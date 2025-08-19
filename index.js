@@ -1,0 +1,40 @@
+const connectDB = require("./server.js");
+
+connectDB();
+
+require("dotenv").config();
+const port = process.env.PORT ;
+const express =  require('express');
+const app = express();
+const cors = require("cors")
+const path = require('path')
+app.use(express.json());
+
+app.use(cors({origin:'*'}));
+
+
+app.use(express.urlencoded({ extended: true }));     
+
+// query photo for client site
+app.use(express.static(path.join(__dirname, 'public')));  
+
+app.get("/",(req,res)=>[
+    res.send("this is home page")
+])
+
+
+app.use("/api", require("./router/Auth.router/auth.router.js")) // auth api----done
+app.use("/api",require("./router/admin.router/admin.router.js"))// admin api---- done
+app.use("/api",require("./router/client.router/client.router.js"))// client api---- 
+app.use("/api",require("./router/supervisor.router/supervisor.router.js"))  //supervisor api---- done 
+
+app.use('/api', require('./router/query.router/query.router.js'));   // query support api
+
+app.use((req, res, next) => {
+  console.log('DEBUG: Incoming request:', req.method, req.originalUrl);
+  next();
+});
+
+app.listen(port, ()=>{
+    console.log(`Server is running on port http://localhost:${port}`);
+})

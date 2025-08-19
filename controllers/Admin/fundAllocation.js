@@ -37,7 +37,7 @@ const allocateFund = async (req, res) => {
     //  Update 
     supervisor.total_payment += Number(amount);
     supervisor.balance_amount += Number(amount);
-    admin.totalReceived -=Number(amount)
+    // admin.totalReceived -=Number(amount)
     admin.totalAllocated +=Number(amount)
 
     //  Save everything

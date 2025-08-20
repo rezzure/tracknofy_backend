@@ -23,7 +23,7 @@ const SupervisorSchema = new mongoose.Schema({
         default: [],     // Initialize as empty array
         trim: true       // Trim whitespace from each string
     },
-    allorted_client:{
+    allotted_client:{
         type: [mongoose.Schema.Types.ObjectId],
         ref: 'Client',
         // required: [true, 'Allotted client is required']
@@ -40,7 +40,7 @@ const SupervisorSchema = new mongoose.Schema({
         type:Number,
         default: 0, 
     },
-    statu:{
+    status:{
         type:String,
         enum: ['active', 'inactive'],
         default: 'active'

@@ -1,11 +1,9 @@
 const mongoose = require("mongoose")
 
-const userSchema = new mongoose.Schema({
+const superAdminSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
-    trim: true,
-    maxlength: [50, 'Name cannot exceed 50 characters']
+    default : "Prabhat Rai" 
   },
   email: {
     type: String,
@@ -16,15 +14,12 @@ const userSchema = new mongoose.Schema({
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
   },
   mobile: {
-    type: String,
-    required: [true, 'Mobile number is required'],
-    match: [/^[0-9]{10,15}$/, 'Please fill a valid mobile number']
+    type: Number,
+    default : '+919990490774'
   },
   role: {
     type: String,
-    enum: ['admin', 'supervisor', 'client'],
-    default: 'client',
-    required: true
+    default : 'Super Admin'
   },
   password: {
     type: String,
@@ -34,7 +29,7 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'suspended'],
+    enum: ['active', 'inactive'],
     default: 'active'
   },
   createdAt: {
@@ -42,5 +37,5 @@ const userSchema = new mongoose.Schema({
     default: Date.now
   }
 });
-const User = mongoose.model("User",userSchema)
-module.exports = User
+const SuperAdmin = mongoose.model("SuperAdmin",superAdminSchema)
+module.exports = SuperAdmin

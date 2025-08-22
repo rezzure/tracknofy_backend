@@ -9,6 +9,7 @@ const updateExpenseStatus = async (req, res) => {
   const { supervisorEmail, status, expenseId } = req.body;
   try {
     const supervisor = await Supervisor.findOne({ email: supervisorEmail });
+    console.log(supervisor)
     const admin = await Admin.findOne({email:email})
     if (!supervisor) {
       return res.send({
@@ -17,6 +18,7 @@ const updateExpenseStatus = async (req, res) => {
       });
     }
     const expense = await Expense.findById({ _id: expenseId });
+    console.log(expense)
     if (!expense) {
       return res.send({
         success: false,
@@ -24,22 +26,24 @@ const updateExpenseStatus = async (req, res) => {
       });
     }
     expense.status = status;
-    await expense.save();
+    
 
     if (status === "approved") {
-      supervisor.total_expense = expense.amount;
-      supervisor.balance_amount =
-        supervisor.total_payment - supervisor.total_expense;
+      supervisor.total_expense += expense.amount;
+      supervisor.balance_amount = supervisor.total_payment - supervisor.total_expense;
       await supervisor.save();
 
       const clientData = await Client.findOne({
-        _id: supervisor.allorted_client,
+        _id: supervisor.allotted_client,
       });
+      console.log(clientData+"client")
+
+      console.log(expense.amount)
 
       clientData.total_expense = expense.amount;
-      clientData.balance_amount =
-        clientData.total_payment - clientData.total_expense;
+      clientData.balance_amount = clientData.total_payment - clientData.total_expense;
       await clientData.save();
+      await expense.save();
 
       // need to remove expense request from expense collection if needed
 
@@ -55,7 +59,9 @@ const updateExpenseStatus = async (req, res) => {
       });
     }
   } catch (err) {
+    console.log(err)
     return res.status(500).send({
+      
       success: false,
       message: "internal server error" + err.message,
     });

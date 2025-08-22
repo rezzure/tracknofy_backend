@@ -49,12 +49,12 @@ const addSite = async (req, res) => {
     }
 
     // Update allocated clients (corrected spelling)
-    if (!supervisordata.allorted_client) {
-      supervisordata.allorted_client = [];
+    if (!supervisordata.allotted_client) {
+      supervisordata.allotted_client = [];
     }
     
-    if (!supervisordata.allorted_client.includes(clientdata._id)) {
-      supervisordata.allorted_client.push(clientdata._id);
+    if (!supervisordata.allotted_client.includes(clientdata._id)) {
+      supervisordata.allotted_client.push(clientdata._id);
     }
 
     await supervisordata.save();

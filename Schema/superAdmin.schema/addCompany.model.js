@@ -55,4 +55,4 @@ const addCompanySchema = new mongoose.Schema({
 
 const AddCompany= mongoose.model("AddCompany", addCompanySchema)
 
-module.exports=AddCompany
+module.exports=AddCompany;

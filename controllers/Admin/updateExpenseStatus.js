@@ -18,6 +18,7 @@ const updateExpenseStatus = async (req, res) => {
       });
     }
     const expense = await Expense.findById({ _id: expenseId });
+    
     console.log(expense)
     if (!expense) {
       return res.send({

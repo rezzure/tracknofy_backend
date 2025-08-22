@@ -1,5 +1,6 @@
 const Admin = require("../../Schema/admin.schema/admine.model")
 const FundAllocation = require("../../Schema/fundAllocation.schema/fundAllocation.model");
+const Ledger = require("../../Schema/ledger.schema/ledger.model");
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model");
 
 const allocateFund = async (req, res) => {
@@ -34,6 +35,14 @@ const allocateFund = async (req, res) => {
       status: "approved"
     });
 
+    const ledgerData = new Ledger({
+      date:date,
+      type:"Debit",
+      from:"Main Account",
+      to:supervisor.name,
+      amount:amount,
+    })
+    await ledgerData.save()
     //  Update 
     supervisor.total_payment += Number(amount);
     supervisor.balance_amount += Number(amount);

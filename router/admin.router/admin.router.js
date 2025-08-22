@@ -39,6 +39,7 @@ const allocateFund = require("../../controllers/Admin/fundAllocation.js");
 const getAllotedAmountData = require("../../controllers/Admin/getAllotedAmountData.js");
 const upload = require("../../middleware/multer.js");
 const checkAdminExist = require("../../controllers/Admin/adminExists.js");
+const getLedgerData = require("../../controllers/Admin/getLedgerData.js");
 
 
 
@@ -143,6 +144,10 @@ router.delete("/delete/partnerDetail/:_id", verification, deletePartnerDetail)
 // /api/auth/check-admin
 router.get('/auth/check-admin', checkAdminExist)
 
+
+
+// get ledger detail
+router.get("/get/ledgerData", verification , getLedgerData)
 
 
 module.exports = router;

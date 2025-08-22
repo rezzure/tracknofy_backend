@@ -1,6 +1,7 @@
 const Client = require("../../Schema/client.schema/client.model");
 const Payments = require("../../Schema/recivedPayments.Schema/payment.model");
-const Admin = require("../../Schema/admin.schema/admine.model")
+const Admin = require("../../Schema/admin.schema/admine.model");
+const Ledger = require("../../Schema/ledger.schema/ledger.model");
 const paymentApproval = async (req, res) => {
   const email = req.query.email;
   console.log(email)
@@ -27,6 +28,15 @@ const paymentApproval = async (req, res) => {
     admin.totalReceived = admin.totalReceived+paymentdetail.amount
     await admin.save()
     if (status === "approved") {
+
+      const ledgerData = new Ledger({
+        date:paymentdetail.transactionDate,
+        type:"Credit",
+        from:client.name,
+        to:"Main Account",
+        amount:paymentdetail.amount,
+      })
+      await ledgerData.save()
       client.total_payment = client.total_payment + paymentdetail.amount;
       client.balance_amount = client.total_payment - client.total_expense;
       await client.save();

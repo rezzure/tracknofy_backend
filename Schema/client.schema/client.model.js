@@ -1,10 +1,10 @@
 const mongoose = require('mongoose')
 
 const clientSchema = new mongoose.Schema({
-  clientId:{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
-  },
+  // clientId:{
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: "User"
+  // },
   name: {
     type: String,
     required: [true, 'Client name is required'],

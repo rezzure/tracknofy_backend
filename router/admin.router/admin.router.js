@@ -37,7 +37,8 @@ const updatePartnerDetail = require("../../controllers/Admin/updatePartnerDetail
 const deletePartnerDetail = require("../../controllers/Admin/deletePartnerDetail.js");
 const allocateFund = require("../../controllers/Admin/fundAllocation.js");
 const getAllotedAmountData = require("../../controllers/Admin/getAllotedAmountData.js");
-const upload = require("../../middleware/multer.js")
+const upload = require("../../middleware/multer.js");
+const checkAdminExist = require("../../controllers/Admin/adminExists.js");
 
 
 
@@ -136,6 +137,11 @@ router.put("/edit/partnerDetail/:_id" ,verification,upload.fields([{ name: 'part
 
 // delete partner detail rounter
 router.delete("/delete/partnerDetail/:_id", verification, deletePartnerDetail)
+
+// checking admin exists
+// checkAdminExist
+// /api/auth/check-admin
+router.get('/auth/check-admin', checkAdminExist)
 
 
 

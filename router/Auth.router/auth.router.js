@@ -1,104 +1,137 @@
-const express = require('express');
-const User = require("../../Schema/users.schema/users.model")
-const Admin = require("../../Schema/admin.schema/admine.model")
+const express = require("express");
+const User = require("../../Schema/users.schema/users.model");
+const Admin = require("../../Schema/admin.schema/admine.model");
 const router = express.Router();
-const bcrypt = require('bcrypt');
-require('dotenv').config()
+const bcrypt = require("bcrypt");
+require("dotenv").config();
 const secretCode = process.env.SECRET_KEY;
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+
+const SuperAdmin = require("../../Schema/superAdmin.schema/superAdmin.model");
 
 // admin signup
-router.post("/auth/signup", async(req,res)=>{
-  const { name, email,password,mobile,role} =req.body;
+router.post("/auth/signup", async (req, res) => {
+  const { name, email, password, mobile, role } = req.body;
   try {
     const admin = await Admin.find();
-    console.log(admin)
-    if(admin.length<0){
+    console.log(admin);
+    if (admin.length < 0) {
       return res.send({
-        success:false,
-        message:"invalid request"
-      })
+        success: false,
+        message: "invalid request",
+      });
     }
 
     const salt = await bcrypt.genSalt(10);
-    const hashPassword = await bcrypt.hash(password,salt)
+    const hashPassword = await bcrypt.hash(password, salt);
     const data = new Admin({
-      name:name,
-      email:email,
-      password:hashPassword,
-      mobile:mobile,
-      role:role
-    })
+      name: name,
+      email: email,
+      password: hashPassword,
+      mobile: mobile,
+      role: role,
+    });
     await data.save();
 
-     const data1 = new User({
-      name:name,
-      email:email,
-      password:hashPassword,
-      mobile:mobile,
-      role:role
-    })
+    const data1 = new User({
+      name: name,
+      email: email,
+      password: hashPassword,
+      mobile: mobile,
+      role: role,
+    });
     await data1.save();
 
     return res.status(200).send({
-      success:true,
-      message:"SignUp success...",
-      data:data,
-    })
+      success: true,
+      message: "SignUp success...",
+      data: data,
+    });
   } catch (error) {
     return res.status(500).send({
-      success:false,
-      message:"error:- "+error.message,
-    })
+      success: false,
+      message: "error:- " + error.message,
+    });
   }
-})
+});
 
 // login
 router.post("/auth/login", async (req, res) => {
-  const { email, password } = req.body
- try{
-   let user = await User.findOne({ email:email });
+  const { email, password } = req.body;
+  try {
+    if (
+      email === process.env.SUPER_ADMIN_EMAIL &&
+      password === process.env.SUPER_ADMIN_PASSWORD
+    ) {
+      const superAdminData = await SuperAdmin.findOne({ email });
+      const superAdmintoken = jwt.sign(email + password, secretCode);
 
-  if (!user) {
-    return res.send({
+      if (!superAdminData) {
+        const data = {
+          email: email,
+          password: password,
+        };
+        const superAdminData = await SuperAdmin.create(data);
+        return res.status(201).send({
+          success: false,
+          message: "Super Admin added succesfully ",
+          superAdminData: superAdminData,
+        });
+      } else {
+        res.status(201).json({
+          success: true,
+          token: superAdmintoken,
+          superAdminExist: true,
+          superAdminData: superAdminData,
+          message: "super admin login successfully",
+        });
+      }
+    }
+
+    let user = await User.findOne({ email: email });
+
+    if (!user) {
+      return res.send({
+        success: false,
+        message: "user not found",
+      });
+    }
+    if (!password || !user.password) {
+      return res.send({
+        success: false,
+        message: "Password missing or user has no password stored",
+      });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.send({
+        success: false,
+        message: "wrong password",
+      });
+    }
+
+    const data = {
+      id: user._id,
+    };
+
+    const token = jwt.sign(data, secretCode);
+    user.password = "";
+    return res.status(200).send({
+      success: true,
+      message: "user logged in successfully",
+      token: token,
+      data: user,
+    });
+  } catch (error) {
+    return res.status(500).send({
       success: false,
-      message: "user not found signup first",
-    })
-  }
-  if (!password || !user.password) {
-    return res.send({
-      success: false,
-      message: "Password missing or user has no password stored",
+      message: "error:- " + error.message,
     });
   }
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.send({
-      success: false,
-      message: "wrong password",
-    })
-  }
+});
 
-  const data = {
-    id: user._id
-  }
+//super admin login
 
-  const token = jwt.sign(data, secretCode);
-  user.password = ""
-  return res.status(200).send({
-    success: true,
-    message: "user logged in successfully",
-    token: token,
-    data: user,
-  })
- }
- catch(error){
-  return res.status(500).send({
-    success:false,
-    message:"error:- "+error.message
-  })
- }
-
-})
+// router.post('/auth/login', superAdminLogin)
 
 module.exports = router;

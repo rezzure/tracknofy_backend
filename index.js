@@ -30,6 +30,8 @@ app.use("/api",require("./router/supervisor.router/supervisor.router.js"))  //su
 
 app.use('/api', require('./router/query.router/query.router.js'));   // query support api
 
+app.use('/api', require('./router/superAdmin.router/addCompany.router.js'));  //super Admin
+
 app.use((req, res, next) => {
   console.log('DEBUG: Incoming request:', req.method, req.originalUrl);
   next();

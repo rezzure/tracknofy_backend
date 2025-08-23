@@ -54,6 +54,10 @@ const clientSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Supervisor name cannot exceed 100 characters']
   },
+  supervisorId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Supervisor'
+  },
   last_payment: {
     type: Date,
     validate: {

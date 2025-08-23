@@ -17,7 +17,8 @@ const paymentSchema = new Schema({
   amount: {
     type: Number,
     required: [true, 'Amount is required'],
-    min: [0.01, 'Amount must be greater than 0']
+    min: [0.01, 'Amount must be greater than 0'],
+    default: 0
   },
   mode: {
     type: String,

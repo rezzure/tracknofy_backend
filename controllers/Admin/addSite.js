@@ -61,6 +61,7 @@ const addSite = async (req, res) => {
 
     // Update client
     clientdata.sitename = name;
+    clientdata.supervisorId = supervisordata._id
     clientdata.supervisor_name = supervisordata.name; // Use DB value, not req.body
     await clientdata.save();
 

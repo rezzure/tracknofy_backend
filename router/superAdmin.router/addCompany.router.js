@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const { upload } = require("../../middleware/queryMiddleware/uploadMiddleware");
-const {addCompanies, getCompanies , updateCompany}= require("../../controllers/SuperAdmin/manageCompany");
+const {addCompanies, getCompanies , updateCompany, updateCompanyStatus}= require("../../controllers/SuperAdmin/manageCompany");
 
 
 
@@ -14,5 +14,9 @@ const {addCompanies, getCompanies , updateCompany}= require("../../controllers/S
 router.post('/add-companies', upload.single('companyLogo'), addCompanies);
 router.get('/get-companies', getCompanies);
 router.put('/add-companies/:id', upload.single('companyLogo'), updateCompany);
+router.put('/api/update-company-status/:id', updateCompanyStatus)
+
+
+
 
 module.exports=router;

@@ -125,17 +125,17 @@ const addCompanies = async (req, res) => {
     await adminUser.save();
 
     // Send email with credentials
-    try {
-      await sendCredentialsEmail(
-        adminEmail,
-        adminName,
-        tempPassword,
-        companyName
-      );
-    } catch (emailError) {
-      // If email fails, we still return success but log the error
-      console.error("Email sending failed:", emailError);
-    }
+    // try {
+    //   await sendCredentialsEmail(
+    //     adminEmail,
+    //     adminName,
+    //     tempPassword,
+    //     companyName
+    //   );
+    // } catch (emailError) {
+    //   // If email fails, we still return success but log the error
+    //   console.error("Email sending failed:", emailError);
+    // }
 
     // Return success response
     res.status(201).json({
@@ -306,34 +306,88 @@ const updateCompany = async (req, res) => {
   }
 };
 
-// Delete company (soft delete)
-// exports.deleteCompany = async (req, res) => {
-//   try {
-//     const companyId = req.params.id;
 
-//     const company = await Company.findById(companyId);
-//     if (!company) {
-//       return res.status(404).json({ message: 'Company not found' });
-//     }
 
-//     // Soft delete company
-//     company.isActive = false;
-//     await company.save();
 
-//     // Deactivate all users associated with this company
-//     await User.updateMany(
-//       { companyId: companyId },
-//       { isActive: false }
-//     );
+// Update company status (Active/InActive)
+const updateCompanyStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
 
-//     res.json({ message: 'Company deleted successfully' });
-//   } catch (error) {
-//     console.error('Error deleting company:', error);
-//     res.status(500).json({
-//       message: 'Server error occurred while deleting company',
-//       error: error.message
-//     });
-//   }
-// };
+    console.log(`DEBUG: Received request to update company ${id} to status: ${status}`);
+    console.log(`DEBUG: Request body:`, req.body);
 
-module.exports={addCompanies, getCompanies, updateCompany};
+    // Validate input
+    if (!id || !status) {
+      console.log('DEBUG: Validation failed - Missing ID or status');
+      return res.status(400).json({
+        success: false,
+        message: 'Company ID and status are required'
+      });
+    }
+
+    // Validate status value
+    if (!['Active', 'InActive'].includes(status)) {
+      console.log('DEBUG: Validation failed - Invalid status value');
+      return res.status(400).json({
+        success: false,
+        message: 'Status must be either "Active" or "InActive"'
+      });
+    }
+
+    console.log(`DEBUG: Looking for company with ID: ${id}`);
+    
+    // Find company and update status
+    const updatedCompany = await Company.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    console.log(`DEBUG: Update result:`, updatedCompany);
+
+    // Check if company exists
+    if (!updatedCompany) {
+      console.log('DEBUG: Company not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Company not found'
+      });
+    }
+
+    console.log(`DEBUG: Successfully updated company ${id} to status: ${status}`);
+
+    // Return success response
+    res.status(200).json({
+      success: true,
+      message: `Company status updated to ${status}`,
+      company: updatedCompany
+    });
+
+  } catch (error) {
+    console.error('ERROR: Error updating company status:', error.message);
+    console.error('ERROR: Full error:', error);
+    
+    // Handle specific errors
+    if (error.name === 'CastError') {
+      console.log('DEBUG: CastError - Invalid company ID format');
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid company ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating company status',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
+
+module.exports={addCompanies, getCompanies, updateCompany, updateCompanyStatus};

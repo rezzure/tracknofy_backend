@@ -26,6 +26,11 @@ const companySchema = new mongoose.Schema({
     required: true,
     min: 1
   },
+  status : {
+    type : String,
+    enum : ['Active', 'InActive'],
+    default : 'Active'
+  },
   isActive: {
     type: Boolean,
     default: true

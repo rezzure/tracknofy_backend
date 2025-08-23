@@ -29,8 +29,8 @@ const superAdminSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive'],
-    default: 'active'
+    enum: ['Active', 'InActive'],
+    default: 'Active'
   },
   createdAt: {
     type: Date,

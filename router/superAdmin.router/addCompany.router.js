@@ -14,7 +14,7 @@ const {addCompanies, getCompanies , updateCompany, updateCompanyStatus}= require
 router.post('/add-companies', upload.single('companyLogo'), addCompanies);
 router.get('/get-companies', getCompanies);
 router.put('/add-companies/:id', upload.single('companyLogo'), updateCompany);
-router.put('/api/update-company-status/:id', updateCompanyStatus)
+router.put('/update-company-status/:id', updateCompanyStatus)
 
 
 

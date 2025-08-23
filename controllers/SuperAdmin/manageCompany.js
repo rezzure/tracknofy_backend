@@ -307,8 +307,6 @@ const updateCompany = async (req, res) => {
 };
 
 
-
-
 // Update company status (Active/InActive)
 const updateCompanyStatus = async (req, res) => {
   try {
@@ -316,7 +314,6 @@ const updateCompanyStatus = async (req, res) => {
     const { status } = req.body;
 
     console.log(`DEBUG: Received request to update company ${id} to status: ${status}`);
-    console.log(`DEBUG: Request body:`, req.body);
 
     // Validate input
     if (!id || !status) {
@@ -358,8 +355,8 @@ const updateCompanyStatus = async (req, res) => {
 
     console.log(`DEBUG: Successfully updated company ${id} to status: ${status}`);
 
-    // Return success response
-    res.status(200).json({
+    // Return success response - ONLY ONCE
+    return res.status(200).json({
       success: true,
       message: `Company status updated to ${status}`,
       company: updatedCompany
@@ -367,7 +364,6 @@ const updateCompanyStatus = async (req, res) => {
 
   } catch (error) {
     console.error('ERROR: Error updating company status:', error.message);
-    console.error('ERROR: Full error:', error);
     
     // Handle specific errors
     if (error.name === 'CastError') {
@@ -378,13 +374,16 @@ const updateCompanyStatus = async (req, res) => {
       });
     }
 
-    res.status(500).json({
+    // Return error response - ONLY ONCE
+    return res.status(500).json({
       success: false,
       message: 'Server error while updating company status',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
+
+
 
 
 

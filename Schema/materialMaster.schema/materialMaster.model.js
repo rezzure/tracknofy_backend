@@ -5,6 +5,10 @@ const materialMasterSchema = new mongoose.Schema({
         type:String,
         required: true
     },
+    materialSize:{
+        type: String,
+        required: true
+    },
     materialName:{
         type: String,
         required: true

@@ -12,43 +12,43 @@ const generateTempPassword = () => {
 };
 
 // Email configuration
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS,
-//   },
-// });
+const transporter = nodemailer.createTransport({
+  service: "prabhat123@gmail.com+testing1@gmail.com",
+  auth: {
+    user: process.env.SUPER_ADMIN_EMAIL,
+    pass: process.env.SUPER_ADMIN_PASSWORD,
+  },
+});
 
 // Send email with credentials
-// const sendCredentialsEmail = async (email, name, tempPassword, companyName) => {
-//   const mailOptions = {
-//     from: process.env.EMAIL_USER,
-//     to: email,
-//     subject: `Your Admin Account for ${companyName}`,
-//     html: `
-//       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-//         <h2>Welcome to ${companyName}!</h2>
-//         <p>Hello ${name},</p>
-//         <p>Your admin account has been created successfully.</p>
-//         <p><strong>Login Credentials:</strong></p>
-//         <p>Email: ${email}</p>
-//         <p>Temporary Password: ${tempPassword}</p>
-//         <p>Please login at: <a href="${process.env.FRONTEND_URL}">${process.env.FRONTEND_URL}</a></p>
-//         <p><strong>Important:</strong> Please change your password on first login.</p>
-//         <br>
-//         <p>Best regards,<br>${companyName} Team</p>
-//       </div>
-//     `,
-//   };
+const sendCredentialsEmail = async (email, name, tempPassword, companyName) => {
+  const mailOptions = {
+    from: process.env.SUPER_ADMIN_EMAIL,
+    to: email,
+    subject: `Your Admin Account for ${companyName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Welcome to ${companyName}!</h2>
+        <p>Hello ${name},</p>
+        <p>Your admin account has been created successfully.</p>
+        <p><strong>Login Credentials:</strong></p>
+        <p>Email: ${email}</p>
+        <p>Temporary Password: ${tempPassword}</p>
+        <p>Please login at: <a href="${process.env.FRONTEND_URL}">${process.env.FRONTEND_URL}</a></p>
+        <p><strong>Important:</strong> Please change your password on first login.</p>
+        <br>
+        <p>Best regards,<br>${companyName} Team</p>
+      </div>
+    `,
+  };
 
-//   try {
-//     await transporter.sendMail(mailOptions);
-//   } catch (error) {
-//     console.error("Error sending email:", error);
-//     throw new Error("Failed to send email");
-//   }
-// };
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send email");
+  }
+};
 
 // Add new company and admin
 const addCompanies = async (req, res) => {
@@ -116,17 +116,17 @@ const addCompanies = async (req, res) => {
     await adminUser.save();
 
     // Send email with credentials
-    // try {
-    //   await sendCredentialsEmail(
-    //     adminEmail,
-    //     adminName,
-    //     tempPassword,
-    //     companyName
-    //   );
-    // } catch (emailError) {
-    //   // If email fails, we still return success but log the error
-    //   console.error("Email sending failed:", emailError);
-    // }
+    try {
+      await sendCredentialsEmail(
+        adminEmail,
+        adminName,
+        tempPassword,
+        companyName
+      );
+    } catch (emailError) {
+      // If email fails, we still return success but log the error
+      console.error("Email sending failed:", emailError);
+    }
 
     // Return success response
     res.status(201).json({

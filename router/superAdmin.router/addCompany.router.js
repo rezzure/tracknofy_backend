@@ -1,8 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const { upload } = require("../../middleware/queryMiddleware/uploadMiddleware");
+
 const {addCompanies, getCompanies , updateCompany, updateCompanyStatus}= require("../../controllers/SuperAdmin/manageCompany");
+const upload = require("../../middleware/superAdmin/uploadLogoMiddleware");
+
+
+
 
 
 

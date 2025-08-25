@@ -17,6 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // query photo for client site
 app.use(express.static(path.join(__dirname, 'public')));  
+//company logo photo to displayin comapnies list(middleware)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 app.get("/",(req,res)=>[
     res.send("this is home page")

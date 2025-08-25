@@ -41,7 +41,7 @@ const updateExpenseStatus = async (req, res) => {
 
       console.log(expense.amount)
 
-      clientData.total_expense = expense.amount;
+      clientData.total_expense += expense.amount;
       clientData.balance_amount = clientData.total_payment - clientData.total_expense;
       await clientData.save();
       await expense.save();

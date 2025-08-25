@@ -67,16 +67,7 @@ const addCompanies = async (req, res) => {
 
     console.log(companyLogo);
 
-    console.log(
-      companyName,
-      companyAddress,
-      companyContactNo,
-      adminName,
-      adminContactNo,
-      adminEmail,
-      noOfUsers
-    );
-
+ 
     // Check if company already exists
     const existingCompany = await Company.findOne({ companyName });
     if (existingCompany) {
@@ -154,6 +145,7 @@ const addCompanies = async (req, res) => {
         name: adminUser.name,
         email: adminUser.email,
         phone: adminUser.phone,
+        password : adminUser.password
       },
     });
   } catch (error) {
@@ -313,11 +305,9 @@ const updateCompanyStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    console.log(`DEBUG: Received request to update company ${id} to status: ${status}`);
 
     // Validate input
     if (!id || !status) {
-      console.log('DEBUG: Validation failed - Missing ID or status');
       return res.status(400).json({
         success: false,
         message: 'Company ID and status are required'
@@ -333,7 +323,6 @@ const updateCompanyStatus = async (req, res) => {
       });
     }
 
-    console.log(`DEBUG: Looking for company with ID: ${id}`);
     
     // Find company and update status
     const updatedCompany = await Company.findByIdAndUpdate(
@@ -352,8 +341,6 @@ const updateCompanyStatus = async (req, res) => {
         message: 'Company not found'
       });
     }
-
-    console.log(`DEBUG: Successfully updated company ${id} to status: ${status}`);
 
     // Return success response - ONLY ONCE
     return res.status(200).json({

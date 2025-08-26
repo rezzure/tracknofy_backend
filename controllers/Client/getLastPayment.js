@@ -9,7 +9,7 @@ const getLastPayment = async (req, res) => {
         const client = await Client.findOne({email:email})
         const lastPayment = await Payments.findOne({clientId:client._id})
        if(!lastPayment) {
-         res.status(400).send({
+         return res.status(400).send({
             success: false,
             message: 'Payment data not found'
         })
@@ -20,7 +20,7 @@ const getLastPayment = async (req, res) => {
         data: lastPayment
        })
     } catch (error) {
-        res.status(500).send({
+        return res.status(500).send({
             success: false,
             message: `Internal server error ${error.message}`
         })

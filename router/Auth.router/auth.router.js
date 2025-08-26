@@ -93,7 +93,7 @@ router.post("/auth/login", async (req, res) => {
     if (!user) {
       return res.send({
         success: false,
-        message: "user not found",
+        message: "Invalid Login Credentials",
       });
     }
     if (!password || !user.password) {

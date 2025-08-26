@@ -13,6 +13,13 @@ const materialMasterSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    materialRate:{
+        type: String,
+        required: true
+    },
+    remarks:{
+        type: String,
+    },
     createdBy:{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Admin',

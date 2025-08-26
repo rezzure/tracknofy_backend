@@ -2,7 +2,9 @@ const VendorManagement = require('../../Schema/vendorManagement.schema/vendorMan
 const Admin = require('../../Schema/admin.schema/admine.model')
 
 const addVendorManagement = async (req, res) =>{
-    const {vendorName, vendorCompany, vendorAddress, vendorMobile, vendorEmail, remarks, email, date} = req.body
+    const email = req.query.email
+    console.log(email)
+    const {vendorName, vendorCompany, vendorAddress, vendorMobile, vendorEmail, remarks, date} = req.body
     try {
         const admin = await Admin.findOne({email:email})
         if(!admin){

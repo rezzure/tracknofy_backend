@@ -2,7 +2,8 @@ const Admin = require('../../Schema/admin.schema/admine.model')
 const MaterialMaster = require('../../Schema/materialMaster.schema/materialMaster.model')
 
 const addMaterialMaster = async (req, res) =>{
-    const {materialType, materialName, email, date} = req.body
+    const email = req.query.email
+    const {materialType, materialName, materialSize, materialRate, remarks} = req.body
     try {
         if(!materialName){
             return res.status(400).send({
@@ -20,8 +21,11 @@ const addMaterialMaster = async (req, res) =>{
         const materialData = new MaterialMaster({
             materialType: materialType,
             materialName: materialName,
+            materialRate: materialRate,
+            materialSize: materialSize,
+            remarks: remarks || "no remarks", 
             createdBy: admin._id,
-            createdAt: date
+            createdAt: Date.now()
         })
         await materialData.save()
         return res.status(200).send({

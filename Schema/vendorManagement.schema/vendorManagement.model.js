@@ -34,7 +34,7 @@ const vendorManagementSchema = new mongoose.Schema(
     createdByModel: {
       type: String,
       enum: ["Admin", "Supervisor"],
-      required: true,
+      // required: true,
     },
     createdAt: {
       type: Date,

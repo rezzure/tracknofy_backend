@@ -14,7 +14,7 @@ const updateExpenseStatus = async (req, res) => {
     if (!supervisor) {
       return res.send({
         success: false,
-        message: "supervisor not found!!!",
+        message: "Supervisor Not Found!!!",
       });
     }
     const expense = await Expense.findById({ _id: expenseId });
@@ -23,7 +23,7 @@ const updateExpenseStatus = async (req, res) => {
     if (!expense) {
       return res.send({
         success: false,
-        message: "expense data not found!!!",
+        message: "Expense Data Not Found!!!",
       });
     }
     expense.status = status;
@@ -50,21 +50,21 @@ const updateExpenseStatus = async (req, res) => {
 
       return res.status(200).send({
         success: true,
-        message: "approval success....",
+        message: "Expense Approved",
       });
     }
     if (status === "rejected") {
+      await expense.save();
       return res.status(200).send({
-        success: true,
-        message: " expense rejected !!!",
+        success:false,
+        message: " Expense Rejected !!!",
       });
     }
   } catch (err) {
     console.log(err)
     return res.status(500).send({
-      
       success: false,
-      message: "internal server error" + err.message,
+      message: "Internal Server Error" + err.message,
     });
   }
 }

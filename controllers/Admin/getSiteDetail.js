@@ -7,19 +7,19 @@ const getSiteDetail = async(req,res)=>{
     if(sites.length<=0){
       return res.status(404).send({
         success:false,
-        message:"no site found"
+        message:"No Site Found"
       })
     }
     return res.status(200).send({
       success:true,
-      message:"site data found",
+      message:"Site Data Found",
       data:sites
     })
 
   } catch (error) {
     return res.status(500).send({
       success:true,
-      message:"Error:- "+error.message
+      message:"Internal Server Error:- "+error.message
     })
   }
 }

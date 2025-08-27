@@ -7,12 +7,12 @@ const getSupervisorDetail = async (req, res) => {
     if (!supervisors || supervisors.length === 0) {
       return res.status(404).send({
         success: false,
-        message: "No supervisors found",
+        message: "No Supervisors Found",
       });
     }
     res.status(200).send({
       success: true,
-      message: "Supervisors fetched successfully",
+      message: "Supervisors Fetched Successfully",
       number_of_supervisors: supervisors.length,
       data: supervisors,
     });
@@ -20,8 +20,7 @@ const getSupervisorDetail = async (req, res) => {
     console.error(err);
     res.status(500).send({
       success: false,
-      message: "Internal server error",
-      error: err.message,
+      message: `Internal Server Error :- ${err.message}`,
     });
   }
 }

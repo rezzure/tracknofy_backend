@@ -12,7 +12,7 @@ const editUser = async(req,res)=>{
     if(!user1){
       return res.status(404).send({
         success:false,
-        message:"user not found"
+        message:"User Not Found"
       })
     }
     if(user1.role === "admin"){
@@ -70,13 +70,13 @@ const editUser = async(req,res)=>{
 
     res.status(200).send({
       success:true,
-      message:"user Details updated",
+      message:"User Details Updated",
       data:user1
     })
   } catch (error) {
     res.status(500).send({
       success:false,
-      message:"Error:- "+error.message
+      message:`Internal Server Error:- ${error.message}`
     })
   }
 }

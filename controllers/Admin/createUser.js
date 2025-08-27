@@ -17,7 +17,7 @@ const createUser = async (req, res) => {
   if (user) {
     res.send({
       success: false,
-      message: "email already exist",
+      message: "Email Already Exist",
     });
   }
 
@@ -46,7 +46,7 @@ const createUser = async (req, res) => {
   user.password = "";
   res.send({
     success: true,
-    message: "user created sucessfully",
+    message: "User Created Sucessfully",
     data: user,
   });
 }

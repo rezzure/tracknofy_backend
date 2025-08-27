@@ -6,18 +6,18 @@ try {
   console.log(ledgerData)
   if(ledgerData.length === 0){
     return res.status(404).send({
-      success:flase,
-      message:"Data not Found"
+      success:false,
+      message:"Data Not Found"
     })
   }
   return res.status(200).send({
     success:true,
-    message:"data found",
+    message:"Data Found",
     data:ledgerData
   })
 } catch (error) {
   return res.status(500).send({
-    success:flase,
+    success:false,
     message:`Internal Server Error :- ${error.message}`
   })
 }

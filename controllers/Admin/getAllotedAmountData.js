@@ -7,12 +7,12 @@ const getAllotedAmountData= async(req,res) =>{
     if(allocatedFund.length === 0){
       return res.status(404).send({
         success:false,
-        message:"data not found !!!"
+        message:"Data Not Found !!!"
       })
     }
     return res.status(200).send({
       success:true,
-      message:"data found",
+      message:"Data Found",
       data:allocatedFund
     })
   } catch (error) {

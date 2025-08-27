@@ -8,19 +8,18 @@ const deleteSite = async(req,res)=>{
     if(!sitedata){
       return res.status(404).send({
         success:false,
-        message:"site not found"
+        message:"Site Not Found"
       })
     }
-
     return res.status(200).send({
       success:true,
-      message:"site deleted...",
+      message:"Site Deleted",
       data:sitedata
     })
   } catch (error) {
     return res.status(500).send({
       success:false,
-      message:`Error:- ${error}`
+      message:`Internal Server Error:- ${error}`
     })
   }
 }

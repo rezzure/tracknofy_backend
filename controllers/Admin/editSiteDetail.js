@@ -13,7 +13,7 @@ const editSiteDetail = async (req,res)=>{
     if(!siteData){
       return res.status(404).send({
         success:false,
-        message:"Site data not found"
+        message:"Site Data Not Found"
       })
     }
     if(name) siteData.name = name;
@@ -29,14 +29,14 @@ const editSiteDetail = async (req,res)=>{
     await siteData.save()
     return res.status(200).send({
       success:true,
-      message:"site data updated",
+      message:"Site Data Updated",
       data:siteData
     })
   }
   catch(error){
     return res.status(500).send({
       success:false,
-      message:`Error:- ${error.message}`
+      message:`Internal Server Error:- ${error.message}`
     })
   }
 }

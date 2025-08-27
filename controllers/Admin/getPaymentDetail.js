@@ -6,18 +6,18 @@ const getPaymentDetail = async (req, res) => {
     if (!details) {
       return res.send({
         success: false,
-        message: "no payment found",
+        message: "No Payment Found",
       });
     }
     return res.status(200).send({
       success: true,
-      message: "data found....",
+      message: "Payment Data Found",
       data: details,
     });
   } catch (err) {
     return res.status(501).send({
       success: false,
-      message: "internal server error " + err.message,
+      message: "Internal Server Error " + err.message,
     });
   }
 }

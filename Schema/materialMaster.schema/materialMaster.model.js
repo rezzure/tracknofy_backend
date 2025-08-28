@@ -17,13 +17,26 @@ const materialMasterSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    materialBrand:{
+        type: String,
+        required: true
+    },
+    materialPhoto: {
+    type: String, // Store file path
+    required: false
+  },
     remarks:{
         type: String,
     },
     createdBy:{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Admin',
+        // ref: 'Admin',
+        refPath: 'createdByModel', // Points to field that specifies which model
         required: true
+    },
+    createdByModel: {
+        type: String,
+        enum: ['Admin', 'Supervisor'],  // Allowed model names
     },
     createdAt: {
         type: Date,

@@ -40,16 +40,16 @@ router.post("/report/progress/:id",verification,upload.array("photos"),progressR
 router.get("/getProgress/report/:_id",verification,getProgressReport)
 
 // materialmaster router
-router.post("/material/master", verification, addMaterialMaster)
+router.post("/sup/material/master", verification, addMaterialMaster)
 
 // get material master detail
-router.get("/get/material/master", verification, getMaterialMaster)
+router.get("/sup/get/material/master", verification, getMaterialMaster)
 
 // Update material master
-router.put("/update/material/master/:_id", verification, updateMaterialMaster)
+router.put("/sup/update/material/master/:_id", verification, updateMaterialMaster)
 
 // delete material master
-router.delete("/delete/material/master/:_id", verification, deleteMaterialMaster)
+router.delete("/sup/delete/material/master/:_id", verification, deleteMaterialMaster)
 
 // vendor management router
 router.post("/sup/vendor/management", verification, addVendorManagement)

@@ -1,8 +1,9 @@
 const PartnerManagement = require("../../Schema/partnerManagement.schema/partnerManagement.model");
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model")
 const addPartnerManagement = async (req, res) => {
+    const email = req.query.email
     try {
-        const { partnerType, partnerName, partnerMobile, partnerAddress ,email} = req.body;
+        const { partnerType, partnerName, partnerMobile, partnerAddress} = req.body;
         const supervisor = await Supervisor.findOne({email:email})
 
         // Validate required fields

@@ -65,18 +65,18 @@ router.delete("/delete/vendorDetail/:_id", deleteVendorDetail)
 
 // partner Management router
 
-router.post("/add/partnerManagement",verification,upload.fields([
+router.post("/sup/add/partnerManagement",verification,upload.fields([
     { name: 'partnerPhoto', maxCount: 1 },
     { name: 'partnerIdProof', maxCount: 1 }
   ]),addPartnerManagement)
 
   // get partner Details router
-router.get("/get/partnerDetail", verification, getPartnerDetail)
+router.get("/sup/get/partnerDetail", verification, getPartnerDetail)
 
   // update partner Details router
-router.put("/edit/partnerDetail/:_id" ,verification,upload.fields([{ name: 'partnerPhoto', maxCount: 1 },{ name: 'partnerIdProof', maxCount: 1 }]),updatePartnerDetail)
+router.put("/sup/edit/partnerDetail/:_id" ,verification,upload.fields([{ name: 'partnerPhoto', maxCount: 1 },{ name: 'partnerIdProof', maxCount: 1 }]),updatePartnerDetail)
 
 // delete partner detail rounter
-router.delete("/delete/partnerDetail/:_id", verification, deletePartnerDetail)
+router.delete("/sup/delete/partnerDetail/:_id", verification, deletePartnerDetail)
 
 module.exports = router;

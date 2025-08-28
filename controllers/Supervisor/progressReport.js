@@ -15,7 +15,7 @@ const progressReport = async(req,res)=>{
         if(!siteData ){
             return res.send({
                 success:false,
-                message:"data missmatched either supervisor or site not found"
+                message:"Either Supervisor or Site Not Found"
             })
         }
         const reportData = new Progress({
@@ -38,7 +38,7 @@ const progressReport = async(req,res)=>{
         const updatedData = await reportData.save();
         return res.status(200).send({
             success:true,
-            message:"Data submitted success",
+            message:"Data Submitted Success",
             data:updatedData
         })
 
@@ -47,7 +47,7 @@ const progressReport = async(req,res)=>{
     catch(err){
         return res.status(501).send({
             success:false,
-            message:`error !!!!! :-${err}`
+            message:`Internal Server Error:- ${err.message}`
         })
     }
     

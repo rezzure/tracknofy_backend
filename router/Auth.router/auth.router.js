@@ -18,7 +18,7 @@ router.post("/auth/signup", async (req, res) => {
     if (admin.length < 0) {
       return res.send({
         success: false,
-        message: "invalid request",
+        message: "Invalid Request",
       });
     }
 
@@ -44,13 +44,13 @@ router.post("/auth/signup", async (req, res) => {
 
     return res.status(200).send({
       success: true,
-      message: "SignUp success...",
+      message: "SignUp Success...",
       data: data,
     });
   } catch (error) {
     return res.status(500).send({
       success: false,
-      message: "error:- " + error.message,
+      message:error.message,
     });
   }
 });
@@ -74,7 +74,7 @@ router.post("/auth/login", async (req, res) => {
         const superAdminData = await SuperAdmin.create(data);
         return res.status(201).send({
           success: false,
-          message: "Super Admin added succesfully ",
+          message: "Super Admin Created ",
           superAdminData: superAdminData,
         });
       } else {
@@ -83,7 +83,7 @@ router.post("/auth/login", async (req, res) => {
           token: superAdmintoken,
           superAdminExist: true,
           superAdminData: superAdminData,
-          message: "super admin login successfully",
+          message: "Super Admin Login Successfully",
         });
       }
     }
@@ -93,20 +93,20 @@ router.post("/auth/login", async (req, res) => {
     if (!user) {
       return res.send({
         success: false,
-        message: "Invalid Login Credentials",
+        message: "User Not Found",
       });
     }
     if (!password || !user.password) {
       return res.send({
         success: false,
-        message: "Password missing or user has no password stored",
+        message: "Password Missing",
       });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.send({
         success: false,
-        message: "wrong password",
+        message: "Wrong Password",
       });
     }
 
@@ -118,14 +118,14 @@ router.post("/auth/login", async (req, res) => {
     user.password = "";
     return res.status(200).send({
       success: true,
-      message: "user logged in successfully",
+      message: "Welcome...",
       token: token,
       data: user,
     });
   } catch (error) {
     return res.status(500).send({
       success: false,
-      message: "error:- " + error.message,
+      message:error.message,
     });
   }
 });

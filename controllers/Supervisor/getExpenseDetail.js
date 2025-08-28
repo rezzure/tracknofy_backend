@@ -9,18 +9,18 @@ const getExpenseDetail = async(req,res)=>{
         if(!expenseData){
             return res.status(404).send({
                 success:false,
-                message:"Data not found..."
+                message:"Data Not Found..."
             })
         }
         res.status(200).send({
             success:true,
-            message:"Expense Data found",
+            message:"Expense Data Found",
             data:expenseData
         })
     } catch (error) {
         res.status(500).send({
             success:false,
-            message:`Error:- ${error.message}`
+            message:`Internal Server Error:- ${error.message}`
         })
     }
 }

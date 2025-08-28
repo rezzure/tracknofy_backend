@@ -9,20 +9,20 @@ const allotedSite = async(req,res)=>{
         if(siteData.length <= 0){
             return res.send({
                 success:false,
-                message:"no site found"
+                message:"No Site Found"
             })
         }
         console.log(siteData)
         return res.status(200).send({
             success:true,
-            message:"data found....",
+            message:"Data Found....",
             data:siteData
         })
     }
     catch(err){
         return res.status(501).send({
             success:false,
-            message:"error:- "+err
+            message:`Internal Server Error:- ${err.message}`
         })
     }
 }

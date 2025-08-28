@@ -8,20 +8,20 @@ const supervisorDetail = async (req,res)=>{
         if(!supervisorData){
             return res.status(404).send({
                 success:false,
-                message:"Supervisor data not found..."
+                message:"Supervisor Data Not Found..."
             })
         }
         console.log(supervisorData)
         return res.status(200).send({
             success:true,
-            message:"User data found...",
+            message:"User Data Found...",
             data:supervisorData
         })
     } catch (error) {
         console.log(error.message)
        return res.status(500).send({
         success:false,
-        message:`Error:- ${error.message}`
+        message:`Internal Server Error :- ${error.message}`
        }) 
     }
 }

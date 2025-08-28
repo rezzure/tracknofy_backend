@@ -55,7 +55,8 @@ const createClientPayment = async (req, res) => {
     // await payment.save();
 
     // Return success response
-    res.status(201).json({
+    res.status(200).send({
+      success:true,
       message: 'Payment submitted successfully! Status: Pending Verification',
       payment: {
         id: payment._id,

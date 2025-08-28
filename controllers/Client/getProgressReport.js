@@ -11,19 +11,19 @@ const getProgressReport =async (req,res)=>{
         if(!progressReport){
             return res.send({
                 success:false,
-                message:"no progress report found"
+                message:"No Report Found"
             })
         }
         return res.status(200).send({
             success:true,
-            message:"progress report found",
+            message:"Progress Report Found",
             data:progressReport
         })
     }
     catch(err){
         res.status(501).send({
             success:false,
-            message:`error found:-${err.message}`
+            message:`Internal Server Error:- ${err.message}`
         })
     }
 }

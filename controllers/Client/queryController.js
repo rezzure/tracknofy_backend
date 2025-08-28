@@ -20,7 +20,7 @@ const queryController = {
       if (!queryType || !description) {
         return res.status(400).json({
           success: false,
-          message: "Query type and description are required",
+          message: "Query Type and Description are Required",
         });
       }
 
@@ -33,7 +33,7 @@ const queryController = {
       if (!clientUser) {
         return res.status(404).json({
           success: false,
-          message: "Client not found",
+          message: "Client Not Found",
           
         });
       }
@@ -60,13 +60,13 @@ const queryController = {
       res.status(201).json({
         success: true,
         data: savedQuery,
-        message: "Query submitted successfully",
+        message: "Query Submitted Successfully",
       });
     } catch (error) {
       console.error("Error in createQuery:", error.message);
       res.status(500).json({
         success: false,
-        message: "Failed to submit query",
+        message: "Failed to Submit Query",
         error: error.message,
       });
     }
@@ -93,13 +93,13 @@ const queryController = {
       res.status(200).json({
         success: true,
         data: formattedQueries,
-        message: "Queries fetched successfully",
+        message: "Queries Fetched Successfully",
       });
     } catch (error) {
       console.error("Error in getClientQueries:", error);
       res.status(500).json({
         success: false,
-        message: "Failed to fetch queries",
+        message: "Failed to Fetch Queries",
         error: error.message,
       });
     }
@@ -116,7 +116,7 @@ const queryController = {
       if (!message) {
         return res.status(400).json({
           success: false,
-          message: "Reply message is required",
+          message: "Reply Message is Required",
         });
       }
 
@@ -124,7 +124,7 @@ const queryController = {
       if (!query) {
         return res.status(404).json({
           success: false,
-          message: "Query not found",
+          message: "Query Not Found",
         });
       }
 
@@ -140,12 +140,12 @@ const queryController = {
       res.status(200).json({
         success: true,
         data: query,
-        message: "Reply added successfully",
+        message: "Reply Added Successfully",
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: "Failed to add reply",
+        message: "Failed to Add Reply",
         error: error.message,
       });
     }

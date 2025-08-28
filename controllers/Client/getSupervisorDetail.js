@@ -7,9 +7,15 @@ const getSupervisorDetail = async (req, res) => {
         const client = await Client.findOne({email:email})
         console.log(client.supervisor_name)
         const supervisor = await Supervisor.findById(client.supervisorId)
+        if(!supervisor){
+            return res.status(400).send({
+                success:true,
+                message:"Supervisor Not Found"
+            })
+        }
         return res.status(200).send({
             success: true,
-            message: 'Supervisor detail found successfully',
+            message: 'Supervisor Detail Found Successfully',
             supervisorDetails : supervisor
 
         })

@@ -38,14 +38,14 @@ const expenseDetail = async(req,res)=>{
     let data = await Expense.create(expenseData)
     return res.status(200).send({
       success: true,
-      message: "data submitted successfully",
+      message: "Data Submitted Successfully",
       data: data
     })
   }
   catch (err) {
     res.status(500).send({
       success: false,
-      message: "internal server error: " + err.message
+      message: `Internal Server Error:- ${err.message}`
     })
   }
 }

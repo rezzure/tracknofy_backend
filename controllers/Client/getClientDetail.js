@@ -9,19 +9,19 @@ const getClientDetails = async (req, res) => {
         if(!user){
             return res.status(404).send({
                 success:false,
-                message:'client data not found'
+                message:'Client Data Not Found'
             })
         }
 console.log(user)
        return res.status(200).send({
             success:true,
             data:user,
-            message:'client detail found'
+            message:'Client Detail Found'
         })
     } catch (error) {
         return res.status(500).send({
             success:false,
-            message:error
+            message:`Internal Server Error:- ${error.message}`
         })
     }
 }

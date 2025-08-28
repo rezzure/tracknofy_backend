@@ -11,18 +11,18 @@ const getLastPayment = async (req, res) => {
        if(!lastPayment) {
          return res.status(400).send({
             success: false,
-            message: 'Payment data not found'
+            message: 'Payment Data Not Found'
         })
        }
        return res.status(200).send({
         success: true,
-        message: 'Last payment found successfully',
+        message: 'Last Payment Found Successfully',
         data: lastPayment
        })
     } catch (error) {
         return res.status(500).send({
             success: false,
-            message: `Internal server error ${error.message}`
+            message: `Internal server error:- ${error.message}`
         })
     }
 }

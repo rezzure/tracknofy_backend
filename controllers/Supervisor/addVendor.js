@@ -2,7 +2,8 @@ const VendorManagement = require('../../Schema/vendorManagement.schema/vendorMan
 const Supervisor = require('../../Schema/supervisor.schema/supervisor.model')
 
 const addVendorManagement = async (req, res) =>{
-    const {vendorName, vendorCompany, vendorAddress, vendorMobile, vendorEmail, remarks, email, date} = req.body
+    const email = req.query.email
+    const {vendorName, vendorCompany, vendorAddress, vendorMobile, vendorEmail, remarks, date} = req.body
     try {
         const supervisor = await Supervisor.findOne({email:email})
         if(!supervisor){

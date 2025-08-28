@@ -7,7 +7,9 @@ const updateVendorDetail = async (req, res) => {
 
     try {
         const vendorDetail = await VendorManagement.findById(_id)
+        console.log(vendorDetail)
         const supervisor = await Supervisor.findOne({email:email})
+        console.log(supervisor)
         if(!vendorDetail){
             return res.status(404).send({
                 success: false,

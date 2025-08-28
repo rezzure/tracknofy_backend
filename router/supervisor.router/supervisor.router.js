@@ -52,16 +52,16 @@ router.put("/update/material/master/:_id", verification, updateMaterialMaster)
 router.delete("/delete/material/master/:_id", verification, deleteMaterialMaster)
 
 // vendor management router
-router.post("/vendor/management", verification, addVendorManagement)
+router.post("/sup/vendor/management", verification, addVendorManagement)
 
 // get vendor data router
-router.get("/get/vendorDetail", verification, getVendorDetail)
+router.get("/sup/get/vendorDetail", verification, getVendorDetail)
 
 // update vendor detail router
-router.put("/update/vendorDetail/:_id", verification, updateVendorDetail)
+router.put("/sup/update/vendorDetail/:_id", verification, updateVendorDetail)
 
 // delete vendor detail router
-router.delete("/delete/vendorDetail/:_id", deleteVendorDetail)
+router.delete("/sup/delete/vendorDetail/:_id", deleteVendorDetail)
 
 // partner Management router
 

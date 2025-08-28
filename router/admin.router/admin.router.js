@@ -125,7 +125,7 @@ router.get("/get/vendorDetail", verification, getVendorDetail)
 router.put("/update/vendorDetail/:_id", verification, updateVendorDetail)
 
 // delete vendor detail router
-router.delete("/delete/vendorDetail/:_id", deleteVendorDetail)
+router.delete("/delete/vendorDetail/:_id", verification, deleteVendorDetail)
 
 // partner Management router
 router.post("/add/partnerManagement",verification,upload.fields([{ name: 'partnerPhoto', maxCount: 1 },{ name: 'partnerIdProof', maxCount: 1 }]),addPartnerManagement)

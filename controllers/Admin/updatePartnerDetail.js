@@ -3,13 +3,17 @@ const Admin = require("../../Schema/admin.schema/admine.model")
 const updatePartnerDetail = async(req,res) =>{
 
   const {_id} = req.params;
+  console.log(_id)
   const { partnerType, partnerName, partnerMobile, partnerAddress ,email} = req.body;
+  console.log(partnerType, partnerName, partnerMobile, partnerAddress ,email)
   const partnerPhotoFile = req.files?.['partnerPhoto']?.[0];
   const partnerIdProofFile = req.files?.['partnerIdProof']?.[0];
 
   try {
     const partner = await PartnerManagement.findById(_id)
+    console.log(partner)
     const admin = await Admin.findOne({email:email})
+    console.log(admin)
     if(!partner){
       return res.status(404).send({
         success:true,

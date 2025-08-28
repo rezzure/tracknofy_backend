@@ -1,8 +1,10 @@
 const PartnerManagement = require("../../Schema/partnerManagement.schema/partnerManagement.model");
 const Admin = require("../../Schema/admin.schema/admine.model")
 const addPartnerManagement = async (req, res) => {
+    const email = req.query.email
+    console.log(email)
     try {
-        const { partnerType, partnerName, partnerMobile, partnerAddress,email } = req.body;
+        const { partnerType, partnerName, partnerMobile, partnerAddress} = req.body;
 
         // Validate required fields
         if (!partnerType || !partnerName || !partnerMobile || !partnerAddress) {

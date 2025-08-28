@@ -7,6 +7,7 @@ const updateMaterialMaster = async (req, res) =>{
 
      try {
         const materialDetail = await MaterialMaster.findById(_id)
+        console.log(materialDetail)
         const admin = await Admin.findOne({email:email})
         if(!materialDetail){
             return res.status(404).send({

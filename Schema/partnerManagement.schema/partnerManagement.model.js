@@ -33,7 +33,7 @@ const partnerSchema = new mongoose.Schema({
   createdByModel: {
     type: String,
     enum: ['Admin', 'Supervisor'], // Allowed model names
-    required: true
+    // required: true
   },
   createdAt: {
     type: Date,

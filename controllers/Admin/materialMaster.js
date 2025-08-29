@@ -3,8 +3,10 @@ const MaterialMaster = require('../../Schema/materialMaster.schema/materialMaste
 
 const addMaterialMaster = async (req, res) =>{
     const email = req.query.email
-    const {materialType, materialName, materialSize, materialRate, remarks} = req.body
+    console.log(email)
     try {
+            const {materialType, materialName, materialSize, measurementType, materialRate, remarks, materialBrand, date} = req.body
+
         if(!materialName){
             return res.status(400).send({
                 success:false,
@@ -12,6 +14,9 @@ const addMaterialMaster = async (req, res) =>{
             })
         }
         const admin = await Admin.findOne({email:email})
+        console.log(admin)
+        const materialPhotoFile = req.file?.['materialPhoto']?.[0];
+        console.log(materialPhotoFile)
         if(!admin){
             return res.status(400).send({
                 success:false,
@@ -23,9 +28,12 @@ const addMaterialMaster = async (req, res) =>{
             materialName: materialName,
             materialRate: materialRate,
             materialSize: materialSize,
-            remarks: remarks || "no remarks", 
+            measurementType:measurementType,
+            materialBrand:materialBrand,
+            remarks: remarks || "no remarks",
+            ...(materialPhotoFile && { materialPhoto: materialPhotoFile.path }),
             createdBy: admin._id,
-            createdAt: Date.now()
+            createdAt: date
         })
         await materialData.save()
         return res.status(200).send({

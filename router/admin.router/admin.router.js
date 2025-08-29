@@ -104,13 +104,13 @@ router.get("/get/allortedFund",verification,getAllotedAmountData)
 router.post("/add/feature", verification, addFeature)
 
 // materialmaster router
-router.post("/material/master", verification, addMaterialMaster )
+router.post("/material/master", verification, upload.single('materialPhoto'), addMaterialMaster )
 
 // get material master detail
 router.get("/get/material/master", verification, getMaterialMaster)
 
 // Update material master
-router.put("/update/material/master/:_id", verification, updateMaterialMaster)
+router.put("/update/material/master/:_id", verification, upload.single('materialPhoto'), updateMaterialMaster)
 
 // delete material master
 router.delete("/delete/material/master/:_id", verification, deleteMaterialMaster)

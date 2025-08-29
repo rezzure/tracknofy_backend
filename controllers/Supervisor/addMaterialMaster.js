@@ -6,8 +6,8 @@ const addMaterialMaster = async (req, res) =>{
     // console.log(email)
    
     try {
-         const {materialType, materialName, materialSize, materialRate, remarks, materialBrand, date} = req.body
-          console.log(materialType, materialName,materialSize, materialRate, remarks, materialBrand, date)
+         const {materialType, materialName, materialSize, measurementType, materialRate, remarks, materialBrand, date} = req.body
+          console.log(materialType, materialName,materialSize, measurementType, materialRate, remarks, materialBrand, date)
 
             
         if(!materialName){
@@ -31,6 +31,7 @@ const addMaterialMaster = async (req, res) =>{
             materialName: materialName,
             materialRate:materialRate,
             materialSize:materialSize,
+            measurementType:measurementType,
             materialBrand:materialBrand,
             remarks:remarks,
              ...(materialPhotoFile && { materialPhoto: materialPhotoFile.path }),

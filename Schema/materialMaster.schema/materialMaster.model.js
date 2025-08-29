@@ -9,6 +9,9 @@ const materialMasterSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    measurementType:{
+        type: String,
+    },
     materialName:{
         type: String,
         required: true

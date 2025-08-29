@@ -13,7 +13,7 @@ const updatePartnerDetail = async(req,res) =>{
     if(!partner){
       return res.status(404).send({
         success:true,
-        message:"partner data not found"
+        message:"Partner Data Not Found"
       })
     }
     if(partnerType) partner.partnerType = partnerType;
@@ -27,7 +27,7 @@ const updatePartnerDetail = async(req,res) =>{
     await partner.save();
     return res.status(200).send({
       success:true,
-      message:"partner data updated successfully",
+      message:"Partner Data Updated",
       data:partner
     })
   } catch (error) {

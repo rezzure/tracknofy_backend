@@ -10,7 +10,7 @@ const addPartnerManagement = async (req, res) => {
         if (!partnerType || !partnerName || !partnerMobile || !partnerAddress) {
             return res.status(400).send({
                 success: false,
-                message: 'All required fields must be provided'
+                message: 'All Required Fields Must Be Provided'
             });
         }
 
@@ -32,11 +32,11 @@ const addPartnerManagement = async (req, res) => {
         
         res.status(201).send({
             success: true,
-            message: 'Partner added successfully',
+            message: 'Partner Added ',
             data: newPartner
         });
     } catch (error) { 
-        console.error('Error adding partner:', error);
+        console.error('Error Adding Partner:', error);
         res.status(500).send({
             success: false,
             message: 'Internal Server Error',

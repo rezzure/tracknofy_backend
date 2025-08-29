@@ -8,18 +8,18 @@ const deleteVendorDetail = async (req, res) =>{
         if(!deletedData) {
             return res.status(500).send({
                 success: false,
-                message: "Vendor data not found"
+                message: "Vendor Data Not Found"
             })
         } 
         return res.status(200).send({
             success: true,
-            message: "Vendor data deleted successfully",
+            message: "Vendor Deleted ",
             data: deletedData
         })
     } catch (error) {
         return res.status(404).send({
             success: false,
-            message: `Internal server error ${error.message}`
+            message: `Internal server error:- ${error.message}`
         })
     }
 }

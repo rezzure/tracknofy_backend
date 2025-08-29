@@ -13,7 +13,7 @@ const updateVendorDetail = async (req, res) => {
         if(!vendorDetail){
             return res.status(404).send({
                 success: false,
-                message: "Vendor detail not found"
+                message: "Vendor Detail Not Found"
             })
         }
         if(vendorName) vendorDetail.vendorName = vendorName
@@ -27,13 +27,13 @@ const updateVendorDetail = async (req, res) => {
         await vendorDetail.save()
         res.status(200).send({
             success: true,
-            message: "Vendor detail updated successfully",
+            message: "Vendor Detail Updated",
             data: vendorDetail
         })
     } catch (error) {
         return res.status(500).send({
             success: false,
-            message: `Internal server error ${error.message}`
+            message: `Internal server error:- ${error.message}`
         })
     }
 }

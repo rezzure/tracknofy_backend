@@ -3,10 +3,13 @@ const Supervisor = require('../../Schema/supervisor.schema/supervisor.model')
 
 const addMaterialMaster = async (req, res) =>{
     const email = req.query.email
-    console.log(email)
-    // const {materialType, materialName,materialSize, materialRate,remarks, materialBrand, date} = req.body
+    // console.log(email)
+   
     try {
-            const {materialType, materialName,materialSize, materialRate, remarks, materialBrand, date} = req.body
+         const {materialType, materialName, materialSize, materialRate, remarks, materialBrand, date} = req.body
+          console.log(materialType, materialName,materialSize, materialRate, remarks, materialBrand, date)
+
+            
         if(!materialName){
             return res.status(400).send({
                 success:false,
@@ -14,8 +17,9 @@ const addMaterialMaster = async (req, res) =>{
             })
         }
         const supervisor = await Supervisor.findOne({email:email})
-        console.log(supervisor)
-        const materialPhotoFile = req.files?.['materialPhoto']?.[0];
+        // console.log(supervisor)
+        const materialPhotoFile = req.file?.['materialPhoto']?.[0];
+        console.log(materialPhotoFile)
         if(!supervisor){
             return res.status(400).send({
                 success:false,
@@ -39,7 +43,8 @@ const addMaterialMaster = async (req, res) =>{
             message: "Material data saved successfully",
             data:materialData
         })
-    } catch (error) {
+    } catch (error) { 
+        console.log(error.message)
         return res.status(500).send({
             success: false,
             message: `Internal server error ${error.message}`

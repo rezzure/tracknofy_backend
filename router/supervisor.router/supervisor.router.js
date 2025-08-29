@@ -40,7 +40,7 @@ router.post("/report/progress/:id",verification,upload.array("photos"),progressR
 router.get("/getProgress/report/:_id",verification,getProgressReport)
 
 // materialmaster router
-router.post("/sup/material/master", verification, addMaterialMaster)
+router.post("/sup/material/master", verification, upload.single('materialPhoto'), addMaterialMaster)
 
 // get material master detail
 router.get("/sup/get/material/master", verification, getMaterialMaster)

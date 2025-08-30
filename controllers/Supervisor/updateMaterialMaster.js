@@ -12,7 +12,7 @@ const updateMaterialMaster = async (req, res) =>{
         if(!materialDetail){
             return res.status(404).send({
                 success: false,
-                message: "Material data not found"
+                message: "Material Data Not Found"
             })
         }
         if(materialType) materialDetail.materialType = materialType
@@ -28,13 +28,13 @@ const updateMaterialMaster = async (req, res) =>{
         const savedData = await materialDetail.save()
         return res.status(200).send({
             success: true,
-            message: "Material details updated successfully",
+            message: "Material Details Updated",
             data: savedData
         })
      } catch (error) {
         return res.status(500).send({
             success: false,
-            message: `Internal server error ${error.message}`
+            message: `Internal server error:- ${error.message}`
         })
      }
 }    

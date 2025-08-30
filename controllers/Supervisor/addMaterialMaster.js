@@ -13,7 +13,7 @@ const addMaterialMaster = async (req, res) =>{
         if(!materialName){
             return res.status(400).send({
                 success:false,
-                message: "Material name required"
+                message: "Material Name Required"
             })
         }
         const supervisor = await Supervisor.findOne({email:email})
@@ -23,7 +23,7 @@ const addMaterialMaster = async (req, res) =>{
         if(!supervisor){
             return res.status(400).send({
                 success:false,
-                message: "Supervisor not found"
+                message: "Supervisor Not Found"
             })
         }
         const materialData = new MaterialMaster({
@@ -41,14 +41,14 @@ const addMaterialMaster = async (req, res) =>{
         await materialData.save()
         return res.status(200).send({
             success:true,
-            message: "Material data saved successfully",
+            message: "Material Created",
             data:materialData
         })
     } catch (error) { 
         console.log(error.message)
         return res.status(500).send({
             success: false,
-            message: `Internal server error ${error.message}`
+            message: `Internal server error:- ${error.message}`
         })
     }
 }

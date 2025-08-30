@@ -3,7 +3,8 @@ const Admin = require("../../Schema/admin.schema/admine.model")
 
 const updateMaterialMaster = async (req, res) =>{
     const {_id} = req.params
-     const {materialType, materialName, email, date} = req.body
+     const {materialType, materialName, materialSize, measurementType, materialRate, remarks, materialBrand, email, date} = req.body
+       const materialPhotoFile = req.file?.['materialPhoto']?.[0];
 
      try {
         const materialDetail = await MaterialMaster.findById(_id)
@@ -17,8 +18,14 @@ const updateMaterialMaster = async (req, res) =>{
         }
         if(materialType) materialDetail.materialType = materialType
         if(materialName) materialDetail.materialName = materialName
+        if(materialSize) materialDetail.materialSize = materialSize
+        if(measurementType) materialDetail.measurementType = measurementType
+        if(materialRate) materialDetail.materialRate = materialRate
+        if(materialBrand) materialDetail.materialBrand = materialBrand
+        if(materialPhotoFile) materialDetail.materialPhoto = materialPhotoFile.filename;
+        if(remarks) materialDetail.remarks = remarks
         if(materialDetail.createdBy.toString() !== admin._id.toString()) materialDetail.createdBy = admin._id
-        materialDetail.createdAt = Date.now()
+        materialDetail.createdAt = date
         const savedData = await materialDetail.save()
         return res.status(200).send({
             success: true,

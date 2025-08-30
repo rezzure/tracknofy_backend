@@ -46,7 +46,7 @@ router.post("/sup/material/master", verification, upload.single('materialPhoto')
 router.get("/sup/get/material/master", verification, getMaterialMaster)
 
 // Update material master
-router.put("/sup/update/material/master/:_id", verification, updateMaterialMaster)
+router.put("/sup/update/material/master/:_id", verification, upload.single('materialPhoto'), updateMaterialMaster)
 
 // delete material master
 router.delete("/sup/delete/material/master/:_id", verification, deleteMaterialMaster)

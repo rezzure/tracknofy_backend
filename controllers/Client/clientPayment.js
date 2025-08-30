@@ -57,7 +57,7 @@ const createClientPayment = async (req, res) => {
     // Return success response
     res.status(200).send({
       success:true,
-      message: 'Payment submitted successfully! Status: Pending Verification',
+      message: 'Payment submitted !',
       payment: {
         id: payment._id,
         amount: payment.amount,

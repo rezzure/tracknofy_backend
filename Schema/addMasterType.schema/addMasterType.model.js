@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose')
 
 const MasterConfigSchema = new mongoose.Schema(
   {
@@ -20,7 +20,7 @@ const MasterConfigSchema = new mongoose.Schema(
     },
     created_by: {
       type: String, // store user_id or username
-      required: true,
+      // required: true,
     },
     updated_by: {
       type: String, // store user_id or username
@@ -36,4 +36,4 @@ const MasterConfigSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("MasterTypeConfig", MasterConfigSchema);
+module.exports = mongoose.model("MasterTypeConfig", MasterConfigSchema);

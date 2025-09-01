@@ -40,4 +40,4 @@ const addMasterType = async (req, res) => {
     }
 }
 
-module.exports = addMasterType
+module.exports=addMasterType

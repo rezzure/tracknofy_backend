@@ -40,6 +40,7 @@ const getAllotedAmountData = require("../../controllers/Admin/getAllotedAmountDa
 const upload = require("../../middleware/multer.js");
 const checkAdminExist = require("../../controllers/Admin/adminExists.js");
 const getLedgerData = require("../../controllers/Admin/getLedgerData.js");
+const addMasterType = require("../../controllers/Admin/addMasterType.js");
 
 
 
@@ -144,10 +145,34 @@ router.delete("/delete/partnerDetail/:_id", verification, deletePartnerDetail)
 // /api/auth/check-admin
 router.get('/auth/check-admin', checkAdminExist)
 
-
-
 // get ledger detail
 router.get("/get/ledgerData", verification , getLedgerData)
+
+
+// add master type
+router.post("/add/master/type", verification, addMasterType)
+
+// get master type
+router.get("/get/master/type", verification,)
+
+// update master type
+router.put("update/master/type/:_id", verification,)
+
+// delete master type
+router.delete("/delete/master/type/:_id", verification, )
+
+
+// add data dictiionary
+router.post("/add/data/dictionary", verification, )
+
+// get data dictionary
+router.get("/get/data/dictionary", verification, )
+
+// update data dictionary
+router.put("/update/data/dictionary/:_id", verification, )
+
+// delete data dictionary
+router.delete("/delete/data/dictionary/:_id", verification, )
 
 
 module.exports = router;

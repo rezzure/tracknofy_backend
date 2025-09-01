@@ -42,4 +42,4 @@ const MasterItemSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("MasterItem", MasterItemSchema);
+module.exports = mongoose.model("MasterItem", MasterItemSchema);

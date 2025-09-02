@@ -6,6 +6,10 @@ const featuresSchema = new Schema({
         required: true,
         unique: true
     },
+    path:{
+        type:String,
+        required:true
+    },
     description: {
         type: String,
         trim: true,

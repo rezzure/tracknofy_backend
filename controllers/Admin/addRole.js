@@ -1,35 +1,64 @@
 const Role = require("../../Schema/addRole.schema/addRole.model");
 const Admin = require("../../Schema/admin.schema/admine.model");
-
 const addRole = async (req, res) => {
-  const {roleName,description,isActive,adminId} = req.body
-  try{
-    const role = await Role.findOne({roleName:roleName});
-    const admin = await Admin.findById({_id:adminId})
-    if(role || !admin){
-      return res.send({
-        success:true,
-        message:"either role already exists or admin not found"
-      })
-    }
-    const data = new Role({
-      roleName:roleName,
-      description:description,
-      isActive:isActive,
-      createdBy:adminId
-    })
-    await data.save();
-    return res.status(200).send({
-      success:true,
-      message:"new role created..."
-    })
+  const { roleName, description, features, isActive, adminEmail } = req.body;
+  console.log("Received data:", { roleName, description, features, adminEmail });
+  
+  try {
+    // Check if role already exists
+    const existingRole = await Role.findOne({ roleName: roleName });
     
-  }
-  catch(err){
+    if (existingRole) {
+      return res.status(409).send({
+        success: false,
+        message: "Role already exists"
+      });
+    }
+    
+    let createdBy = null;
+    
+   
+    if (adminEmail) {
+      const admin = await Admin.findOne({ email: adminEmail });
+      if (!admin) {
+        return res.status(404).send({
+          success: false,
+          message: "Admin not found"
+        });
+      }
+      createdBy = admin._id;
+    }
+    
+   
+    const transformedFeatures = features.map(feature => ({
+      featureName: feature.featureName,
+      path: feature.path
+    }));
+    
+    // Create new role
+    const newRole = new Role({
+      roleName: roleName,
+      description: description,
+      features: transformedFeatures,
+      isActive: isActive !== undefined ? isActive : true,
+      createdBy: createdBy
+    });
+    
+    await newRole.save();
+    
+    return res.status(201).send({
+      success: true,
+      message: "New role created successfully",
+      data: newRole
+    });
+    
+  } catch (err) {
+    console.error("Error creating role:", err);
     return res.status(500).send({
-      success:true,
-      message:"error :- "+err.message,
-    })
+      success: false,
+      message: "Internal server error: " + err.message,
+    });
   }
-}
-module.exports=addRole
+};
+
+module.exports = addRole

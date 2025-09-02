@@ -41,6 +41,11 @@ const upload = require("../../middleware/multer.js");
 const checkAdminExist = require("../../controllers/Admin/adminExists.js");
 const getLedgerData = require("../../controllers/Admin/getLedgerData.js");
 const addMasterType = require("../../controllers/Admin/addMasterType.js");
+const getFeature = require("../../controllers/Admin/getFeatures.js");
+const getRoles = require("../../controllers/Admin/getRole.js");
+const editRole = require("../../controllers/Admin/editRole.js");
+const deleteRole = require("../../controllers/Admin/deleteRole.js");
+
 
 
 
@@ -49,6 +54,19 @@ router.get("/admin/detail",verification,adminDetail)
 
 // router for add role
 router.post("/add/role" ,verification,addRole)
+
+// router to get all created role
+router.get("/get/role" ,verification,getRoles)
+
+// router to edit role
+router.put("/edit/role/:_id" ,verification,editRole)
+
+// router to edit role
+router.delete("/delete/role/:_id" ,verification,deleteRole)
+
+
+// router for getting Features
+router.get("/get/features",verification,getFeature)
 
 //router to create user
 router.post("/create/user",verification, createUser);
@@ -102,7 +120,7 @@ router.post("/disbursement", verification, allocateFund);
 router.get("/get/allortedFund",verification,getAllotedAmountData)
 
 // additional features
-router.post("/add/feature", verification, addFeature)
+router.post("/add/feature",  addFeature)
 
 // materialmaster router
 router.post("/material/master", verification, upload.single('materialPhoto'), addMaterialMaster )
@@ -147,6 +165,9 @@ router.get('/auth/check-admin', checkAdminExist)
 
 // get ledger detail
 router.get("/get/ledgerData", verification , getLedgerData)
+
+// add feature
+// router.post("/add/feature",  addFeature)
 
 
 // add master type

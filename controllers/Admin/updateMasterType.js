@@ -1,11 +1,11 @@
 const MasterTypeConfig = require("../../Schema/addMasterType.schema/addMasterType.model");
 const Admin = require("../../Schema/admin.schema/admine.model")
-const updateMasterTypeDetail = async(req,res) =>{
+const updateMasterTypeDetail = async (req,res) =>{
 
   const {_id} = req.params;
   console.log(_id)
   const { master_type_id, master_type_name, master_type_description, email} = req.body;
-  console.log(master_type_id, master_type_name, master_type_description, date ,email)
+  console.log(master_type_id, master_type_name, master_type_description, email)
   
 
   try {

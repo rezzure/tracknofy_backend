@@ -36,4 +36,6 @@ const MasterConfigSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("MasterTypeConfig", MasterConfigSchema);
+const MasterTypeConfig = mongoose.model("MasterTypeConfig", MasterConfigSchema);
+
+module.exports = MasterTypeConfig

@@ -4,12 +4,12 @@ const updateDataDictionaryDetail = async(req,res) =>{
 
   const {_id} = req.params;
   console.log(_id)
-  const { master_type_id, master_type_name, master_type_description, email} = req.body;
-  console.log(master_type_id, master_type_name, master_type_description, date ,email)
+  const { master_id, master_item_id, master_item_name, master_item_description, email} = req.body;
+  console.log(master_id, master_item_id, master_item_name, master_item_description,email)
   
 
   try {
-    const dataDictionary = await MasterTypeConfig.findById(_id)
+    const dataDictionary = await MasterItem.findById(_id)
     console.log(dataDictionary)
     const admin = await Admin.findOne({email:email})
     console.log(admin)
@@ -19,9 +19,10 @@ const updateDataDictionaryDetail = async(req,res) =>{
         message:"Data dictionary data not found"
       })
     }
-    if(master_type_id) dataDictionary.master_type_id = master_type_id;
-    if(master_type_name) dataDictionary.master_type_name = master_type_name;
-    if(master_type_description) dataDictionary.master_type_description = master_type_description;
+    // if(master_id) dataDictionary.master_id = master_id;
+    if(master_item_id) dataDictionary.master_item_id = master_item_id;
+    if(master_item_name) dataDictionary.master_item_name = master_item_name;
+    if(master_item_description) dataDictionary.master_item_description = master_item_description;
     if(dataDictionary.created_by.toString() !== admin._id.toString()) dataDictionary.updated_by = admin._id
     dataDictionary.createdAt=Date.now()
     await dataDictionary.save();

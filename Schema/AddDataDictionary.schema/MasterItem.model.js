@@ -1,11 +1,16 @@
-import mongoose from "mongoose";
+const mongoose =  require('mongoose');
+const MasterConfigSchema = require('../addMasterType.schema/addMasterType.model')
 
 const MasterItemSchema = new mongoose.Schema(
   {
-    master_type: {
+    master_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MasterConfigSchema", // reference to master_type
       required: true,
+    },
+    master_type_name: {
+      type: String,
+      required: true
     },
     master_item_id: {
       type: String,
@@ -42,4 +47,6 @@ const MasterItemSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("MasterItem", MasterItemSchema);
+const  MasterItem = mongoose.model("MasterItem", MasterItemSchema);
+
+module.exports = MasterItem

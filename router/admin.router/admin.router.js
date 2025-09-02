@@ -46,6 +46,14 @@ const getRoles = require("../../controllers/Admin/getRole.js");
 const editRole = require("../../controllers/Admin/editRole.js");
 const deleteRole = require("../../controllers/Admin/deleteRole.js");
 
+const updateMasterTypeDetail = require("../../controllers/Admin/updateMasterType.js");
+const getMasterTypeDetail = require("../../controllers/Admin/getMasterType.js");
+const deleteMasterTypeDetail = require("../../controllers/Admin/deleteMasterType.js");
+const addDataDictionary = require("../../controllers/Admin/addDataDictionary.js");
+const getDataDictionaryDetail = require("../../controllers/Admin/getDataDictionary.js");
+const updateDataDictionaryDetail = require("../../controllers/Admin/updateDataDictionary.js");
+const deleteDataDictionaryDetail = require("../../controllers/Admin/deleteDataDictionary.js");
+
 
 
 
@@ -174,26 +182,26 @@ router.get("/get/ledgerData", verification , getLedgerData)
 router.post("/add/master/type", verification, addMasterType)
 
 // get master type
-router.get("/get/master/type", verification,)
+router.get("/get/master/type", verification, getMasterTypeDetail)
 
 // update master type
-router.put("update/master/type/:_id", verification,)
+router.put("/update/master/type/:_id", verification, updateMasterTypeDetail)
 
 // delete master type
-router.delete("/delete/master/type/:_id", verification, )
+router.delete("/delete/master/type/:_id", verification, deleteMasterTypeDetail)
 
 
 // add data dictiionary
-router.post("/add/data/dictionary", verification, )
+router.post("/add/data/dictionary", verification, addDataDictionary)
 
 // get data dictionary
-router.get("/get/data/dictionary", verification, )
+router.get("/get/data/dictionary", verification, getDataDictionaryDetail)
 
 // update data dictionary
-router.put("/update/data/dictionary/:_id", verification, )
+router.put("/update/data/dictionary/:_id", verification, updateDataDictionaryDetail)
 
 // delete data dictionary
-router.delete("/delete/data/dictionary/:_id", verification, )
+router.delete("/delete/data/dictionary/:_id", verification, deleteDataDictionaryDetail)
 
 
 module.exports = router;

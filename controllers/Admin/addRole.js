@@ -38,7 +38,7 @@ const addRole = async (req, res) => {
     
     // Create new role
     const newRole = new Role({
-      roleName: roleName,
+       roleName: roleName.trim().toLowerCase(),
       description: description,
       features: transformedFeatures,
       isActive: isActive !== undefined ? isActive : true,

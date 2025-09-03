@@ -8,7 +8,7 @@ const getRoles = async (req, res) => {
             message:"Role not found"
         })
     }
-    
+    console.log(roles)
     return res.status(200).send({
       success: true,
       message: "Roles retrieved successfully",

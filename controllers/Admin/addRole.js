@@ -32,7 +32,8 @@ const addRole = async (req, res) => {
    
     const transformedFeatures = features.map(feature => ({
       featureName: feature.featureName,
-      path: feature.path
+      path: feature.path,
+      icon:feature.icon
     }));
     
     // Create new role

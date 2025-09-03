@@ -24,6 +24,11 @@ const roleSchema = new Schema(
           required: true,
           trim: true,
         },
+        icon: {
+          type: String,
+          required: true,
+          // trim: true,
+        },
       },
     ],
     isActive: {

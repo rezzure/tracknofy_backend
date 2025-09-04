@@ -53,6 +53,9 @@ const addDataDictionary = require("../../controllers/Admin/addDataDictionary.js"
 const getDataDictionaryDetail = require("../../controllers/Admin/getDataDictionary.js");
 const updateDataDictionaryDetail = require("../../controllers/Admin/updateDataDictionary.js");
 const deleteDataDictionaryDetail = require("../../controllers/Admin/deleteDataDictionary.js");
+const addQuotation = require("../../controllers/Admin/addQuotation.js");
+const getQuotation = require("../../controllers/Admin/getQuotation.js");
+const updateQuotation = require("../../controllers/Admin/updateQuotation.js");
 
 
 
@@ -202,6 +205,16 @@ router.put("/update/data/dictionary/:_id", verification, updateDataDictionaryDet
 
 // delete data dictionary
 router.delete("/delete/data/dictionary/:_id", verification, deleteDataDictionaryDetail)
+
+
+// router to add Quotation
+router.post("/add/quotation",verification,addQuotation)
+
+// router for get quotaion master
+router.get("/get/quotation",verification,getQuotation)
+
+// router for get quotaion master
+router.put("/update/quotation/:_id",verification,updateQuotation)
 
 
 module.exports = router;

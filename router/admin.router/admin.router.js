@@ -56,6 +56,10 @@ const deleteDataDictionaryDetail = require("../../controllers/Admin/deleteDataDi
 const addQuotation = require("../../controllers/Admin/addQuotation.js");
 const getQuotation = require("../../controllers/Admin/getQuotation.js");
 const updateQuotation = require("../../controllers/Admin/updateQuotation.js");
+const addBoqRateMaster = require("../../controllers/Admin/addBoqRateMaster.js");
+const getBoqRateDetail = require("../../controllers/Admin/getBoqRateMaster.js");
+const updateBoqRateDetail = require("../../controllers/Admin/updateBoqRateMaster.js");
+const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster.js");
 
 
 
@@ -215,6 +219,18 @@ router.get("/get/quotation",verification,getQuotation)
 
 // router for get quotaion master
 router.put("/update/quotation/:_id",verification,updateQuotation)
+
+// add boq rate master
+router.post("/add/boqRate/master", addBoqRateMaster)
+
+// get boq rate master
+router.get("/get/boqRate/master", getBoqRateDetail)
+
+// update boq rate master
+router.put("/update/boqRate/master/:_id", updateBoqRateDetail)
+
+// delete boq rate master
+router.delete("/delete/boqRate/master/:_id", deleteBoqRateDetail)
 
 
 module.exports = router;

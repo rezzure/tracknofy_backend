@@ -61,9 +61,6 @@ const getBoqRateDetail = require("../../controllers/Admin/getBoqRateMaster.js");
 const updateBoqRateDetail = require("../../controllers/Admin/updateBoqRateMaster.js");
 const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster.js");
 
-
-
-
 // admin details
 router.get("/admin/detail",verification,adminDetail)
 
@@ -78,7 +75,6 @@ router.put("/edit/role/:_id" ,verification,editRole)
 
 // router to edit role
 router.delete("/delete/role/:_id" ,verification,deleteRole)
-
 
 // router for getting Features
 router.get("/get/features",verification,getFeature)
@@ -181,10 +177,6 @@ router.get('/auth/check-admin', checkAdminExist)
 // get ledger detail
 router.get("/get/ledgerData", verification , getLedgerData)
 
-// add feature
-// router.post("/add/feature",  addFeature)
-
-
 // add master type
 router.post("/add/master/type", verification, addMasterType)
 
@@ -196,7 +188,6 @@ router.put("/update/master/type/:_id", verification, updateMasterTypeDetail)
 
 // delete master type
 router.delete("/delete/master/type/:_id", verification, deleteMasterTypeDetail)
-
 
 // add data dictiionary
 router.post("/add/data/dictionary", verification, addDataDictionary)
@@ -210,12 +201,11 @@ router.put("/update/data/dictionary/:_id", verification, updateDataDictionaryDet
 // delete data dictionary
 router.delete("/delete/data/dictionary/:_id", verification, deleteDataDictionaryDetail)
 
-
 // router to add Quotation
 router.post("/add/quotation",verification,addQuotation)
 
 // router for get quotaion master
-router.get("/get/quotation",verification,getQuotation)
+router.get("/get/quotation/:_id",verification,getQuotation)
 
 // router for get quotaion master
 router.put("/update/quotation/:_id",verification,updateQuotation)
@@ -231,6 +221,5 @@ router.put("/update/boqRate/master/:_id", updateBoqRateDetail)
 
 // delete boq rate master
 router.delete("/delete/boqRate/master/:_id", deleteBoqRateDetail)
-
 
 module.exports = router;

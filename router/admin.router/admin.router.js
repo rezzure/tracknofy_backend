@@ -60,6 +60,8 @@ const addBoqRateMaster = require("../../controllers/Admin/addBoqRateMaster.js");
 const getBoqRateDetail = require("../../controllers/Admin/getBoqRateMaster.js");
 const updateBoqRateDetail = require("../../controllers/Admin/updateBoqRateMaster.js");
 const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster.js");
+const addQuotationSubItems = require("../../controllers/Admin/addQuotationSubItems.js");
+const getQuotationSubItems = require("../../controllers/Admin/getQuotationSubItems.js");
 
 // admin details
 router.get("/admin/detail",verification,adminDetail)
@@ -211,15 +213,19 @@ router.get("/get/quotation/:_id",verification,getQuotation)
 router.put("/update/quotation/:_id",verification,updateQuotation)
 
 // add boq rate master
-router.post("/add/boqRate/master", addBoqRateMaster)
+router.post("/add/boqRate/master",verification, addBoqRateMaster)
 
 // get boq rate master
-router.get("/get/boqRate/master", getBoqRateDetail)
+router.get("/get/boqRate/master",verification, getBoqRateDetail)
 
 // update boq rate master
-router.put("/update/boqRate/master/:_id", updateBoqRateDetail)
+router.put("/update/boqRate/master/:_id", verification,updateBoqRateDetail)
 
 // delete boq rate master
-router.delete("/delete/boqRate/master/:_id", deleteBoqRateDetail)
+router.delete("/delete/boqRate/master/:_id", verification,deleteBoqRateDetail)
+
+// router for adding subworks
+router.post("/add/subItem", verification,addQuotationSubItems)
+router.get("/get/subItems",verification, getQuotationSubItems)
 
 module.exports = router;

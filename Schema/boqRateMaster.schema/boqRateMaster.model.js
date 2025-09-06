@@ -1,9 +1,32 @@
 const mongoose = require("mongoose");
 
 const boqRateMasterSchema = new mongoose.Schema({
-  workItem: {
-    type: String,
+  projectTypeId:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"MasterTypeConfig",
+    required:true
+  },
+  projectType:{
+    type:String,
+    required:true
+  },
+  scopeOfWorkId:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Quotation",
+    required:true
+  },
+  scopeOfWork:{
+    type:String,
+    required:true
+  },
+  workItemId: {
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Quotation",
     required: true
+  },
+  workItem:{
+    type:String,
+    required:true
   },
   baseRate: {
     rate:{

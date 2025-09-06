@@ -12,12 +12,16 @@ const quotationMasterSchema = new mongoose.Schema({
         type:String,
         required:true
     },
-   
     workItems:[{
         item:{
         type:String,
         required:true
+    },
+    subItems:[{
+        subItem:{
+        type:String,
     }
+    }],
     }],
     createdBy:{
         type:String,

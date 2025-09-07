@@ -71,6 +71,7 @@ const updateBoqRateDetail = require("../../controllers/Admin/updateBoqRateMaster
 const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster.js");
 const addQuotationSubItems = require("../../controllers/Admin/addQuotationSubItems.js");
 const getQuotationSubItems = require("../../controllers/Admin/getQuotationSubItems.js");
+const updateQuotationSubItem = require("../../controllers/Admin/UpdateQuotationSubItem.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -272,6 +273,7 @@ router.put("/update/boqRate/master/:_id", verification, updateBoqRateDetail);
 router.delete("/delete/boqRate/master/:_id", verification, deleteBoqRateDetail);
 
 // router for adding subworks
+<<<<<<< HEAD
 router.post("/add/subItem", verification, addQuotationSubItems);
 router.get("/get/subItems", verification, getQuotationSubItems);
 
@@ -289,5 +291,18 @@ router.put("/updateTodo/:id", updateTodo);
 
 // Delete Task
 router.delete("/deleteTodo/:id", deleteTodo);
+=======
+router.post("/add/subItem", verification,addQuotationSubItems)
+
+// router to get subWork
+router.get("/get/subItems",verification, getQuotationSubItems)
+>>>>>>> 9619fecab5cb6aab2cb16e52b934ed0bb1858828
+
+
+// router to edit subWork
+router.put("/update/subItem/:id",verification,updateQuotationSubItem)
+
+// router to delete subWork
+router.delete("delete/subItem",verification)
 
 module.exports = router;

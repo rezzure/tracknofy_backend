@@ -3,11 +3,11 @@ const mongoose = require("mongoose")
 const tracknofyBoardSchema = new mongoose.Schema({
     taskName: {
         type: String,
-        required: [true, 'Task Name is required']
+        // required: [true, 'Task Name is required']
     },
     description: {
         type: String,
-        required: [true, 'Description is required']
+        // required: [true, 'Description is required']
     },
     createdAt: {
         type: Date,
@@ -19,7 +19,6 @@ const tracknofyBoardSchema = new mongoose.Schema({
     },
     updatedBy: {
         type: String,
-        required: [true, 'Updated By is required']
     },
     status: {
         type: String,

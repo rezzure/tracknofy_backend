@@ -273,7 +273,7 @@ router.put("/update/boqRate/master/:_id", verification, updateBoqRateDetail);
 router.delete("/delete/boqRate/master/:_id", verification, deleteBoqRateDetail);
 
 // router for adding subworks
-<<<<<<< HEAD
+
 router.post("/add/subItem", verification, addQuotationSubItems);
 router.get("/get/subItems", verification, getQuotationSubItems);
 
@@ -291,12 +291,11 @@ router.put("/updateTodo/:id", updateTodo);
 
 // Delete Task
 router.delete("/deleteTodo/:id", deleteTodo);
-=======
 router.post("/add/subItem", verification,addQuotationSubItems)
 
 // router to get subWork
 router.get("/get/subItems",verification, getQuotationSubItems)
->>>>>>> 9619fecab5cb6aab2cb16e52b934ed0bb1858828
+
 
 
 // router to edit subWork

@@ -62,6 +62,7 @@ const updateBoqRateDetail = require("../../controllers/Admin/updateBoqRateMaster
 const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster.js");
 const addQuotationSubItems = require("../../controllers/Admin/addQuotationSubItems.js");
 const getQuotationSubItems = require("../../controllers/Admin/getQuotationSubItems.js");
+const updateQuotationSubItem = require("../../controllers/Admin/UpdateQuotationSubItem.js");
 
 // admin details
 router.get("/admin/detail",verification,adminDetail)
@@ -226,6 +227,15 @@ router.delete("/delete/boqRate/master/:_id", verification,deleteBoqRateDetail)
 
 // router for adding subworks
 router.post("/add/subItem", verification,addQuotationSubItems)
+
+// router to get subWork
 router.get("/get/subItems",verification, getQuotationSubItems)
+
+
+// router to edit subWork
+router.put("/update/subItem/:id",verification,updateQuotationSubItem)
+
+// router to delete subWork
+router.delete("delete/subItem",verification)
 
 module.exports = router;

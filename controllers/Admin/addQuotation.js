@@ -1,51 +1,11 @@
+const MasterItem = require("../../Schema/AddDataDictionary.schema/MasterItem.model");
 const MasterTypeConfig = require("../../Schema/addMasterType.schema/addMasterType.model");
 const Quotation = require("../../Schema/interior.schema/quotation.model");
-
-// const addQuotation =async (req, res) => {
-//   try {
-//     const {projectTypeId, scopeOfWork, workItems } = req.body;
-//     console.log(projectTypeId, scopeOfWork, workItems)
-//     const projectTypeData = await MasterTypeConfig.findById(projectTypeId)
-//     console.log(projectTypeData)
-
-
-//     const quotationItem = new Quotation({
-//       projectTypeId,
-//       projectType:projectTypeData.master_type_name,
-//       scopeOfWork,
-//       workItems,
-//       createdBy:"admin",
-//     });
-    
-//     const newQuotationItem = await quotationItem.save();
-//     res.status(200).send({
-//       success: true,
-//       message: 'Work item saved successfully',
-//       data: newQuotationItem
-//     });
-//   } catch (error) {
-//     res.status(400).json({
-//       success: false,
-//       message: error.message
-//     });
-//   }
-// };
-// module.exports = addQuotation
-
-
-
-
-
-
-
-
-
-
-
 
 const addQuotation = async (req, res) => {
   try {
     const { projectTypeId, scopeOfWork, workItems } = req.body;
+    console.log(projectTypeId, scopeOfWork, workItems)
 
     // Validate required fields
     if (!projectTypeId || !scopeOfWork || !workItems || workItems.length === 0) {
@@ -63,7 +23,7 @@ const addQuotation = async (req, res) => {
       });
     }
     
-    const projectTypeData = await MasterTypeConfig.findById(projectTypeId);
+    const projectTypeData = await MasterItem.findById(projectTypeId);
 
     if (!projectTypeData) {
       return res.status(404).json({
@@ -84,7 +44,7 @@ const addQuotation = async (req, res) => {
     
     const quotationItem = new Quotation({
       projectTypeId,
-      projectType: projectTypeData.master_type_name,
+      projectType: projectTypeData.master_item_name,
       scopeOfWork,
       workItems: formattedWorkItems, // Use the formatted array
       createdBy: req.query.email || "admin",

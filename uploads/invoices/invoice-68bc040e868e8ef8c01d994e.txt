@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc040e868e8ef8c01d994e
+Amount: 280
+Method: undefined
+Transaction ID: Fggv
+Date: undefined
+Status: pending

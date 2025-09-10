@@ -29,6 +29,11 @@ router.get("/progress/report",verification,getProgressReport)
 router.get("/get/supervisorDetail", verification, getSupervisorDetail)
 
 
+// Add to your server routes
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 module.exports = router
 
 

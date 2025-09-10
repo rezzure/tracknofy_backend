@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc0aaee06c47f5981b12e1
+Amount: 1200
+Method: undefined
+Transaction ID: puffy56
+Date: undefined
+Status: pending

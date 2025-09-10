@@ -12,7 +12,7 @@ const getClientDetails = async (req, res) => {
                 message:'Client Data Not Found'
             })
         }
-console.log(user)
+          console.log(user)
        return res.status(200).send({
             success:true,
             data:user,

@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc0bd7e06c47f5981b12f5
+Amount: 2008
+Method: undefined
+Transaction ID: Hy6yv
+Date: undefined
+Status: pending

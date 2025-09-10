@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bff17d5ae5bd075a573e46
+Amount: 1000
+Method: undefined
+Transaction ID: Tt6677
+Date: undefined
+Status: pending

@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bd6d8020d8c8fa62481fd9
+Amount: 4664
+Method: undefined
+Transaction ID: 66
+Date: undefined
+Status: pending

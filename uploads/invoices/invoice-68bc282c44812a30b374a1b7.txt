@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc282c44812a30b374a1b7
+Amount: 100022
+Method: undefined
+Transaction ID: Ghusyyy66
+Date: undefined
+Status: pending

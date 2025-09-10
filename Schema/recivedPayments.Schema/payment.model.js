@@ -59,7 +59,7 @@ const paymentSchema = new Schema({
     default: Date.now
   },
   transactionId:{
-    type:Number,
+    type:String,
     required:true,
   }
 })

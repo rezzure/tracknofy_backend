@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bbfd13868e8ef8c01d991c
+Amount: 105
+Method: undefined
+Transaction ID: AHGGGYBUY45
+Date: undefined
+Status: pending

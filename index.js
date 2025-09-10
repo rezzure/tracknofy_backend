@@ -40,6 +40,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(port, ()=>{
+
+app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port http://localhost:${port}`);
-})
+    console.log(`Also accessible at http://YOUR_LOCAL_IP:${port}`);
+});

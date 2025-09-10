@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc1d1044812a30b374a1ad
+Amount: 200
+Method: undefined
+Transaction ID: SGhyy677
+Date: undefined
+Status: pending

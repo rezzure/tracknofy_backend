@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bbf85d868e8ef8c01d9914
+Amount: 200
+Method: undefined
+Transaction ID: FGYYHYY4456
+Date: undefined
+Status: pending

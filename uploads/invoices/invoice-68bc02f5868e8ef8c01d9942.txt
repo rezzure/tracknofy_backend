@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc02f5868e8ef8c01d9942
+Amount: 25000
+Method: undefined
+Transaction ID: AGJBhI677
+Date: undefined
+Status: pending

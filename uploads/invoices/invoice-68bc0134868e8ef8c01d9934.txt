@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc0134868e8ef8c01d9934
+Amount: 366
+Method: undefined
+Transaction ID: Fkakak7
+Date: undefined
+Status: pending

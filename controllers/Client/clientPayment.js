@@ -1,20 +1,22 @@
+const path = require("path");
 const Client = require("../../Schema/client.schema/client.model");
 const Payments = require("../../Schema/recivedPayments.Schema/payment.model")
-
+const fs = require('fs')
 const createClientPayment = async (req, res) => {
   const email = req.query.email
-  console.log(req.body)
+
   const { amount, paymentMethod, transactionId, date } = req.body;
+    console.log(req.body)
   const proofDocument = req.file;
   console.log(proofDocument);
   
  
   // // Validate required fields
-  // if (!amount || !transactionId || !proofDocument) {
-  //   return res.status(400).json({
-  //     message: 'Amount, transaction ID, and payment proof are required.'
-  //   });
-  // }
+  if (!amount || !transactionId || !proofDocument) {
+    return res.status(400).json({
+      message: 'Amount, transaction ID, and payment proof are required.'
+    });
+  }
   
   
   try {
@@ -31,7 +33,7 @@ const createClientPayment = async (req, res) => {
       clientName:user.name,
       siteName:user.sitename,
 
-      // client: req.user._id, // Uncomment when auth is implemented
+      client: req.user._id, // Uncomment when auth is implemented
       // project: req.user.activeProject // Uncomment when auth is implemented
     };
     // Create payment record
@@ -39,20 +41,20 @@ const createClientPayment = async (req, res) => {
 
     // --- INVOICE GENERATION LOGIC ---
     // // Generate a simple invoice text file (could be replaced with PDF logic)
-    // const invoiceDir = path.join(__dirname, '../../uploads/invoices/');
-    // if (!fs.existsSync(invoiceDir)) {
-    //   fs.mkdirSync(invoiceDir, { recursive: true });
-    // }
-    // const invoiceFilename = `invoice-${payment._id}.txt`;
-    // const invoicePath = path.join('uploads/invoices', invoiceFilename);
-    // const invoiceFullPath = path.join(invoiceDir, invoiceFilename);
-    // // Simple invoice content
-    // const invoiceContent = `INVOICE\nPayment ID: ${payment._id}\nAmount: ${payment.amount}\nMethod: ${payment.paymentMethod}\nTransaction ID: ${payment.transactionId}\nDate: ${payment.paymentDate}\nStatus: ${payment.status}`;
-    // fs.writeFileSync(invoiceFullPath, invoiceContent);
+    const invoiceDir = path.join(__dirname, '../../uploads/invoices/');
+    if (!fs.existsSync(invoiceDir)) {
+      fs.mkdirSync(invoiceDir, { recursive: true });
+    }
+    const invoiceFilename = `invoice-${payment._id}.txt`;
+    const invoicePath = path.join('uploads/invoices', invoiceFilename);
+    const invoiceFullPath = path.join(invoiceDir, invoiceFilename);
+    // Simple invoice content
+    const invoiceContent = `INVOICE\nPayment ID: ${payment._id}\nAmount: ${payment.amount}\nMethod: ${payment.paymentMethod}\nTransaction ID: ${payment.transactionId}\nDate: ${payment.paymentDate}\nStatus: ${payment.status}`;
+    fs.writeFileSync(invoiceFullPath, invoiceContent);
 
     // Update payment with invoice path
-    // payment.invoiceDocument = invoicePath;
-    // await payment.save();
+    payment.invoiceDocument = invoicePath;
+    await payment.save();
 
     // Return success response
     res.status(200).send({

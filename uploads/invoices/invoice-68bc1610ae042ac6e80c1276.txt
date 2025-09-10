@@ -1,0 +1,7 @@
+INVOICE
+Payment ID: 68bc1610ae042ac6e80c1276
+Amount: 200
+Method: undefined
+Transaction ID: Tvv66
+Date: undefined
+Status: pending

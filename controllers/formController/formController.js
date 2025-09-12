@@ -5,38 +5,41 @@ const Form = require('../../Schema/dynamicForm.schema/dynamicForm.model');
 // Get all forms with pagination and search
 exports.getAllForms = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { page = 1, limit = 9, search = '' } = req.query;
     const skip = (page - 1) * limit;
     
-    const query = search 
-      ? { 
+    const query = search
+      ? {
           formName: { $regex: search, $options: 'i' },
-          isActive: true 
+          isActive: true
         }
       : { isActive: true };
-    
+
     const forms = await Form.find(query)
       .select('formName formFields createdAt updatedAt')
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
-    
+
     const total = await Form.countDocuments(query);
-    
+
     const formsWithFieldCount = forms.map(form => ({
       ...form.toObject(),
       fieldCount: form.formFields.length,
-      id: form._id
+      id: form._id,
+      _id: form._id // Keep both for compatibility
     }));
-    
+
     res.json({
       success: true,
       data: formsWithFieldCount,
       pagination: {
-        page: parseInt(page),
+        currentPage: parseInt(page),
         limit: parseInt(limit),
         total,
-        pages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
       }
     });
   } catch (error) {
@@ -51,8 +54,9 @@ exports.getAllForms = async (req, res) => {
 
 // Get single form by ID
 exports.getFormById = async (req, res) => {
+  const{_id} = req.params
   try {
-    const form = await Form.findById(req.params.id);
+    const form = await Form.findById(_id);
     
     if (!form) {
       return res.status(404).json({
@@ -129,7 +133,7 @@ exports.createForm = async (req, res) => {
 exports.updateForm = async (req, res) => {
   try {
     const { formName, formFields } = req.body;
-    
+    const {_id} = req.params
     if (!formName || !formFields || !Array.isArray(formFields)) {
       return res.status(400).json({
         success: false,
@@ -138,7 +142,7 @@ exports.updateForm = async (req, res) => {
     }
     
     const form = await Form.findByIdAndUpdate(
-      req.params.id,
+      _id,
       {
         formName,
         formFields,
@@ -175,9 +179,11 @@ exports.updateForm = async (req, res) => {
 
 // Delete form (soft delete)
 exports.deleteForm = async (req, res) => {
+  const {_id} = req.params
+  console.log(_id)
   try {
     const form = await Form.findByIdAndUpdate(
-      req.params.id,
+      _id,
       { isActive: false },
       { new: true }
     );

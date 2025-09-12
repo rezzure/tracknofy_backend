@@ -2,27 +2,36 @@ const express = require("express");
 const router = express.Router();
 
 require("dotenv").config();
-const verification=require("../../middleware/verification.js");
+const verification = require("../../middleware/verification.js");
 
-const addRole = require ("../../controllers/Admin/addRole.js");
-const adminDetail = require ("../../controllers/Admin/adminDetail.js");
-const createUser = require ("../../controllers/Admin/createUser.js");
-const getUsers = require ("../../controllers/Admin/getUsers.js");
-const editUser = require ("../../controllers/Admin/editUser.js");
-const getAdminDetail = require ("../../controllers/Admin/getAdminDetail.js");
-const deleteUser = require ("../../controllers/Admin/deleteUser.js");
-const getClientDetails = require ("../../controllers/Admin/getClientDetail.js");
-const addSite = require ("../../controllers/Admin/addSite.js");
-const getSupervisorDetail = require ("../../controllers/Admin/supervisorDetails.js");
-const editSiteDetail = require ("../../controllers/Admin/editSiteDetail.js");
-const getSiteDetail = require ("../../controllers/Admin/getSiteDetail.js");
-const deleteSite = require ("../../controllers/Admin/deleteSite.js");
-const getExpense = require ("../../controllers/Admin/getExpense.js");
-const updateExpenseStatus = require ("../../controllers/Admin/updateExpenseStatus.js");
-const getPaymentDetail = require ("../../controllers/Admin/getPaymentDetail.js");
-const paymentApproval = require ("../../controllers/Admin/paymentApproval.js");
-const disbursement = require ("../../controllers/Admin/disbursement.js");
-const addFeature = require ("../../controllers/Admin/addFeature.js");
+const {
+
+  getTodos,
+  getTodoById,
+  updateTodo,
+  deleteTodo,
+  addTodo,
+} = require("../../controllers/Admin/addTodo.js");
+
+const addRole = require("../../controllers/Admin/addRole.js");
+const adminDetail = require("../../controllers/Admin/adminDetail.js");
+const createUser = require("../../controllers/Admin/createUser.js");
+const getUsers = require("../../controllers/Admin/getUsers.js");
+const editUser = require("../../controllers/Admin/editUser.js");
+const getAdminDetail = require("../../controllers/Admin/getAdminDetail.js");
+const deleteUser = require("../../controllers/Admin/deleteUser.js");
+const getClientDetails = require("../../controllers/Admin/getClientDetail.js");
+const addSite = require("../../controllers/Admin/addSite.js");
+const getSupervisorDetail = require("../../controllers/Admin/supervisorDetails.js");
+const editSiteDetail = require("../../controllers/Admin/editSiteDetail.js");
+const getSiteDetail = require("../../controllers/Admin/getSiteDetail.js");
+const deleteSite = require("../../controllers/Admin/deleteSite.js");
+const getExpense = require("../../controllers/Admin/getExpense.js");
+const updateExpenseStatus = require("../../controllers/Admin/updateExpenseStatus.js");
+const getPaymentDetail = require("../../controllers/Admin/getPaymentDetail.js");
+const paymentApproval = require("../../controllers/Admin/paymentApproval.js");
+const disbursement = require("../../controllers/Admin/disbursement.js");
+const addFeature = require("../../controllers/Admin/addFeature.js");
 const addMaterialMaster = require("../../controllers/Admin/materialMaster.js");
 const addVendorManagement = require("../../controllers/Admin/vendorManagement.js");
 const getMaterialMaster = require("../../controllers/Admin/getMaterialMaster.js");
@@ -60,70 +69,69 @@ const addBoqRateMaster = require("../../controllers/Admin/addBoqRateMaster.js");
 const getBoqRateDetail = require("../../controllers/Admin/getBoqRateMaster.js");
 const updateBoqRateDetail = require("../../controllers/Admin/updateBoqRateMaster.js");
 const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster.js");
-
-
-
+const addQuotationSubItems = require("../../controllers/Admin/addQuotationSubItems.js");
+const getQuotationSubItems = require("../../controllers/Admin/getQuotationSubItems.js");
+const updateQuotationSubItem = require("../../controllers/Admin/UpdateQuotationSubItem.js");
 
 // admin details
-router.get("/admin/detail",verification,adminDetail)
+router.get("/admin/detail", verification, adminDetail);
 
 // router for add role
-router.post("/add/role" ,verification,addRole)
+router.post("/add/role", verification, addRole);
 
 // router to get all created role
-router.get("/get/role" ,verification,getRoles)
+router.get("/get/role", verification, getRoles);
 
 // router to edit role
-router.put("/edit/role/:_id" ,verification,editRole)
+router.put("/edit/role/:_id", verification, editRole);
 
 // router to edit role
-router.delete("/delete/role/:_id" ,verification,deleteRole)
-
+router.delete("/delete/role/:_id", verification, deleteRole);
 
 // router for getting Features
-router.get("/get/features",verification,getFeature)
+router.get("/get/features", verification, getFeature);
 
 //router to create user
-router.post("/create/user",verification, createUser);
+router.post("/create/user", verification, createUser);
 
 // router for getting user list
-router.get("/get/users",verification, getUsers);
+router.get("/get/users", verification, getUsers);
 
 // editUser
-router.put("/edit/user/:id",verification,editUser)
+router.put("/edit/user/:id", verification, editUser);
 
 // delete user from collection
-router.delete("/delete/user/:id",verification,deleteUser)
+router.delete("/delete/user/:id", verification, deleteUser);
 
 // router for getting admin detail
-router.get("/admin/detail",verification,getAdminDetail)
+router.get("/admin/detail", verification, getAdminDetail);
 
 // router to get clients detail
-router.get("/client/detail",verification, getClientDetails);
+router.get("/client/detail", verification, getClientDetails);
 
 //  router to get supervisors detail
-router.get("/supervisor/details",verification, getSupervisorDetail);
+router.get("/supervisor/details", verification, getSupervisorDetail);
 
 // router for site details
-router.post("/add/site",verification, addSite);
+router.post("/add/site", verification, addSite);
 
 // getting site details
-router.get("/get/sitesdetail",verification,getSiteDetail)
+router.get("/get/sitesdetail", verification, getSiteDetail);
 
 // edit site details
-router.put("/edit/site/:id",verification, editSiteDetail)
+router.put("/edit/site/:id", verification, editSiteDetail);
 
 // deleting site
-router.delete("/delete/site/:id",verification,deleteSite)
+router.delete("/delete/site/:id", verification, deleteSite);
 
 // router for getting pending expenses detail from expenses collection
-router.get("/getExpense/detail", verification,getExpense);
+router.get("/getExpense/detail", verification, getExpense);
 
 //router for expense approval
-router.post("/updateExpenseStatus", verification,updateExpenseStatus);
+router.post("/updateExpenseStatus", verification, updateExpenseStatus);
 
 //router for getting payment details which is from clients
-router.get("/getPayment/detail", verification,getPaymentDetail);
+router.get("/getPayment/detail", verification, getPaymentDetail);
 
 // router for approving payment from client
 router.post("/payment/approval", verification, paymentApproval);
@@ -132,105 +140,169 @@ router.post("/payment/approval", verification, paymentApproval);
 router.post("/disbursement", verification, allocateFund);
 
 // get disbursed amount data
-router.get("/get/allortedFund",verification,getAllotedAmountData)
+router.get("/get/allortedFund", verification, getAllotedAmountData);
 
 // additional features
-router.post("/add/feature",  addFeature)
+router.post("/add/feature", addFeature);
 
 // materialmaster router
-router.post("/material/master", verification, upload.single('materialPhoto'), addMaterialMaster )
+router.post(
+  "/material/master",
+  verification,
+  upload.single("materialPhoto"),
+  addMaterialMaster
+);
 
 // get material master detail
-router.get("/get/material/master", verification, getMaterialMaster)
+router.get("/get/material/master", verification, getMaterialMaster);
 
 // Update material master
-router.put("/update/material/master/:_id", verification, upload.single('materialPhoto'), updateMaterialMaster)
+router.put(
+  "/update/material/master/:_id",
+  verification,
+  upload.single("materialPhoto"),
+  updateMaterialMaster
+);
 
 // delete material master
-router.delete("/delete/material/master/:_id", verification, deleteMaterialMaster)
+router.delete(
+  "/delete/material/master/:_id",
+  verification,
+  deleteMaterialMaster
+);
 
 // vendor management router
-router.post("/vendor/management", verification, addVendorManagement)
+router.post("/vendor/management", verification, addVendorManagement);
 
 // get vendor detail router
-router.get("/get/vendorDetail", verification, getVendorDetail)
+router.get("/get/vendorDetail", verification, getVendorDetail);
 
 // update vendor detail router
-router.put("/update/vendorDetail/:_id", verification, updateVendorDetail)
+router.put("/update/vendorDetail/:_id", verification, updateVendorDetail);
 
 // delete vendor detail router
-router.delete("/delete/vendorDetail/:_id", verification, deleteVendorDetail)
+router.delete("/delete/vendorDetail/:_id", verification, deleteVendorDetail);
 
 // partner Management router
-router.post("/add/partnerManagement",verification,upload.fields([{ name: 'partnerPhoto', maxCount: 1 },{ name: 'partnerIdProof', maxCount: 1 }]),addPartnerManagement)
+router.post(
+  "/add/partnerManagement",
+  verification,
+  upload.fields([
+    { name: "partnerPhoto", maxCount: 1 },
+    { name: "partnerIdProof", maxCount: 1 },
+  ]),
+  addPartnerManagement
+);
 
 // get partner details router
-router.get("/get/partnerDetail", verification, getPartnerDetail)
+router.get("/get/partnerDetail", verification, getPartnerDetail);
 
 // edit partner details router
-router.put("/edit/partnerDetail/:_id" ,verification,upload.fields([{ name: 'partnerPhoto', maxCount: 1 },{ name: 'partnerIdProof', maxCount: 1 }]),updatePartnerDetail)
+router.put(
+  "/edit/partnerDetail/:_id",
+  verification,
+  upload.fields([
+    { name: "partnerPhoto", maxCount: 1 },
+    { name: "partnerIdProof", maxCount: 1 },
+  ]),
+  updatePartnerDetail
+);
 
 // delete partner detail rounter
-router.delete("/delete/partnerDetail/:_id", verification, deletePartnerDetail)
+router.delete("/delete/partnerDetail/:_id", verification, deletePartnerDetail);
 
 // checking admin exists
 // checkAdminExist
 // /api/auth/check-admin
-router.get('/auth/check-admin', checkAdminExist)
+router.get("/auth/check-admin", checkAdminExist);
 
 // get ledger detail
-router.get("/get/ledgerData", verification , getLedgerData)
-
-// add feature
-// router.post("/add/feature",  addFeature)
-
+router.get("/get/ledgerData", verification, getLedgerData);
 
 // add master type
-router.post("/add/master/type", verification, addMasterType)
+router.post("/add/master/type", verification, addMasterType);
 
 // get master type
-router.get("/get/master/type", verification, getMasterTypeDetail)
+router.get("/get/master/type", verification, getMasterTypeDetail);
 
 // update master type
-router.put("/update/master/type/:_id", verification, updateMasterTypeDetail)
+router.put("/update/master/type/:_id", verification, updateMasterTypeDetail);
 
 // delete master type
-router.delete("/delete/master/type/:_id", verification, deleteMasterTypeDetail)
-
+router.delete("/delete/master/type/:_id", verification, deleteMasterTypeDetail);
 
 // add data dictiionary
-router.post("/add/data/dictionary", verification, addDataDictionary)
+router.post("/add/data/dictionary", verification, addDataDictionary);
 
 // get data dictionary
-router.get("/get/data/dictionary", verification, getDataDictionaryDetail)
+router.get("/get/data/dictionary", verification, getDataDictionaryDetail);
 
 // update data dictionary
-router.put("/update/data/dictionary/:_id", verification, updateDataDictionaryDetail)
+router.put(
+  "/update/data/dictionary/:_id",
+  verification,
+  updateDataDictionaryDetail
+);
 
 // delete data dictionary
-router.delete("/delete/data/dictionary/:_id", verification, deleteDataDictionaryDetail)
-
+router.delete(
+  "/delete/data/dictionary/:_id",
+  verification,
+  deleteDataDictionaryDetail
+);
 
 // router to add Quotation
-router.post("/add/quotation",verification,addQuotation)
+router.post("/add/quotation", verification, addQuotation);
 
 // router for get quotaion master
-router.get("/get/quotation",verification,getQuotation)
+router.get("/get/quotation/:_id", verification, getQuotation);
 
 // router for get quotaion master
-router.put("/update/quotation/:_id",verification,updateQuotation)
+router.put("/update/quotation/:_id", verification, updateQuotation);
 
 // add boq rate master
-router.post("/add/boqRate/master", addBoqRateMaster)
+router.post("/add/boqRate/master", verification, addBoqRateMaster);
 
 // get boq rate master
-router.get("/get/boqRate/master", getBoqRateDetail)
+router.get("/get/boqRate/master", verification, getBoqRateDetail);
 
 // update boq rate master
-router.put("/update/boqRate/master/:_id", updateBoqRateDetail)
+router.put("/update/boqRate/master/:_id", verification, updateBoqRateDetail);
 
 // delete boq rate master
-router.delete("/delete/boqRate/master/:_id", deleteBoqRateDetail)
+router.delete("/delete/boqRate/master/:_id", verification, deleteBoqRateDetail);
 
+// router for adding subworks
+
+router.post("/add/subItem", verification, addQuotationSubItems);
+router.get("/get/subItems", verification, getQuotationSubItems);
+
+// Add Task
+router.post("/addTodo", addTodo);
+
+// Get All Tasks
+router.get("/getTodo", getTodos);
+
+// Get Single Task
+router.get("/getTodo/:id", getTodoById);
+
+// Update Task
+router.put("/updateTodo/:id", updateTodo);
+
+// Delete Task
+router.delete("/deleteTodo/:id", deleteTodo);
+
+router.post("/add/subItem", verification,addQuotationSubItems)
+
+// router to get subWork
+router.get("/get/subItems",verification, getQuotationSubItems)
+
+
+
+// router to edit subWork
+router.put("/update/subItem/:id",verification,updateQuotationSubItem)
+
+// router to delete subWork
+router.delete("delete/subItem",verification)
 
 module.exports = router;

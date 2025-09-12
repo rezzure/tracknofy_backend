@@ -4,7 +4,7 @@ const BoqRateMaster = require("../../Schema/boqRateMaster.schema/boqRateMaster.m
 const addBoqRateMaster = async (req, res) => {
   const email = req.query.email;
   console.log(email);
-  const {workItem, base_rate, baseRateDescription, average_rate, averageRateDescription, premium_rate, premiumRateDescription, remarks} = req.body;
+  const {projectType,projectTypeName,scopeOfWork,scopeOfWorkName, workItem,workItemName, base_rate, baseRateDescription, average_rate, averageRateDescription, premium_rate, premiumRateDescription, remarks} = req.body;
 
   console.log(workItem, base_rate, baseRateDescription, average_rate, averageRateDescription, premium_rate, premiumRateDescription, remarks)
 
@@ -19,7 +19,12 @@ const addBoqRateMaster = async (req, res) => {
     }
 
     const boqRateData = new BoqRateMaster({
-      workItem: workItem,
+      projectTypeId:projectType,
+      projectType:projectTypeName,
+      scopeOfWorkId:scopeOfWork,
+      scopeOfWork:scopeOfWorkName,
+      workItemId: workItem,
+      workItem:workItemName,
       baseRate: {
         rate: base_rate,
         rateDescription: baseRateDescription,

@@ -1,3 +1,4 @@
+const MasterItem = require("../../Schema/AddDataDictionary.schema/MasterItem.model");
 const MasterTypeConfig = require("../../Schema/addMasterType.schema/addMasterType.model");
 const Quotation = require("../../Schema/interior.schema/quotation.model");
 
@@ -6,7 +7,7 @@ const updateQuotation = async (req, res) => {
     const { _id } = req.params;
     const { projectTypeId, scopeOfWork, workItems } = req.body;
     const email = req.query.email || "admin";
-    
+    console.log(projectTypeId, scopeOfWork, workItems)
     // Validate required fields
     if (!projectTypeId || !scopeOfWork || !workItems || workItems.length === 0) {
       return res.status(400).json({
@@ -25,7 +26,7 @@ const updateQuotation = async (req, res) => {
       });
     }
 
-    const projectTypeData = await MasterTypeConfig.findById(projectTypeId);
+    const projectTypeData = await MasterItem.findById(projectTypeId);
     
     if (!projectTypeData) {
       return res.status(404).json({

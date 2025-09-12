@@ -1,5 +1,13 @@
 const connectDB = require("./server.js");
 
+
+
+const formRoutes = require('./router/formRouter/formRouter.js');
+const submissionRoutes = require('./router/submissionRouter/submissionRouter.js');
+const fileRoutes = require('./router/file.router/fileRouter.js');
+const dashboardRoutes = require('./router/dashbordRouter/dashboardRouter.js');
+const fs = require('fs');
+
 connectDB();
 
 require("dotenv").config();
@@ -20,6 +28,52 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get("/", (req, res) => [res.send("this is home page")]);
+
+
+
+// testion
+
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
+// Routes
+app.use('/api', formRoutes);
+app.use('/api', submissionRoutes);
+app.use('/api', fileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Form Builder API is running' });
+});
+
+// Error handling middleware
+const upload = require('./middleware/dynamicForm.multer/multer.js');
+app.use((error, req, res, next) => {
+  if (error instanceof upload.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 5MB.'
+      });
+    }
+  }
+})
+ 
+
+
+// testingg
+
+
+
+
 
 app.use("/api", require("./router/Auth.router/auth.router.js")); // auth api----done
 app.use("/api", require("./router/admin.router/admin.router.js")); // admin api---- done

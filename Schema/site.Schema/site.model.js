@@ -29,6 +29,18 @@ const siteSchema = new Schema({
     type:String,
     required:true
   },
+  totalAmount:{
+    type:Number,
+    default:0
+  },
+  totalExpense:{
+    type:Number,
+    default:0
+  },
+  lastPayment:{
+    type:Number,
+    default:0
+  },
   status: {
     type: String,
     enum: ['active', 'inactive', 'under_construction', 'completed'],
@@ -38,8 +50,11 @@ const siteSchema = new Schema({
     type: Date,
     default: Date.now,
     immutable: true 
+  },
+  lastPaymentUpdatedAt:{
+    type:Date,
   }
-})
+},{timestamps:true})
 
 const Site = mongoose.model("Site",siteSchema)
 module.exports = Site;

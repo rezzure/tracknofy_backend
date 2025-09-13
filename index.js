@@ -160,6 +160,8 @@ app.use((error, req, res, next) => {
 });
 
 // Other routes
+// kanban board task router
+app.use('/api', require("./router/kanbanRouter/kanBanRouter.js"));
 app.use("/api", require("./router/Auth.router/auth.router.js"));
 app.use("/api", require("./router/admin.router/admin.router.js"));
 app.use("/api", require("./router/client.router/client.router.js"));

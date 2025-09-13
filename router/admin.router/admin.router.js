@@ -72,6 +72,7 @@ const deleteBoqRateDetail = require("../../controllers/Admin/deleteBoqRateMaster
 const addQuotationSubItems = require("../../controllers/Admin/addQuotationSubItems.js");
 const getQuotationSubItems = require("../../controllers/Admin/getQuotationSubItems.js");
 const updateQuotationSubItem = require("../../controllers/Admin/UpdateQuotationSubItem.js");
+const getSiteById = require("../../controllers/Admin/getSiteById.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -117,6 +118,9 @@ router.post("/add/site", verification, addSite);
 
 // getting site details
 router.get("/get/sitesdetail", verification, getSiteDetail);
+
+
+router.get("/get/site/:_id", verification, getSiteById);
 
 // edit site details
 router.put("/edit/site/:id", verification, editSiteDetail);

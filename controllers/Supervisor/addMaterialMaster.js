@@ -1,54 +1,53 @@
 const MaterialMaster = require('../../Schema/materialMaster.schema/materialMaster.model')
 const Supervisor = require('../../Schema/supervisor.schema/supervisor.model')
 
-const addMaterialMaster = async (req, res) =>{
+const addMaterialMaster = async (req, res) => {
     const email = req.query.email
-    // console.log(email)
-   
     try {
-         const {materialType, materialName, materialSize, measurementType, materialRate, remarks, materialBrand, date} = req.body
-          console.log(materialType, materialName,materialSize, measurementType, materialRate, remarks, materialBrand, date)
+        const {materialType, materialName, materialSize, measurementType, materialRate, remarks, materialBrand, date} = req.body
 
-            
         if(!materialName){
             return res.status(400).send({
                 success:false,
-                message: "Material Name Required"
+                message: "Material name required"
             })
         }
+        
         const supervisor = await Supervisor.findOne({email:email})
-        // console.log(supervisor)
-        const materialPhotoFile = req.file?.['materialPhoto']?.[0];
-        console.log(materialPhotoFile)
+        
+        // Fix the path to be accessible from frontend
+        const materialPhoto = req.file ? `/uploads/${req.file.filename}` : null;
+
         if(!supervisor){
             return res.status(400).send({
                 success:false,
-                message: "Supervisor Not Found"
+                message: "Admin not found"
             })
         }
+        
         const materialData = new MaterialMaster({
             materialType: materialType,
             materialName: materialName,
-            materialRate:materialRate,
-            materialSize:materialSize,
-            measurementType:measurementType,
-            materialBrand:materialBrand,
-            remarks:remarks,
-             ...(materialPhotoFile && { materialPhoto: materialPhotoFile.path }),
+            materialRate: materialRate,
+            materialSize: materialSize,
+            measurementType: measurementType,
+            materialBrand: materialBrand,
+            remarks: remarks || "no remarks",
+            materialPhoto: materialPhoto,
             createdBy: supervisor._id,
             createdAt: date
         })
+        
         await materialData.save()
         return res.status(200).send({
             success:true,
-            message: "Material Created",
-            data:materialData
+            message: "Material data saved successfully",
+            data: materialData
         })
-    } catch (error) { 
-        console.log(error.message)
+    } catch (error) {
         return res.status(500).send({
             success: false,
-            message: `Internal server error:- ${error.message}`
+            message: `Internal server error ${error.message}`
         })
     }
 }

@@ -21,7 +21,7 @@ const addMaterialMaster = async (req, res) => {
         if(!supervisor){
             return res.status(400).send({
                 success:false,
-                message: "Admin not found"
+                message: "Supervisor not found"
             })
         }
         

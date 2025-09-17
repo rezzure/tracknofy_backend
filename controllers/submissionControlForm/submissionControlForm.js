@@ -1,4 +1,5 @@
 
+const mongoose = require('mongoose');
 const Form = require('../../Schema/dynamicForm.schema/dynamicForm.model');
 const FormSubmission = require('../../Schema/formSubmission.schema/formSubmission.model');
 const FileUpload = require('../../middleware/dynamicForm.multer/multer');
@@ -7,6 +8,14 @@ const FileUpload = require('../../middleware/dynamicForm.multer/multer');
 exports.submitForm = async (req, res) => {
   try {
     const formId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(formId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid form ID'
+      });
+    }
+
     const { submissionData, submittedBy = 'anonymous' } = req.body;
     
     // Find the form
@@ -78,16 +87,25 @@ exports.submitForm = async (req, res) => {
 // Get form submissions
 exports.getFormSubmissions = async (req, res) => {
   try {
+    const formId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(formId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid form ID'
+      });
+    }
+
     const { page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
     
-    const submissions = await FormSubmission.find({ formId: req.params.id })
+    const submissions = await FormSubmission.find({ formId })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .populate('formId', 'formName');
     
-    const total = await FormSubmission.countDocuments({ formId: req.params.id });
+    const total = await FormSubmission.countDocuments({ formId });
     
     res.json({
       success: true,
@@ -113,6 +131,14 @@ exports.getFormSubmissions = async (req, res) => {
 exports.getAllSubmissions = async (req, res) => {
   try {
     const { page = 1, limit = 10, formId } = req.query;
+
+    if (formId && !mongoose.Types.ObjectId.isValid(formId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid form ID'
+      });
+    }
+
     const skip = (page - 1) * limit;
     
     const query = formId ? { formId } : {};

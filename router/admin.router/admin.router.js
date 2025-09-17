@@ -42,6 +42,7 @@ const updateVendorDetail = require("../../controllers/Admin/updateVendorDetail.j
 const deleteVendorDetail = require("../../controllers/Admin/deleteVendorDetail.js");
 const addPartnerManagement = require("../../controllers/Admin/addPartnerManagement.js");
 const getPartnerDetail = require("../../controllers/Admin/getPartnerDetail.js");
+const dailyPartnerDetailsRouter = require("../../controllers/Admin/dailyPartnerDetails.js");
 const updatePartnerDetail = require("../../controllers/Admin/updatePartnerDetail.js");
 const deletePartnerDetail = require("../../controllers/Admin/deletePartnerDetail.js");
 const allocateFund = require("../../controllers/Admin/fundAllocation.js");
@@ -200,6 +201,8 @@ router.post(
 
 // get partner details router
 router.get("/get/partnerDetail", verification, getPartnerDetail);
+
+router.use("/dailyPartnerDetails", dailyPartnerDetailsRouter);
 
 // edit partner details router
 router.put(

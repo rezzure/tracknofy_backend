@@ -7,9 +7,12 @@ exports.submitFinal = async (req, res) => {
   try {
     const { clientDetails, ...roomData } = req.body;
     console.log(clientDetails, roomData)
-
+    console.log(roomData)
+    console.log(clientDetails.clientEmail)
+    // const email
     // Check if client exists
-    const client = await ClientData.findOne({ email: clientDetails.clientEmail });
+    const client = await ClientData.findOne({ clientEmail: clientDetails.clientEmail });
+    console.log("hello"+client)
     if (!client) {
       return res.status(404).json({
         success: false,
@@ -21,10 +24,10 @@ exports.submitFinal = async (req, res) => {
     const survey = new Survey({
       clientId: client._id,
       clientData: {
-        name: client.name,
-        email: client.email,
-        mobile: client.mobile,
-        address: client.address,
+        name: client.clientName,
+        email: client.clientEmail,
+        mobile: client.clientMobile,
+        address: client.siteAddress,
         siteShortName: client.siteShortName
       },
       surveyData: roomData
@@ -35,7 +38,7 @@ exports.submitFinal = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Survey submitted successfully',
-      submissionId: savedSurvey._id
+      submissionId: savedSurvey
     });
 
   } catch (error) {

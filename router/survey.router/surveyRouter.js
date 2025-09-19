@@ -2,23 +2,26 @@ const express = require('express');
 const router = express.Router();
 
 const verification = require('../../middleware/verification');
-// const { submitClient, getClient } = require('../../controllers/siteSurvey/clientData');
-const {submitClientData,
+const {
+  submitClientData,
   getClientData,
   getUserClients,
-  deleteClient} = require("../../controllers/siteSurvey/clientData")
+  deleteClient,
+  getAllSites,           // Add this
+  updateSiteClientData   // Add this
+} = require("../../controllers/siteSurvey/clientData");
+
+const { getSiteData } = require("../../controllers/siteSurvey/siteSurveyData"); // Add this
 const { submitFinal, getSurvey } = require('../../controllers/siteSurvey/siteSurvey');
 
-// POST /api/client/submit - Submit client data
+// Existing routes
 router.post('/clientData/submit', submitClientData);
+router.post('/submit/final', verification, submitFinal);
+router.get('/survey/:id', verification, getSurvey);
 
-// POST /api/client/get - Get client data by email
-// router.get('/client/get',verification, getClient);
+// New routes for Sites Dashboard
+router.get('/sites/all', verification, getAllSites);                    // Get all sites
+router.get('/sites/:siteId', verification, getSiteData);               // Get specific site data
+router.put('/sites/:siteId/client', verification, updateSiteClientData); // Update site client data
 
-// POST /api/survey/final - Submit final survey data
-router.post('/submit/final',verification, submitFinal);
-
-// GET /api/survey/:id - Get survey by ID
-router.get('/survey/:id',verification, getSurvey);
-
-module.exports = router
+module.exports = router;

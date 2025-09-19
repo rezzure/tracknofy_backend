@@ -1,4 +1,4 @@
-const ClientData = require('../../Schema/survey.schema/clientData.model');
+const ClientData = require("../../Schema/survey.schema/clientData.model");
 
 // Submit client data
 const submitClientData = async (req, res) => {
@@ -193,9 +193,131 @@ const deleteClient = async (req, res) => {
   }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Add this to your existing clientData controller
+
+// Get all sites for dashboard
+const getAllSites = async (req, res) => {
+  try {
+    const userEmail = req.query.email;
+
+    if (!userEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'User email is required'
+      });
+    }
+
+    // Get all clients created by this user
+    const sites = await ClientData.find({ 
+      createdBy: userEmail 
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: sites
+    });
+
+  } catch (error) {
+    console.error('Error fetching sites:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch sites',
+      error: error.message
+    });
+  }
+};
+
+// Update site client data
+const updateSiteClientData = async (req, res) => {
+  try {
+    const { siteId } = req.params;
+    const { clientName, clientEmail, clientMobile, siteAddress, siteShortName } = req.body;
+    const userEmail = req.query.email;
+
+    if (!userEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'User email is required'
+      });
+    }
+
+    // Find and update the client
+    const updatedClient = await ClientData.findOneAndUpdate(
+      { 
+        _id: siteId, 
+        createdBy: userEmail 
+      },
+      {
+        clientName,
+        clientEmail: clientEmail.toLowerCase(),
+        clientMobile,
+        siteAddress,
+        siteShortName,
+        updatedAt: Date.now()
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedClient) {
+      return res.status(404).json({
+        success: false,
+        message: 'Site not found or you do not have permission to update it'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Client information updated successfully!',
+      data: updatedClient
+    });
+
+  } catch (error) {
+    console.error('Error updating site client data:', error);
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: errors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update client information',
+      error: error.message
+    });
+  }
+};
+
+// Export the new functions
 module.exports = {
   submitClientData,
   getClientData,
   getUserClients,
-  deleteClient
+  deleteClient,
+  getAllSites,        // Add this
+  updateSiteClientData // Add this
 };

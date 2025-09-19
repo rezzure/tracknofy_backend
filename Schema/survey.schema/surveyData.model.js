@@ -14,16 +14,24 @@ const surveySchema = new mongoose.Schema({
     siteShortName: String
   },
   surveyData: {
-    type: Object,
-    required: true
+    type: mongoose.Schema.Types.Mixed, // This will store all the floor/room data
+    default: {}
   },
-  status: {
-    type: String,
-    default: 'completed'
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
-}, {
-  timestamps: true
+});
+
+surveySchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 const Survey = mongoose.model('Survey', surveySchema);
-module.exports = Survey
+
+module.exports = Survey;

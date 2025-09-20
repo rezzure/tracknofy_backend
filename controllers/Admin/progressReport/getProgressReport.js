@@ -1,13 +1,12 @@
-const Client = require("../../Schema/client.schema/client.model");
-const Progress =require("../../Schema/progressReport.schema/progressReport.model");
+const Progress = require("../../../Schema/progressReport.schema/progressReport.model");
+
 
 const getProgressReport =async (req,res)=>{
     const email = req.query.email;
     console.log(email)
     try{
-        const client = await Client.findOne({email:email})
-        console.log(client)
-        const progressReport = await Progress.find({siteName:client.sitename,supervisor:client.supervisor_name})
+       
+        const progressReport = await Progress.find().sort({ createdAt: -1 })
         console.log(progressReport)
         if(!progressReport){
             return res.send({

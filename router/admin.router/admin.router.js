@@ -74,6 +74,7 @@ const addQuotationSubItems = require("../../controllers/Admin/addQuotationSubIte
 const getQuotationSubItems = require("../../controllers/Admin/getQuotationSubItems.js");
 const updateQuotationSubItem = require("../../controllers/Admin/UpdateQuotationSubItem.js");
 const getSiteById = require("../../controllers/Admin/getSiteById.js");
+const getProgressReport = require("../../controllers/Admin/progressReport/getProgressReport.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -312,6 +313,9 @@ router.put("/update/subItem/:id",verification,updateQuotationSubItem)
 // router to delete subWork
 router.delete("delete/subItem",verification)
 
+
+// router for progress report
+router.get("/progress/reports",verification,getProgressReport)
 
 
 // dynamic form

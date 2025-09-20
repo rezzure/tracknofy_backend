@@ -49,25 +49,20 @@ const dailyPartnerSchema = new mongoose.Schema({
   // Custom IST timestamps
   createdAt: {
     type: Date,
-    default: () => {
-      const now = new Date();
-      // Convert to IST (UTC + 5:30)
-      const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-      return new Date(now.getTime() + istOffset);
-    }
+   default: Date.now
   },
   updatedAt: {
     type: Date,
-    default: () => {
-      const now = new Date();
-      // Convert to IST (UTC + 5:30)
-      const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-      return new Date(now.getTime() + istOffset);
-    }
+    default: Date.now
+  },
+  checkInDate: {
+    type: String, // Store as YYYY-MM-DD
+    required: true,
+    default: () => new Date().toISOString().split('T')[0]
   }
 }, {
   // Don't use automatic timestamps since we're handling them manually
-  timestamps: false
+  timestamps: true
 });
 
 // Pre-save middleware to update the updatedAt field on document updates

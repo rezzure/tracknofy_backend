@@ -4,8 +4,22 @@ const Form = require('../../Schema/dynamicForm.schema/dynamicForm.model');
 
 // Get all forms with pagination and search
 exports.getAllForms = async (req, res) => {
+  const email = req.query.email
   try {
-    const { page = 1, limit = 9, search = '' } = req.query;
+   if(email){
+    const forms = await Form.find({ 
+      userEmail: email,
+      isActive: true 
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: 'Forms retrieved successfully',
+      data: forms
+    });
+   }
+   else{
+     const { page = 1, limit = 9, search = '' } = req.query;
     const skip = (page - 1) * limit;
     
     const query = search
@@ -42,6 +56,7 @@ exports.getAllForms = async (req, res) => {
         hasPrevPage: page > 1
       }
     });
+   }
   } catch (error) {
     console.error('Error fetching forms:', error);
     res.status(500).json({
@@ -132,7 +147,8 @@ exports.createForm = async (req, res) => {
 // Update form
 exports.updateForm = async (req, res) => {
   try {
-    const { formName, formFields } = req.body;
+    const { formName, formFields ,userEmail} = req.body;
+    console.log(formName, formFields,userEmail)
     const {_id} = req.params
     if (!formName || !formFields || !Array.isArray(formFields)) {
       return res.status(400).json({
@@ -146,6 +162,7 @@ exports.updateForm = async (req, res) => {
       {
         formName,
         formFields,
+        userEmail,
         updatedAt: new Date()
       },
       { new: true, runValidators: true }

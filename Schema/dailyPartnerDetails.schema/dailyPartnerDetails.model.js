@@ -1,4 +1,3 @@
-// dailyPartnerDetails.model.js
 const mongoose = require("mongoose");
 
 const dailyPartnerSchema = new mongoose.Schema(
@@ -21,14 +20,15 @@ const dailyPartnerSchema = new mongoose.Schema(
       enum: ["Admin", "Supervisor"],
       required: true,
     },
+    // **FIX**: Removed default value. Now required from the API call.
     checkInDate: {
       type: String, // YYYY-MM-DD format
       required: true,
-      default: () => new Date().toISOString().split("T")[0],
     },
+    // **FIX**: Removed default value. Now required from the API call.
     checkInTime: {
       type: Date,
-      default: Date.now,
+      required: true,
     },
   },
   {
@@ -36,7 +36,6 @@ const dailyPartnerSchema = new mongoose.Schema(
   }
 );
 
-// Index for better performance
 dailyPartnerSchema.index({ checkInDate: -1 });
 dailyPartnerSchema.index({ createdBy: 1 });
 dailyPartnerSchema.index({ partnerType: 1 });

@@ -1,11 +1,6 @@
 const Progress = require("../../../Schema/progressReport.schema/progressReport.model");
 
 // Update drawing for a photo
-// router.patch('/:reportId/photos/:photoIndex/drawing'
-
-
-
-// Update drawing for a photo
 const updateDrawingPic = async (req, res) => {
   try {
     const { reportId, photoIndex } = req.params;

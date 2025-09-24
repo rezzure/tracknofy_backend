@@ -77,7 +77,7 @@ const getSiteById = require("../../controllers/Admin/getSiteById.js");
 const getProgressReport = require("../../controllers/Admin/progressReport/getProgressReport.js");
 const addComment = require("../../controllers/Admin/progressReport/addComment.js");
 const updateDrawingPic = require("../../controllers/Admin/progressReport/updateDrawingPic.js");
-const toggleCommentResolved = require("../../controllers/Admin/progressReport/toggleCommentResolved .js");
+const toggleCommentResolved = require("../../controllers/Admin/progressReport/toggleCommentResolved.js");
 const deleteComment = require("../../controllers/Admin/progressReport/deleteComment.js");
 
 // admin details

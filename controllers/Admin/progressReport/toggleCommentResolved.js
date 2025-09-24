@@ -2,13 +2,10 @@ const Progress = require("../../../Schema/progressReport.schema/progressReport.m
 
 
 // Toggle comment resolved status
-// router.patch('/:reportId/photos/:photoIndex/comments/:commentId/resolve'
 const toggleCommentResolved = async (req, res) => {
   try {
     const { reportId, photoIndex, commentId } = req.params;
     const { resolved } = req.body;
-    console.log("reportId", "photoIndex", "commentId", reportId, photoIndex, commentId)
-    console.log('resolved', resolved)
 
     const progressReport = await Progress.findById(reportId);
     if (!progressReport) {

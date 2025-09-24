@@ -20,6 +20,7 @@ const getPartnerDetail = require("../../controllers/Supervisor/getPartnerDetail"
 const updatePartnerDetail = require("../../controllers/Supervisor/updatePartnerDetail");
 const deletePartnerDetail = require("../../controllers/Supervisor/deletePartnerDetail");
 const allotedSite = require("../../controllers/Supervisor/allotedSite");
+const { resolveComment } = require("../../controllers/Supervisor/resolveComment");
  
 // get detail
 router.get("/supervisor/detail",verification,supervisorDetail)
@@ -78,5 +79,11 @@ router.put("/sup/edit/partnerDetail/:_id" ,verification,upload.fields([{ name: '
 
 // delete partner detail rounter
 router.delete("/sup/delete/partnerDetail/:_id", verification, deletePartnerDetail)
+
+//for supervisor can add resolved message if site problem resolved
+router.put('/comments/resolve/:commentId', resolveComment)
+
+// // Admin responds to resolution (accept or reopen)
+// router.patch('/comments/:commentId/admin-response', adminRespondToResolution);
 
 module.exports = router;

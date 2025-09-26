@@ -21,7 +21,9 @@ const addQuotationSubItems = async(req,res)=>{
 
         const workItemData = data.workItems.find(item => item._id.toString() === workItem.toString())
         if (workItemData) {
-            workItemData.subItems = subWorkItems.map(item => ({ subItem: item }));
+            const newSubItems = subWorkItems.map(item => ({ subItem: item }));
+            // Then, push these new objects into the existing array
+            workItemData.subItems.push(...newSubItems); 
             await data.save();
             res.send({
                 success: true,

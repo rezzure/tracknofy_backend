@@ -16,6 +16,7 @@ const getVendorDetail = require("../../controllers/Supervisor/getVendorDetail");
 const updateVendorDetail = require("../../controllers/Supervisor/updateVendorDetail");
 const deleteVendorDetail = require("../../controllers/Supervisor/deleteVendorDetail");
 const addPartnerManagement = require("../../controllers/Supervisor/addPartnerManagement");
+const dailyPartnerDetailsRouter = require("../../controllers/Supervisor/dailyPartnerDetails");
 const getPartnerDetail = require("../../controllers/Supervisor/getPartnerDetail");
 const updatePartnerDetail = require("../../controllers/Supervisor/updatePartnerDetail");
 const deletePartnerDetail = require("../../controllers/Supervisor/deletePartnerDetail");
@@ -70,6 +71,8 @@ router.post("/sup/add/partnerManagement",verification,upload.fields([
     { name: 'partnerPhoto', maxCount: 1 },
     { name: 'partnerIdProof', maxCount: 1 }
   ]),addPartnerManagement)
+
+  router.use("/sup/dailyPartnerDetails", dailyPartnerDetailsRouter);
 
   // get partner Details router
 router.get("/sup/get/partnerDetail", verification, getPartnerDetail)

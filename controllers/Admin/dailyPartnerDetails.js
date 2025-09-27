@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const DailyPartnerDetails = require("../../Schema/dailyPartnerDetails.schema/dailyPartnerDetails.model.js");
 const Admin = require("../../Schema/admin.schema/admine.model.js");
-const Supervisor = require("../../Schema/supervisor.schema/supervisor.model.js");
 const verification = require("../../middleware/verification.js");
 
 router.post("/export/dailyPartners", verification, async (req, res) => {
@@ -20,14 +19,9 @@ router.post("/export/dailyPartners", verification, async (req, res) => {
     let userModel = "Admin";
 
     if (!user) {
-      user = await Supervisor.findOne({ email });
-      userModel = "Supervisor";
-    }
-
-    if (!user) {
       return res
         .status(404)
-        .json({ success: false, message: "User not found" });
+        .send({ success: false, message: "User not found" });
     }
 
     const dailyPartners = await Promise.all(
@@ -47,7 +41,7 @@ router.post("/export/dailyPartners", verification, async (req, res) => {
           longitude: partner.longitude,
           latitude: partner.latitude,
           createdBy: user._id,
-          createdByModel: userModel,
+          createdByModel: userModel,  
           checkInDate: partner.checkInDate, // <-- USE FRONTEND VALUE
           checkInTime: partner.checkInTime, // <-- USE FRONTEND VALUE
         });

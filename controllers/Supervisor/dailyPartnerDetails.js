@@ -1,55 +1,36 @@
 const express = require("express");
 const router = express.Router();
 const DailyPartnerDetails = require("../../Schema/dailyPartnerDetails.schema/dailyPartnerDetails.model.js");
-const Admin = require("../../Schema/admin.schema/admine.model.js");
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model.js");
 const verification = require("../../middleware/verification.js");
 
-// Export partners endpoint - matches frontend call
-router.post("/dailyPartnerDetails/export/dailyPartners", verification, async (req, res) => {
+router.post("/export/dailyPartners", verification, async (req, res) => {
   try {
-    const { partners, checkInDate } = req.body; // Add checkInDate to request
+    const { partners } = req.body;
     const email = req.query.email;
 
     if (!partners || !Array.isArray(partners) || partners.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No partners data provided",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "No partners data provided" });
     }
 
-    // Validate each partner
-    for (const partner of partners) {
-      if (!partner.partnerName || !partner.partnerType || !partner.partnerMobile) {
-        return res.status(400).json({
-          success: false,
-          message: "Missing required fields for partner",
-        });
-      }
-    }
-
-    // Find the user who is creating the record
-    let user = await Admin.findOne({ email });
-    let userModel = "Admin";
+    let user = await Supervisor.findOne({ email });
+    let userModel = "Supervisor";
 
     if (!user) {
-      user = await Supervisor.findOne({ email });
-      userModel = "Supervisor";
+      return res
+        .status(404)
+        .send({ success: false, message: "User not found" });
     }
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Use provided date or current date
-    const currentDate = checkInDate || new Date().toISOString().split('T')[0];
-    
-    // Create daily partner records with date
     const dailyPartners = await Promise.all(
       partners.map(async (partner) => {
+        // **FIX**: Use the date and time sent from the frontend
+        if (!partner.checkInDate || !partner.checkInTime) {
+          throw new Error("Missing check-in date or time for a partner.");
+        }
+
         const dailyPartner = new DailyPartnerDetails({
           partnerType: partner.partnerType,
           partnerName: partner.partnerName,
@@ -57,13 +38,13 @@ router.post("/dailyPartnerDetails/export/dailyPartners", verification, async (re
           partnerAddress: partner.partnerAddress || "",
           partnerPhoto: partner.partnerPhoto || "",
           partnerIdProof: partner.partnerIdProof || "",
-          longitude: partner.longitude || 77.1025,
-          latitude: partner.latitude || 28.7041,
+          longitude: partner.longitude,
+          latitude: partner.latitude,
           createdBy: user._id,
-          createdByModel: userModel,
-          checkInDate: currentDate, // Store the check-in date
+          createdByModel: userModel,  
+          checkInDate: partner.checkInDate, // <-- USE FRONTEND VALUE
+          checkInTime: partner.checkInTime, // <-- USE FRONTEND VALUE
         });
-
         return await dailyPartner.save();
       })
     );
@@ -75,32 +56,49 @@ router.post("/dailyPartnerDetails/export/dailyPartners", verification, async (re
     });
   } catch (error) {
     console.error("Export partners error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message
-    });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || "Internal server error",
+      });
   }
 });
 
-// Add a new endpoint to get today's check-ins
-router.get("/dailyPartnerDetails/dailyPartners/today", verification, async (req, res) => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyPartners = await DailyPartnerDetails.find({ checkInDate: today })
-      .populate("createdBy")
-      .sort({ createdAt: -1 });
+// --- (The rest of the routes in this file are correct and do not need changes) ---
 
-    res.status(200).json({
-      success: true,
-      data: dailyPartners,
-    });
+router.get("/by-date", verification, async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date)
+      return res
+        .status(400)
+        .json({ success: false, message: "Date parameter is required" });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Invalid date format. Use YYYY-MM-DD.",
+        });
+
+    const dailyPartners = await DailyPartnerDetails.find({
+      checkInDate: date,
+    }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: dailyPartners });
   } catch (error) {
-    console.error("Get today's partners error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    console.error("Get partners by date error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+router.get("/dates-with-checkins", verification, async (req, res) => {
+  try {
+    const datesWithCheckins = await DailyPartnerDetails.distinct("checkInDate");
+    res.status(200).json({ success: true, data: datesWithCheckins });
+  } catch (error) {
+    console.error("Get dates with checkins error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
 

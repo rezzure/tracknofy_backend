@@ -114,6 +114,103 @@
 
 // updated schema 
 
+// const mongoose = require("mongoose");
+
+// const conversationSchema = new mongoose.Schema({
+//   lastContact: {
+//     type: Date,
+//     default: Date.now
+//   },
+//   nextContact: {
+//     type: Date,
+//     required: true
+//   },
+//   timeSlot: {
+//     type: String,
+//     required: true
+//   },
+//   comments: {
+//     type: String,
+//     required: true
+//   }
+// }, { timestamps: true });
+
+// const leadSchema = new mongoose.Schema({
+//   name: {
+//     type: String,
+//     required: true,
+//   },
+//   email: {
+//     type: String,
+//     // required: true,
+//   },
+//   mobile: {
+//     type: String,
+//     required: true,
+//   },
+//   spocName: {
+//     type: String,
+//     default: ''
+//   },
+//   spocMobile: {
+//     type: String,
+//     default: ''
+//   },
+//   address: {
+//     type: String,
+//     // required: true,
+//   },
+//   leadSource: {
+//     type: String,
+//     // required: true,
+//   },
+//   assign: {
+//     type: String,
+//     // required: true,
+//   },
+//   projectType: {
+//     type: String,
+//     // required: true,
+//   },
+//   leadType: {
+//     type: String,
+//     enum: ['hot lead', 'warm lead', 'cold lead'],
+//     required: true
+//   },
+//   leadStatus: {
+//     type: String,
+//     enum: ['new leads', 'contacted', 'qualified', 'proposal', 'negotiation', 'closed won', 'lost'],
+//     default: 'new leads'
+//   },
+//   description: {
+//     type: String,
+//     default: ''
+//   },
+//   tentativeValue: {
+//     type: Number,
+//     default: 0
+//   },
+//   lost: {
+//     type: String,
+//     default: ''
+//   },
+//   conversations: [conversationSchema],
+//   lastContact: {
+//     type: Date,
+//     default: Date.now
+//   },
+//   nextContact: {
+//     type: Date
+//   }
+// }, { timestamps: true });
+
+// const Lead = mongoose.model("Lead", leadSchema);
+// module.exports = Lead;
+
+
+
+// not required 
+
 const mongoose = require("mongoose");
 
 const conversationSchema = new mongoose.Schema({
@@ -142,7 +239,7 @@ const leadSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    // required: true,
+    default: ''
   },
   mobile: {
     type: String,
@@ -158,24 +255,24 @@ const leadSchema = new mongoose.Schema({
   },
   address: {
     type: String,
-    // required: true,
+    default: ''
   },
   leadSource: {
     type: String,
-    // required: true,
+    default: ''
   },
   assign: {
     type: String,
-    // required: true,
+    default: ''
   },
   projectType: {
     type: String,
-    // required: true,
+    default: ''
   },
   leadType: {
     type: String,
-    enum: ['hot lead', 'warm lead', 'cold lead'],
-    required: true
+    enum: ['hot lead', 'warm lead', 'cold lead', ''],
+    default: ''
   },
   leadStatus: {
     type: String,

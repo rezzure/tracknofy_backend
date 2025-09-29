@@ -6,6 +6,7 @@ const taskMovement = require("../../controllers/kanbanTaskController/taskMovemen
 
 // Get all tasks (with optional siteId filtering)
 router.get('/get/tasks', taskController.getAllTasks);
+router.get('/get/allTasks', taskController.getTasks);
 
 // Get tasks by status (with optional siteId filtering)
 router.get('/get/tasks/status/:status', taskController.getTasksByStatus);

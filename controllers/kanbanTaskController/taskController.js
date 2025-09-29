@@ -1,167 +1,3 @@
-// const Task = require("../../Schema/kanbanBoardTask.schema/kanbanBoardTask.model");
-
-
-// // Get all tasks
-// exports.getAllTasks = async (req, res) => {
-//   try {
-//     const tasks = await Task.find().sort({ createdAt: -1 });
-//     res.status(200).json(tasks);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// // Get tasks by status
-// exports.getTasksByStatus = async (req, res) => {
-//   try {
-//     const { status } = req.params;
-//     const tasks = await Task.find({ status }).sort({ createdAt: -1 });
-//     res.status(200).json(tasks);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// // Get a single task by ID
-// exports.getTaskById = async (req, res) => {
-//   try {
-//     const task = await Task.findById(req.params.id);
-//     if (!task) {
-//       return res.status(404).json({ message: 'Task not found' });
-//     }
-//     res.status(200).json(task);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// // Create a new task
-// exports.createTask = async (req, res) => {
-//   try {
-//     const taskData = {
-//       title: req.body.title,
-//       description: req.body.description,
-//       assignee: req.body.assignee,
-//       priority: req.body.priority,
-//       tags: req.body.tags,
-//       dueDate: req.body.dueDate,
-//       status: req.body.status || 'backlog'
-//     };
-
-//     const task = new Task(taskData);
-//     const savedTask = await task.save();
-//     res.status(201).json(savedTask);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-// // Update a task
-// exports.updateTask = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updateData = { ...req.body, updatedAt: Date.now() };
-    
-//     const task = await Task.findByIdAndUpdate(id, updateData, { 
-//       new: true, 
-//       runValidators: true 
-//     });
-    
-//     if (!task) {
-//       return res.status(404).json({ message: 'Task not found' });
-//     }
-    
-//     res.status(200).json(task);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-// // Update task status
-// exports.updateTaskStatus = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { status } = req.body;
-    
-//     const task = await Task.findByIdAndUpdate(
-//       id, 
-//       { status, updatedAt: Date.now() }, 
-//       { new: true, runValidators: true }
-//     );
-    
-//     if (!task) {
-//       return res.status(404).json({ message: 'Task not found' });
-//     }
-    
-//     res.status(200).json(task);
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-// // Delete a task
-// exports.deleteTask = async (req, res) => {
-//   try {
-//     const task = await Task.findByIdAndDelete(req.params.id);
-    
-//     if (!task) {
-//       return res.status(404).json({ message: 'Task not found' });
-//     }
-    
-//     res.status(200).json({ message: 'Task deleted successfully' });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// // Get tasks statistics
-// exports.getTasksStatistics = async (req, res) => {
-//   try {
-//     const stats = await Task.aggregate([
-//       {
-//         $group: {
-//           _id: '$status',
-//           count: { $sum: 1 }
-//         }
-//       }
-//     ]);
-    
-//     // Format the statistics
-//     const formattedStats = {};
-//     stats.forEach(stat => {
-//       formattedStats[stat._id] = stat.count;
-//     });
-    
-//     // Ensure all statuses are represented
-//     const allStatuses = ['backlog', 'todo', 'inprogress', 'review', 'done'];
-//     allStatuses.forEach(status => {
-//       if (!formattedStats[status]) {
-//         formattedStats[status] = 0;
-//       }
-//     });
-    
-//     res.status(200).json(formattedStats);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const Task = require("../../Schema/kanbanBoardTask.schema/kanbanBoardTask.model");
 const mongoose = require('mongoose');
 
@@ -241,6 +77,29 @@ exports.getAllTasks = async (req, res) => {
     });
   }
 };
+
+exports.getTasks = async (req,res)=>{
+  try {
+    const tasks = await Task.find()
+    if(tasks.length === 0){
+      return res.status(400).send({
+        success:false,
+        message:"Task Data not found"
+      })
+    }
+    console.log(tasks)
+    res.status(200).send({
+      success:true,
+      message:"Data found",
+      data:tasks
+    })
+  } catch (error) {
+    res.status(500).send({
+      success:false,
+      message:`Internal Server error:- ${error.message}`
+    })
+  }
+}
 
 // Get tasks by status with optional siteId filtering
 exports.getTasksByStatus = async (req, res) => {
@@ -372,7 +231,22 @@ exports.getTaskById = async (req, res) => {
 // Create a new task
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, assignee, priority, tags, dueDate, status, siteId, userId } = req.body;
+    console.log("Received task data:", req.body);
+    const { 
+      title, 
+      description, 
+      assignee, 
+      priority, 
+      tags, 
+      dueDate, 
+      status, 
+      siteId, 
+      userId,
+      assignorName,
+      assignorEmail,
+      assigneeName,
+      assigneeEmail
+    } = req.body;
     
     // Validate required fields and data format
     const validationErrors = validateTaskData(req.body);
@@ -392,13 +266,12 @@ exports.createTask = async (req, res) => {
       tags: Array.isArray(tags) ? tags.filter(tag => tag.trim()) : [],
       dueDate: dueDate || null,
       status: status || 'backlog',
-      siteId: new mongoose.Types.ObjectId(siteId)
+      siteId: new mongoose.Types.ObjectId(siteId),
+      assignorName: assignorName?.trim() || '',
+      assignorEmail: assignorEmail?.trim() || '',
+      assigneeName: assigneeName?.trim() || '',
+      assigneeEmail: assigneeEmail?.trim() || ''
     };
-    
-    // Add userId if provided
-    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
-      taskData.userId = new mongoose.Types.ObjectId(userId);
-    }
     
     const task = new Task(taskData);
     const savedTask = await task.save();
@@ -459,6 +332,12 @@ exports.updateTask = async (req, res) => {
     if (updateData.tags) cleanUpdateData.tags = Array.isArray(updateData.tags) ? updateData.tags.filter(tag => tag.trim()) : [];
     if (updateData.dueDate !== undefined) cleanUpdateData.dueDate = updateData.dueDate || null;
     if (updateData.status) cleanUpdateData.status = updateData.status;
+    
+    // Add assignor and assignee information if provided
+    if (updateData.assignorName !== undefined) cleanUpdateData.assignorName = updateData.assignorName.trim();
+    if (updateData.assignorEmail !== undefined) cleanUpdateData.assignorEmail = updateData.assignorEmail.trim();
+    if (updateData.assigneeName !== undefined) cleanUpdateData.assigneeName = updateData.assigneeName.trim();
+    if (updateData.assigneeEmail !== undefined) cleanUpdateData.assigneeEmail = updateData.assigneeEmail.trim();
     
     cleanUpdateData.updatedAt = new Date();
     
@@ -549,11 +428,10 @@ exports.updateTaskStatus = async (req, res) => {
   }
 };
 
-// Delete a task
+// Delete a task - FIXED: Removed siteId from req.body for DELETE request
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const { siteId } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -562,24 +440,13 @@ exports.deleteTask = async (req, res) => {
       });
     }
     
-    // Build query - include siteId verification if provided
-    let query = { _id: id };
-    if (siteId) {
-      if (!mongoose.Types.ObjectId.isValid(siteId)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid site ID format'
-        });
-      }
-      query.siteId = new mongoose.Types.ObjectId(siteId);
-    }
-    
-    const task = await Task.findOneAndDelete(query);
+    // For DELETE requests, we don't expect a body, so we just delete by ID
+    const task = await Task.findByIdAndDelete(id);
     
     if (!task) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Task not found or access denied' 
+        message: 'Task not found' 
       });
     }
     

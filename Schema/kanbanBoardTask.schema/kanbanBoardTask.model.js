@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
+    // required: true,
     trim: true
   },
   description: {
@@ -37,8 +37,38 @@ const taskSchema = new mongoose.Schema({
   siteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Site', // Reference to your Site model (adjust the model name as needed)
-    required: true,
+    // required: true,
     index: true // Add index for better query performance
+  },
+  // NEW FIELD: Site Name
+  siteName: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  // NEW FIELD: Assignor Name
+  assignorName: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  // NEW FIELD: Assignor Email
+  assignorEmail: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  // NEW FIELD: Assignee Name
+  assigneeName: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  // NEW FIELD: Assignee Email
+  assigneeEmail: {
+    type: String,
+    trim: true,
+    default: ''
   },
   // Optional: Add user ID if you want to track who created the task
   userId: {

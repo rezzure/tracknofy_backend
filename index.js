@@ -3,6 +3,7 @@ const formRoutes = require('./router/formRouter/formRouter.js');
 // const submissionRoutes = require('./router/submissionRouter/submissionRouter.js');
 const fileRoutes = require('./router/file.router/fileRouter.js');
 const dashboardRoutes = require('./router/dashbordRouter/dashboardRouter.js');
+const leadRoutes = require("./router/crm.router/crmRouter.js")
 const fs = require('fs');
 
 connectDB();
@@ -35,6 +36,7 @@ app.get("/", (req, res) => [res.send("this is home page")]);
 
 // Routes
 app.use('/api', formRoutes);
+app.use('/api', leadRoutes);
 // app.use('/api', submissionRoutes);
 app.use('/api', fileRoutes);
 app.use('/api/dashboard', dashboardRoutes);

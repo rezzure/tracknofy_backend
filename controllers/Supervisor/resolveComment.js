@@ -16,6 +16,7 @@ const resolveComment = async (req, res) => {
     const supervisorName = req.user?.name || "Supervisor"; // Adjust based on your auth middleware
 
     if (!resolvedMessage || !resolvedMessage.trim()) {
+      
       return res.status(400).json({
         success: false,
         message: 'Resolution message is required'

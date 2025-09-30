@@ -79,6 +79,7 @@ const addComment = require("../../controllers/Admin/progressReport/addComment.js
 const updateDrawingPic = require("../../controllers/Admin/progressReport/updateDrawingPic.js");
 const toggleCommentResolved = require("../../controllers/Admin/progressReport/toggleCommentResolved.js");
 const deleteComment = require("../../controllers/Admin/progressReport/deleteComment.js");
+const assignQuery = require("../../controllers/Admin/assignQueries.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -329,6 +330,9 @@ router.patch('/progress/:reportId/photos/:photoIndex/comments/:commentId/resolve
 router.delete('/progress/:reportId/photos/:photoIndex/comments/:commentId', deleteComment)
 //`${backendURL}/api/progress/${reportId}/photos/${photoIndex}/comments/${commentId}`,
 // dynamic form
+
+
+router.patch('/queries/:queryId/assign', assignQuery);
 
 // router to add form
 // router.add("")

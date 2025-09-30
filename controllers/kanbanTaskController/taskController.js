@@ -1,5 +1,6 @@
 const Task = require("../../Schema/kanbanBoardTask.schema/kanbanBoardTask.model");
 const mongoose = require('mongoose');
+const Site = require("../../Schema/site.Schema/site.model");
 
 // Helper function to build query filter with siteId
 const buildQueryFilter = (additionalFilters = {}, siteId = null) => {
@@ -37,7 +38,7 @@ const validateTaskData = (data, isUpdate = false) => {
     errors.push('Priority must be low, medium, or high');
   }
   
-  if (data.status && !['backlog', 'todo', 'inprogress', 'review', 'done'].includes(data.status)) {
+  if (data.status && ![ 'todo', 'inprogress', 'done'].includes(data.status)) {
     errors.push('Invalid status value');
   }
   
@@ -108,7 +109,7 @@ exports.getTasksByStatus = async (req, res) => {
     const { siteId } = req.query;
     
     // Validate status
-    if (!['backlog', 'todo', 'inprogress', 'review', 'done'].includes(status)) {
+    if (!['todo', 'inprogress', 'done'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid status value'
@@ -257,16 +258,18 @@ exports.createTask = async (req, res) => {
         errors: validationErrors
       });
     }
-    
+    const site = await Site.findById(siteId)
+
     const taskData = {
       title: title.trim(),
       description: description?.trim() || '',
       assignee: assignee?.trim() || '',
-      priority: priority || 'medium',
+      priority: priority ,
       tags: Array.isArray(tags) ? tags.filter(tag => tag.trim()) : [],
       dueDate: dueDate || null,
-      status: status || 'backlog',
+      status: status ,
       siteId: new mongoose.Types.ObjectId(siteId),
+      siteName:site.siteName,
       assignorName: assignorName?.trim() || '',
       assignorEmail: assignorEmail?.trim() || '',
       assigneeName: assigneeName?.trim() || '',
@@ -381,7 +384,7 @@ exports.updateTaskStatus = async (req, res) => {
       });
     }
     
-    if (!status || !['backlog', 'todo', 'inprogress', 'review', 'done'].includes(status)) {
+    if (!status || ![ 'todo', 'inprogress', 'done'].includes(status)) {
       return res.status(400).json({
         success: false,
         message: 'Valid status is required'
@@ -449,8 +452,7 @@ exports.deleteTask = async (req, res) => {
         message: 'Task not found' 
       });
     }
-    
-    res.status(200).json({ 
+     res.status(200).json({ 
       success: true, 
       message: 'Task deleted successfully',
       data: { deletedTaskId: id }
@@ -502,7 +504,7 @@ exports.getTasksStatistics = async (req, res) => {
     });
     
     // Ensure all statuses are represented
-    const allStatuses = ['backlog', 'todo', 'inprogress', 'review', 'done'];
+    const allStatuses = [ 'todo', 'inprogress','done'];
     allStatuses.forEach(status => {
       if (!formattedStats[status]) {
         formattedStats[status] = 0;
@@ -545,7 +547,7 @@ exports.getSiteTaskStatistics = async (req, res) => {
     });
     
     // Ensure all statuses are represented
-    const allStatuses = ['backlog', 'todo', 'inprogress', 'review', 'done'];
+    const allStatuses = ['todo', 'inprogress','done'];
     allStatuses.forEach(status => {
       if (!formattedStats[status]) {
         formattedStats[status] = 0;

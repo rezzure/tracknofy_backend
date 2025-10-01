@@ -80,6 +80,8 @@ const updateDrawingPic = require("../../controllers/Admin/progressReport/updateD
 const toggleCommentResolved = require("../../controllers/Admin/progressReport/toggleCommentResolved.js");
 const deleteComment = require("../../controllers/Admin/progressReport/deleteComment.js");
 const assignQuery = require("../../controllers/Admin/assignQueries.js");
+const { getAllQueries } = require("../../controllers/Admin/querySupport.js");
+const { createTicket, getAllTickets, getUserTickets, updateTicketStatus, addTicketCommunication, getTicketById } = require("../../controllers/Admin/ticketController.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -333,6 +335,13 @@ router.delete('/progress/:reportId/photos/:photoIndex/comments/:commentId', dele
 
 
 router.patch('/queries/:queryId/assign', assignQuery);
+
+router.post("/tickets/create", createTicket);
+router.get("/tickets", getAllTickets);
+router.get("/tickets/user/:userId", getUserTickets);
+router.patch("/tickets/:ticketId/status", updateTicketStatus);
+router.patch("/tickets/:ticketId/communication", addTicketCommunication);
+router.get("/tickets/:ticketId", getTicketById);
 
 // router to add form
 // router.add("")

@@ -68,7 +68,7 @@ const { submitFinal, getSurvey } = require('../../controllers/siteSurvey/siteSur
 // 6. Define route for submitting client data (client information form)
 // POST request to '/api/clientData/submit'
 // No authentication middleware (verification) applied - allows unauthenticated submissions
-router.post('/clientData/submit', submitClientData);
+router.post('/clientData/submit',verification, submitClientData);
 
 // 7. Define route for submitting final survey data (room data + work items)
 // POST request to '/api/submit/final'

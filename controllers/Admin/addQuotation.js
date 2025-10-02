@@ -4,19 +4,19 @@ const Quotation = require("../../Schema/interior.schema/quotation.model");
 
 const addQuotation = async (req, res) => {
   try {
-    const { projectTypeId, scopeOfWork, workItems } = req.body;
-    console.log(projectTypeId, scopeOfWork, workItems)
+    const { projectTypeId, scopeOfWork, workCategory } = req.body;
+    console.log(projectTypeId, scopeOfWork, workCategory)
 
     // Validate required fields
-    if (!projectTypeId || !scopeOfWork || !workItems || workItems.length === 0) {
+    if (!projectTypeId || !scopeOfWork || !workCategory || workCategory.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Project type, scope of work, and at least one work item are required'
       });
     }
     
-    // Validate that workItems is an array
-    if (!Array.isArray(workItems)) {
+    // Validate that workCategory is an array
+    if (!Array.isArray(workCategory)) {
       return res.status(400).json({
         success: false,
         message: 'Work items must be an array'
@@ -32,8 +32,8 @@ const addQuotation = async (req, res) => {
       });
     }
     
-    // Format workItems correctly - ensure each item is stored as {item: "text"}
-    const formattedWorkItems = workItems.map(item => {
+    // Format workCategory correctly - ensure each item is stored as {item: "text"}
+    const formattedworkCategory = workCategory.map(item => {
       // If item is already an object with item property, use it
       if (typeof item === 'object' && item.item) {
         return { item: item.item };
@@ -46,7 +46,7 @@ const addQuotation = async (req, res) => {
       projectTypeId,
       projectType: projectTypeData.master_item_name,
       scopeOfWork,
-      workItems: formattedWorkItems, // Use the formatted array
+      workCategory: formattedworkCategory, // Use the formatted array
       createdBy: req.query.email || "admin",
     });
     

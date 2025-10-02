@@ -1,13 +1,14 @@
 const Quotation = require("../../Schema/interior.schema/quotation.model")
 const addQuotationSubItems = async(req,res)=>{
-    // const {itemId,subItems} = req.body
-    const {workItem,subWorkItems} = req.body
-    console.log(workItem,subWorkItems)
+    // const {itemId,workType} = req.body
+    const {workCategory,workType} = req.body
+    console.log(workCategory)
+    console.log(workCategory,workType)
     try {
         const data = await Quotation.findOne({
-            workItems:{
+            workCategory:{
                 $elemMatch:{
-                    _id:workItem
+                    _id:workCategory
                 }
             }
         })
@@ -19,15 +20,16 @@ const addQuotationSubItems = async(req,res)=>{
         }
         // console.log(data)
 
-        const workItemData = data.workItems.find(item => item._id.toString() === workItem.toString())
-        if (workItemData) {
-            const newSubItems = subWorkItems.map(item => ({ subItem: item }));
+        const workTypeData = data.workCategory.find(item => item._id.toString() === workCategory.toString())
+        console.log(workTypeData)
+        if (workTypeData) {
+            const newType = workType.map(item => ({ type: item }));
             // Then, push these new objects into the existing array
-            workItemData.subItems.push(...newSubItems); 
+            workTypeData.workType.push(...newType); 
             await data.save();
             res.send({
                 success: true,
-                message: "SubItems Added",
+                message: "WorkType Added",
                 data:data
             });
         } else {

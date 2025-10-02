@@ -5,16 +5,16 @@ const Quotation = require('../../Schema/interior.schema/quotation.model');
 // Update sub-item
 const updateQuotationSubItem = async (req, res) => {
   try {
-    const { id } = req.params; // This is the subItem ID
+    const { id } = req.params; // This is the type ID
     const {
       projectType,
       scopeOfWork,
-      workItem,
-      subWorkItems
+      workCategory,
+      workType
     } = req.body;
 
     // Validate required fields
-    if (!projectType || !scopeOfWork || !workItem || !subWorkItems || !Array.isArray(subWorkItems)) {
+    if (!projectType || !scopeOfWork || !workCategory || !workType || !Array.isArray(workType)) {
       return res.status(400).json({
         success: false,
         message: "Project Type, Scope of Work, Work Item, and Sub Work Items are required"
@@ -35,7 +35,7 @@ const updateQuotationSubItem = async (req, res) => {
     }
 
     // Find the work item within the quotation
-    const workItemObj = quotation.workItems.id(workItem);
+    const workItemObj = quotation.workCategory.id(workCategory);
 
     if (!workItemObj) {
       return res.status(404).json({
@@ -45,7 +45,7 @@ const updateQuotationSubItem = async (req, res) => {
     }
 
     // Find the sub item to update
-    const subItemToUpdate = workItemObj.subItems.id(id);
+    const subItemToUpdate = workItemObj.workType.id(id);
 
     if (!subItemToUpdate) {
       return res.status(404).json({
@@ -54,9 +54,9 @@ const updateQuotationSubItem = async (req, res) => {
       });
     }
 
-    // Update the sub item (assuming we're updating with the first subWorkItems entry)
-    if (subWorkItems.length > 0 && subWorkItems[0].trim() !== '') {
-      subItemToUpdate.subItem = subWorkItems[0].trim();
+    // Update the sub item (assuming we're updating with the first workType entry)
+    if (workType.length > 0 && workType[0].trim() !== '') {
+      subItemToUpdate.type = workType[0].trim();
     }
 
     // Update the timestamp

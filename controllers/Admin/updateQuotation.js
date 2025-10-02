@@ -5,11 +5,11 @@ const Quotation = require("../../Schema/interior.schema/quotation.model");
 const updateQuotation = async (req, res) => {
   try {
     const { _id } = req.params;
-    const { projectTypeId, scopeOfWork, workItems } = req.body;
+    const { projectTypeId, scopeOfWork, workCategory } = req.body;
     const email = req.query.email || "admin";
-    console.log(projectTypeId, scopeOfWork, workItems)
+    console.log(projectTypeId, scopeOfWork, workCategory)
     // Validate required fields
-    if (!projectTypeId || !scopeOfWork || !workItems || workItems.length === 0) {
+    if (!projectTypeId || !scopeOfWork || !workCategory || workCategory.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Project type, scope of work, and at least one work item are required"
@@ -35,8 +35,8 @@ const updateQuotation = async (req, res) => {
       });
     }
 
-    // Transform workItems array of strings or objects to array of objects with item field
-    const formattedWorkItems = workItems.map(item => {
+    // Transform workCategory array of strings or objects to array of objects with item field
+    const formattedWorkCategory = workCategory.map(item => {
       if (typeof item === 'object' && item.item) {
         return { item: item.item };
       }
@@ -50,7 +50,7 @@ const updateQuotation = async (req, res) => {
         projectTypeId,
         projectType: projectTypeData.master_type_name,
         scopeOfWork,
-        workItems: formattedWorkItems,
+        workCategory: formattedWorkCategory,
         updatedAt: new Date(),
         // Remove $set for createdBy as it should not be updated here
       },

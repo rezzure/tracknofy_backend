@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 const featuresSchema = new Schema({
+    featuresCategories: {
+        type: String,
+        required: true,
+        trim: true
+    },
     featureName: {
         type: "String",
         required: true,

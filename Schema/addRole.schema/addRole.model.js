@@ -14,6 +14,11 @@ const roleSchema = new Schema(
     },
     features: [
       {
+        featuresCategories: {
+          type: String,
+          required: true,
+          trim: true,
+        },
         featureName: {
           type: String,
           required: true,

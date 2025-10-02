@@ -82,6 +82,7 @@ const deleteComment = require("../../controllers/Admin/progressReport/deleteComm
 const assignQuery = require("../../controllers/Admin/assignQueries.js");
 const { getAllQueries } = require("../../controllers/Admin/querySupport.js");
 const { createTicket, getAllTickets, getUserTickets, updateTicketStatus, addTicketCommunication, getTicketById } = require("../../controllers/Admin/ticketController.js");
+const addQuotationTask = require("../../controllers/Admin/addQuotationTask.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -312,13 +313,13 @@ router.post("/add/subItem", verification,addQuotationSubItems)
 // router to get subWork
 router.get("/get/subItems",verification, getQuotationSubItems)
 
-
-
 // router to edit subWork
 router.put("/update/subItem/:id",verification,updateQuotationSubItem)
 
 // router to delete subWork
 router.delete("delete/subItem",verification)
+
+router.post("/add/quotation/task",verification, addQuotationTask)
 
 
 // router for progress report

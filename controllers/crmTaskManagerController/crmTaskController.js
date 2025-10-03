@@ -4,6 +4,7 @@ const CRMTask = require("../../Schema/crmTaskManager.schema/crmTaskManager.model
 const createTask = async (req, res) => {
   try {
     const task = new CRMTask(req.body);
+    console.log(task)
     await task.save();
 
     res.status(201).json({

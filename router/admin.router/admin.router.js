@@ -83,6 +83,8 @@ const assignQuery = require("../../controllers/Admin/assignQueries.js");
 const { getAllQueries } = require("../../controllers/Admin/querySupport.js");
 const { createTicket, getAllTickets, getUserTickets, updateTicketStatus, addTicketCommunication, getTicketById } = require("../../controllers/Admin/ticketController.js");
 const addQuotationTask = require("../../controllers/Admin/addQuotationTask.js");
+const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
+const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
@@ -320,6 +322,8 @@ router.put("/update/subItem/:id",verification,updateQuotationSubItem)
 router.delete("delete/subItem",verification)
 
 router.post("/add/quotation/task",verification, addQuotationTask)
+router.get("/get/quotationTasks",verification, getQuotationTask)
+router.put("/update/quotationTasks/:id",verification, updateQuotationTask)
 
 
 // router for progress report

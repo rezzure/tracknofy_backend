@@ -145,43 +145,118 @@ exports.createForm = async (req, res) => {
 };
 
 // Update form
+// exports.updateForm = async (req, res) => {
+//   try {
+//     const { formName, formFields ,userEmail} = req.body;
+//     console.log(formName, formFields,userEmail)
+//     const {_id} = req.params
+//     if (!formName || !formFields || !Array.isArray(formFields)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Form name and fields are required'
+//       });
+//     }
+    
+//     const form = await Form.findByIdAndUpdate(
+//       _id,
+//       {
+//         formName,
+//         formFields,
+//         userEmail,
+//         updatedAt: new Date()
+//       },
+//       { new: true, runValidators: true }
+//     );
+    
+//     if (!form) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Form not found'
+//       });
+//     }
+    
+//     res.json({
+//       success: true,
+//       message: 'Form updated successfully',
+//       data: {
+//         ...form.toObject(),
+//         id: form._id,
+//         fieldCount: form.formFields.length
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error updating form:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error updating form',
+//       error: error.message
+//     });
+//   }
+// };
+
 exports.updateForm = async (req, res) => {
   try {
-    const { formName, formFields ,userEmail} = req.body;
-    console.log(formName, formFields,userEmail)
-    const {_id} = req.params
+    const { formName, formFields, userEmail } = req.body;
+    console.log('Update request:', { formName, formFields, userEmail });
+    const { _id } = req.params;
+
     if (!formName || !formFields || !Array.isArray(formFields)) {
       return res.status(400).json({
         success: false,
         message: 'Form name and fields are required'
       });
     }
-    
-    const form = await Form.findByIdAndUpdate(
-      _id,
-      {
-        formName,
-        formFields,
-        userEmail,
-        updatedAt: new Date()
-      },
-      { new: true, runValidators: true }
-    );
-    
-    if (!form) {
+
+    // Find the existing form first
+    const existingForm = await Form.findById(_id);
+    if (!existingForm) {
       return res.status(404).json({
         success: false,
         message: 'Form not found'
       });
     }
-    
+
+    // Prepare update data
+    const updateData = {
+      formName,
+      formFields,
+      updatedAt: new Date()
+    };
+
+    // Handle userEmail - add to array if provided and not already present
+    if (userEmail) {
+      const emailToAdd = userEmail.trim().toLowerCase();
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailToAdd)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid email address'
+        });
+      }
+
+      // Check if email already exists in the array
+      if (!existingForm.userEmail.includes(emailToAdd)) {
+        updateData.$addToSet = { userEmail: emailToAdd };
+      }
+    }
+
+    // Update the form
+    const form = await Form.findByIdAndUpdate(
+      _id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
     res.json({
       success: true,
-      message: 'Form updated successfully',
+      message: userEmail ? 'Form updated and user assigned successfully' : 'Form updated successfully',
       data: {
         ...form.toObject(),
         id: form._id,
-        fieldCount: form.formFields.length
+        fieldCount: form.formFields.length,
+        assignedUsersCount: form.userEmail.length
       }
     });
   } catch (error) {

@@ -1,10 +1,18 @@
 const mongoose = require('mongoose');
 
 const FormSchema = new mongoose.Schema({
-  userEmail:{
-    type:String,
-    // required:true
-  },
+  userEmail: [{
+    type: String,
+    trim: true,
+    lowercase: true,
+    validate: {
+      validator: function(email) {
+        // Basic email validation
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      },
+      message: 'Please provide a valid email address'
+    }
+  }],
   formName: {
     type: String,
     required: true,
@@ -19,7 +27,7 @@ const FormSchema = new mongoose.Schema({
     type: {
       type: String,
       required: true,
-      enum: ['text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'image']
+      enum: ['text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'image',"canvas"]
     },
     label: {
       type: String,
@@ -48,4 +56,4 @@ const FormSchema = new mongoose.Schema({
 });
 
 const Form = mongoose.model('Form', FormSchema);
-module.exports = Form
+module.exports = Form;

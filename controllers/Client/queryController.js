@@ -25,7 +25,7 @@ const queryController = {
       }
 
       const clientObjId = new mongoose.Types.ObjectId(clientId)
-      console.log(clientObjId)
+      console.log("clientObjId", clientObjId )
 
       const clientUser = await User.findOne({ _id: clientObjId }).select('-password');;
       console.log("Found client:", clientUser);

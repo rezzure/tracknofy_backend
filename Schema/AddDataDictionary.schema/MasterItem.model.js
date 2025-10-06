@@ -1,23 +1,17 @@
 const mongoose =  require('mongoose');
-const MasterConfigSchema = require('../addMasterType.schema/addMasterType.model')
 
 const MasterItemSchema = new mongoose.Schema(
   {
     master_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MasterConfigSchema", // reference to master_type
-      required: true,
+      // required: true,
     },
     master_type_name: {
       type: String,
       required: true
     },
-    master_item_id: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
+  
     master_item_name: {
       type: String,
       required: true,

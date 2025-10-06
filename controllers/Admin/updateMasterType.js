@@ -4,8 +4,8 @@ const updateMasterTypeDetail = async (req,res) =>{
 
   const {_id} = req.params;
   console.log(_id)
-  const { master_type_id, master_type_name, master_type_description, email} = req.body;
-  console.log(master_type_id, master_type_name, master_type_description, email)
+  const { master_type_name, master_type_description, email} = req.body;
+  console.log( master_type_name, master_type_description, email)
   
 
   try {
@@ -19,7 +19,6 @@ const updateMasterTypeDetail = async (req,res) =>{
         message:"master type data not found"
       })
     }
-    if(master_type_id) masterType.master_type_id = master_type_id;
     if(master_type_name) masterType.master_type_name = master_type_name;
     if(master_type_description) masterType.master_type_description = master_type_description;
     if(masterType.created_by.toString() !== admin._id.toString()) masterType.updated_by = admin._id

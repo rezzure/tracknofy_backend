@@ -7,11 +7,11 @@ const addDataDictionary = async (req, res) => {
     // console.log(email)
 
     try {
-        const {master_id, master_item_id, master_item_name, master_item_description} = req.body
-        // console.log(master_id, master_item_id, master_item_name, master_item_description)
+        const {master_id,master_item_name, master_item_description} = req.body
+        console.log(master_id, master_item_name, master_item_description)
 
          // Validate required fields
-        if (!master_id || !master_item_id || !master_item_name || !master_item_description || !master_id) {
+        if (!master_id || !master_item_name) {
             return res.status(400).send({
                 success: false,
                 message: 'All required fields must be provided'
@@ -25,7 +25,6 @@ const addDataDictionary = async (req, res) => {
         const newDataDictionary = new MasterItem({
             master_id,
             master_type_name: masterType.master_type_name,
-            master_item_id,
             master_item_name,
             master_item_description,
             created_by:admin._id,

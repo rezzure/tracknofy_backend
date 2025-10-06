@@ -2,12 +2,6 @@ const mongoose = require('mongoose')
 
 const MasterConfigSchema = new mongoose.Schema(
   {
-    master_type_id: {
-      type: String, // You can also use ObjectId if needed
-      required: true,
-      unique: true,
-      trim: true,
-    },
     master_type_name: {
       type: String,
       required: true,

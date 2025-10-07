@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const verification = (req, res, next) => {
     const token = req.headers['token'] || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);;
-
+    console.log(token)
     if (!token) {
         return res.status(401).send({
             success: false,

@@ -72,7 +72,7 @@ app.use("/api", require("./router/supervisor.router/supervisor.router.js"));
 app.use("/api", require("./router/query.router/query.router.js"));
 app.use("/api", require("./router/superAdmin.router/addCompany.router.js"));
 app.use("/api", require("./router/ticketRouter/ticket.router.js"))
-
+app.use('/api', require("./router/manualQuotation.router/manualQuotationRouter.js"));
 app.use((req, res, next) => {
   console.log("DEBUG: Incoming request:", req.method, req.originalUrl);
   next();

@@ -79,6 +79,7 @@ router.post('/submit/final', verification, submitFinal);
 // GET request to '/api/survey/:id' where :id is the survey ID parameter
 // Protected route - requires token verification
 router.get('/survey/:id', verification, getSurvey);
+router.get('/survey', verification, getSurvey);
 
 // 9. Define route for getting all sites for the authenticated user
 // GET request to '/api/sites/all'

@@ -2,7 +2,7 @@ const Quotation = require("../../Schema/interior.schema/quotation.model");
 
 const getQuotation = async(req,res)=>{
     const{_id} = req.params
-    
+    console.log(_id)
     try {
 
         if(_id.toString()==="1"){

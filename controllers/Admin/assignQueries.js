@@ -11,20 +11,22 @@ const assignQuery = async (req, res) => {
       status = "assigned"
     } = req.body;
 
-    console.log("queryId",queryId)
-    console.log('assignedTo', 
-      'assignedToName', 
-      'assignedRole', 
-      'assignmentNotes',assignedTo, 
-      assignedToName, 
-      assignedRole, 
-      assignmentNotes)
+    console.log("queryId", queryId);
+    console.log('assignedTo', assignedTo, 'assignedToName', assignedToName, 'assignedRole', assignedRole, 'assignmentNotes', assignmentNotes);
 
     // Validate required fields
     if (!assignedTo || !assignedToName || !assignedRole) {
       return res.status(400).json({
         success: false,
         message: "Assigned user details are required",
+      });
+    }
+
+    // Validate queryId
+    if (!queryId || queryId === '[object Object]') {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid query ID",
       });
     }
 
@@ -53,7 +55,7 @@ const assignQuery = async (req, res) => {
     query.assignedAt = new Date();
     query.status = status;
 
-    // // Add assignment notification to communications
+    // Add assignment notification to communications
     const assignmentCommunication = {
       sender: "admin",
       senderName: "Admin",
@@ -66,25 +68,6 @@ const assignQuery = async (req, res) => {
       : [assignmentCommunication];
 
     await query.save();
-
-    // // Create notification for the assigned user
-    // try {
-    //   const Notification = require("./Notification"); // Adjust path as needed
-      
-    //   await Notification.create({
-    //     recipient: assignedTo,
-    //     recipientModel: "User",
-    //     title: "New Query Assigned",
-    //     message: `You have been assigned a new query: "${query.queryType}" from ${query.client}`,
-    //     type: "assignment",
-    //     relatedEntityType: "Query",
-    //     relatedEntityId: query._id,
-    //     isRead: false,
-    //   });
-    // } catch (notificationError) {
-    //   console.error("Error creating notification:", notificationError.message);
-    //   // Continue even if notification fails
-    // }
 
     res.status(200).json({
       success: true,
@@ -99,6 +82,7 @@ const assignQuery = async (req, res) => {
     });
   }
 };
+
 
 
 module.exports=assignQuery;

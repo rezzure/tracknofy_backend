@@ -1,7 +1,7 @@
 const express = require('express');
 const queryController = require('../../controllers/Client/queryController');
 
-const { getAllQueries, deleteQuery, responseQuery } = require('../../controllers/Admin/querySupport');
+const { getAllQueries, responseQuery } = require('../../controllers/Admin/querySupport');
 const upload = require('../../middleware/multer');
 const verification = require('../../middleware/verification');
 
@@ -18,15 +18,6 @@ router.patch('/queries/:queryId/reply', upload.array('attachments'), queryContro
 
 //admin section
 router.get('/all-quaries',getAllQueries)
-// Correct PATCH route for updating a query (admin response)
-// Remove incorrect POST route for admin response
-// queryRouter.post('/queries/queryId/response', updateQuery)
-router.delete('/queries/delete/:id', deleteQuery)
- 
-
-// Correct PATCH route for admin response to match frontend
 router.patch('/queries/:queryId/response', responseQuery);
-//admin
-// queryRouter.patch('/update-query-status/:id/status', queryController.updateQueryStatus);
 
 module.exports = router;

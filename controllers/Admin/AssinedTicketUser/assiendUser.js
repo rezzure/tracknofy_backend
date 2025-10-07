@@ -67,64 +67,64 @@ const getTicketById = async (req, res) => {
   }
 };
 
-// Update ticket status
-const updateTicketStatus = async (req, res) => {
-  try {
-    const { ticketId } = req.params;
-    const { status, updatedBy } = req.body;
+// // Update ticket status
+// const updateTicketStatus = async (req, res) => {
+//   try {
+//     const { ticketId } = req.params;
+//     const { status, updatedBy } = req.body;
 
-    // Validate status
-    const validStatuses = ["assigned", "in-progress", "resolved", "closed"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status value",
-      });
-    }
+//     // Validate status
+//     const validStatuses = ["assigned", "in-progress", "resolved", "closed"];
+//     if (!validStatuses.includes(status)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid status value",
+//       });
+//     }
 
-    const ticket = await Ticket.findByIdAndUpdate(
-      ticketId,
-      { 
-        status,
-        ...(status === "resolved" && { 
-          resolvedAt: new Date(),
-          resolvedBy: updatedBy 
-        }),
-        ...(status === "closed" && { 
-          closedAt: new Date() 
-        })
-      },
-      { new: true, runValidators: true }
-    ).populate('queryId');
+//     const ticket = await Ticket.findByIdAndUpdate(
+//       ticketId,
+//       { 
+//         status,
+//         ...(status === "resolved" && { 
+//           resolvedAt: new Date(),
+//           resolvedBy: updatedBy 
+//         }),
+//         ...(status === "closed" && { 
+//           closedAt: new Date() 
+//         })
+//       },
+//       { new: true, runValidators: true }
+//     ).populate('queryId');
 
-    if (!ticket) {
-      return res.status(404).json({
-        success: false,
-        message: "Ticket not found",
-      });
-    }
+//     if (!ticket) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Ticket not found",
+//       });
+//     }
 
-    // Optionally update the original query status as well
-    if (ticket.queryId) {
-      await Query.findByIdAndUpdate(
-        ticket.queryId._id,
-        { status: status === "resolved" || status === "closed" ? "closed" : "assigned" }
-      );
-    }
+//     // Optionally update the original query status as well
+//     if (ticket.queryId) {
+//       await Query.findByIdAndUpdate(
+//         ticket.queryId._id,
+//         { status: status === "resolved" || status === "closed" ? "closed" : "assigned" }
+//       );
+//     }
 
-    res.status(200).json({
-      success: true,
-      message: `Ticket status updated to ${status}`,
-      data: ticket,
-    });
-  } catch (error) {
-    console.error("Error updating ticket status:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error while updating ticket status",
-    });
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: `Ticket status updated to ${status}`,
+//       data: ticket,
+//     });
+//   } catch (error) {
+//     console.error("Error updating ticket status:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error while updating ticket status",
+//     });
+//   }
+// };
 
 // Add communication to ticket
 const addTicketCommunication = async (req, res) => {
@@ -236,10 +236,242 @@ const resolveTicket = async (req, res) => {
   }
 };
 
+
+// Unified status update for both queries and tickets
+const updateStatus = async (req, res) => {
+  try {
+    const { entityType, entityId } = req.params;
+    const { status, updatedBy, updatedByName, resolutionNotes, message } = req.body;
+
+    // Validate status based on entity type
+    const validQueryStatuses = ["open", "assigned", "in-progress", "resolved", "closed"];
+    const validTicketStatuses = ["assigned", "in-progress", "resolved", "closed"];
+    
+    if (entityType === 'query' && !validQueryStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value for query",
+      });
+    }
+    
+    if (entityType === 'ticket' && !validTicketStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value for ticket",
+      });
+    }
+
+    let updatedEntity;
+    let relatedEntity;
+
+    if (entityType === 'query') {
+      // Update query
+      const updateData = {
+        status,
+        updatedAt: new Date()
+      };
+
+      // Add resolution data if status is resolved or closed
+      if (status === "resolved" || status === "closed") {
+        updateData.resolvedAt = new Date();
+        if (updatedBy) updateData.resolvedBy = updatedBy;
+        if (updatedByName) updateData.resolvedByName = updatedByName;
+        if (resolutionNotes) updateData.resolutionNotes = resolutionNotes;
+      }
+
+      // Add communication if message is provided
+      if (message) {
+        const communication = {
+          sender: updatedBy ? "assigned_user" : "admin",
+          message: message,
+          sentAt: new Date()
+        };
+        
+        updateData.$push = { communications: communication };
+      }
+
+      updatedEntity = await Query.findByIdAndUpdate(
+        entityId,
+        updateData,
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedEntity) {
+        return res.status(404).json({
+          success: false,
+          message: "Query not found",
+        });
+      }
+
+      // Update related ticket if exists
+      if (updatedEntity.ticketId) {
+        const ticketUpdateData = {
+          status: status === "open" ? "assigned" : status, // Map open status to assigned for tickets
+          updatedAt: new Date()
+        };
+
+        if (status === "resolved" || status === "closed") {
+          ticketUpdateData.resolvedAt = new Date();
+          if (updatedBy) ticketUpdateData.resolvedBy = updatedBy;
+          if (updatedByName) ticketUpdateData.resolvedByName = updatedByName;
+          if (resolutionNotes) ticketUpdateData.resolutionNotes = resolutionNotes;
+        }
+
+        relatedEntity = await Ticket.findByIdAndUpdate(
+          updatedEntity.ticketId,
+          ticketUpdateData,
+          { new: true, runValidators: true }
+        );
+      }
+
+      // Create notification for client
+      if (updatedEntity.clientId) {
+        // await Notification.create({
+        //   recipient: updatedEntity.clientId,
+        //   recipientModel: "User",
+        //   title: "Query Status Updated",
+        //   message: `Your query status has been updated to "${status}"`,
+        //   type: "status_update",
+        //   relatedEntityType: "Query",
+        //   relatedEntityId: updatedEntity._id,
+        // });
+      }
+
+    } else if (entityType === 'ticket') {
+      // Update ticket
+      const updateData = {
+        status,
+        updatedAt: new Date()
+      };
+
+      if (status === "resolved" || status === "closed") {
+        updateData.resolvedAt = new Date();
+        if (updatedBy) updateData.resolvedBy = updatedBy;
+        if (updatedByName) updateData.resolvedByName = updatedByName;
+        if (resolutionNotes) updateData.resolutionNotes = resolutionNotes;
+      }
+
+      updatedEntity = await Ticket.findByIdAndUpdate(
+        entityId,
+        updateData,
+        { new: true, runValidators: true }
+      ).populate('queryId');
+
+      if (!updatedEntity) {
+        return res.status(404).json({
+          success: false,
+          message: "Ticket not found",
+        });
+      }
+
+      // Update related query
+      if (updatedEntity.queryId) {
+        const queryUpdateData = {
+          status: status,
+          updatedAt: new Date()
+        };
+
+        if (status === "resolved" || status === "closed") {
+          queryUpdateData.resolvedAt = new Date();
+          if (updatedBy) queryUpdateData.resolvedBy = updatedBy;
+          if (updatedByName) queryUpdateData.resolvedByName = updatedByName;
+          if (resolutionNotes) queryUpdateData.resolutionNotes = resolutionNotes;
+        }
+
+        relatedEntity = await Query.findByIdAndUpdate(
+          updatedEntity.queryId._id,
+          queryUpdateData,
+          { new: true, runValidators: true }
+        );
+
+        // Create notification for client
+        if (relatedEntity && relatedEntity.clientId) {
+          // await Notification.create({
+          //   recipient: relatedEntity.clientId,
+          //   recipientModel: "User",
+          //   title: "Ticket Status Updated",
+          //   message: `Your ticket status has been updated to "${status}"`,
+          //   type: "status_update",
+          //   relatedEntityType: "Ticket",
+          //   relatedEntityId: updatedEntity._id,
+          // });
+        }
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid entity type. Use 'query' or 'ticket'",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `${entityType} status updated to ${status}`,
+      data: {
+        updatedEntity,
+        relatedEntity
+      },
+    });
+
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating status",
+    });
+  }
+};
+
+
 module.exports = {
   getTicketsAssignedToUser,
   getTicketById,
-  updateTicketStatus,
+  updateStatus,
   addTicketCommunication,
   resolveTicket
 };
+
+
+
+
+
+
+
+// Get status history for an entity
+// const getStatusHistory = async (req, res) => {
+//   try {
+//     const { entityType, entityId } = req.params;
+
+//     let entity;
+//     if (entityType === 'query') {
+//       entity = await Query.findById(entityId).select('status communications updatedAt');
+//     } else if (entityType === 'ticket') {
+//       entity = await Ticket.findById(entityId).select('status communications updatedAt');
+//     } else {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid entity type",
+//       });
+//     }
+
+//     if (!entity) {
+//       return res.status(404).json({
+//         success: false,
+//         message: `${entityType} not found`,
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       data: entity,
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching status history:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error while fetching status history",
+//     });
+//   }
+// };
+

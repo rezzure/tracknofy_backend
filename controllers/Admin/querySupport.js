@@ -23,11 +23,7 @@ const getAllQueries = async (req, res) => {
   }
 };
 
-// /**
-//  * @desc    Update a query with admin response
-//  * @route   PATCH /api/queries/:id
-//  * @access  Private/Admin
-//  */
+
 
 const responseQuery = async (req, res) => {
   try {
@@ -101,11 +97,6 @@ const responseQuery = async (req, res) => {
   }
 };
 
-// /**
-//  * @desc    Get queries for a specific client
-//  * @route   GET /api/queries/client/:clientId
-//  * @access  Private
-//  */
 
 const getClientQueries = async (req, res) => {
   try {
@@ -138,11 +129,7 @@ const getClientQueries = async (req, res) => {
   }
 };
 
-// /**
-//  * @desc    Delete a query
-//  * @route   DELETE /api/queries/:id
-//  * @access  Private/Admin
-//  */
+
 const deleteQuery = async (req, res) => {
   try {
     const { id } = req.params;
@@ -171,8 +158,65 @@ const deleteQuery = async (req, res) => {
   }
 };
 
+// Get queries by multiple IDs
+const getQueriesByIds = async (req, res) => {
+  try {
+    const { queryIds } = req.body;
+
+    // Validate queryIds
+    if (!queryIds || !Array.isArray(queryIds) || queryIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Query IDs array is required",
+      });
+    }
+
+    // Validate each ID is a valid MongoDB ObjectId
+    const validQueryIds = queryIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+    
+    if (validQueryIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid query IDs provided",
+      });
+    }
+
+    // Find queries by IDs
+    const queries = await Query.find({ 
+      _id: { $in: validQueryIds } 
+    })
+    .sort({ createdAt: -1 })
+    .lean(); // Convert to plain JS objects
+
+    // Ensure photos and communications are properly formatted
+    const formattedQueries = queries.map((query) => ({
+      ...query,
+      photos: Array.isArray(query.photos) ? query.photos : [],
+      communications: Array.isArray(query.communications)
+        ? query.communications
+        : [],
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: formattedQueries,
+      message: "Queries fetched successfully",
+      count: formattedQueries.length
+    });
+  } catch (error) {
+    console.error("Error in getQueriesByIds:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch queries",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   deleteQuery,
+  getQueriesByIds,
   getClientQueries,
   responseQuery,
   getAllQueries,

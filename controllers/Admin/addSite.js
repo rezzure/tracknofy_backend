@@ -1,6 +1,7 @@
 const Client = require("../../Schema/client.schema/client.model");
 const Site = require("../../Schema/site.Schema/site.model");
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model");
+const User = require("../../Schema/users.schema/users.model");
 
 
 const addSite = async (req, res) => {
@@ -10,6 +11,10 @@ const addSite = async (req, res) => {
     // Find client and supervisor
     const clientdata = await Client.findOne({ email: client });
     const supervisordata = await Supervisor.findOne({ email: supervisor });
+
+    const Userdata = await User.findOne({email : clientdata.email})
+    console.log("clientdata",Userdata)
+
 
     if (!clientdata) {
       return res.status(404).send({
@@ -29,6 +34,7 @@ const addSite = async (req, res) => {
     const siteDetail = new Site({
       siteName: siteName,
       address,
+      mobile : Userdata.mobile,
       clientId: clientdata._id,
       clientName: clientdata.name,
       supervisorId: supervisordata._id,

@@ -134,7 +134,7 @@ const queryController = {
         attachments,
       });
 
-      query.status = "open";
+      // query.status = "open";
       await query.save();
 
       res.status(200).json({

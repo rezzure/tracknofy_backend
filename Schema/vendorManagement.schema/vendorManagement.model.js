@@ -1,3 +1,59 @@
+// const mongoose = require("mongoose");
+// const vendorManagementSchema = new mongoose.Schema(
+//   {
+//     vendorName: {
+//       type: String,
+//       required: true,
+//     },
+//     vendorCompany: {
+//       type: String,
+//       required: true,
+//     },
+//     vendorAddress: {
+//       type: String,
+//       required: true,
+//     },
+//     vendorMobile: {
+//       type: Number,
+//       required: true,
+//     },
+//     vendorEmail: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//     },
+//     remarks: {
+//       type: String,
+//       default: "No remarks",
+//     },
+//     createdBy: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       refPath: "createdByModel",
+//       required: true,
+//     },
+//     createdByModel: {
+//       type: String,
+//       enum: ["Admin", "Supervisor"],
+//       // required: true,
+//     },
+//     createdAt: {
+//       type: Date,
+//       default: Date.now,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// const VendorManagement = mongoose.model(
+//   "VendorManagement",
+//   vendorManagementSchema
+// );
+
+// module.exports = VendorManagement;
+
+
+
+
 const mongoose = require("mongoose");
 const vendorManagementSchema = new mongoose.Schema(
   {
@@ -21,6 +77,23 @@ const vendorManagementSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    vendorCategory: {
+      type: String,
+      required: true,
+      enum: ["Civil", "Carpentry", "Plumbing", "Electrical", "Fabricator"]
+    },
+    gstNo: {
+      type: String,
+      default: ""
+    },
+    accountNo: {
+      type: String,
+      default: ""
+    },
+    ifscCode: {
+      type: String,
+      default: ""
     },
     remarks: {
       type: String,

@@ -7,12 +7,12 @@ const getSiteById = async(req,res)=>{
         if(!site){
             return res.status(400).send({
                 success:false,
-                message:"data not found"
+                message:"Site data not found"
             })
         }
         return res.status(200).send({
             success:true,
-            message:"data found",
+            message:"Site data found",
             data:site
         })
     } catch (error) {
@@ -22,4 +22,5 @@ const getSiteById = async(req,res)=>{
         })
     }
 }
+
 module.exports = getSiteById

@@ -1,5 +1,6 @@
 const express = require("express");
 const { getTicketsAssignedToUser, getTicketById, addTicketCommunication, resolveTicket, updateStatus } = require("../../controllers/Admin/AssinedTicketUser/assiendUser");
+const getAssignUserSite = require("../../controllers/Admin/Material&Purchase/getAssignUserSite");
 const router = express.Router();
 
 
@@ -19,5 +20,8 @@ router.patch("/tickets/:ticketId/communication", addTicketCommunication);
 router.patch("/tickets/:ticketId/resolve", resolveTicket);
 
 router.patch("/status/:entityType/:entityId", updateStatus);
+
+
+router.get('/get/assignUserSite', getAssignUserSite)
 
 module.exports = router;

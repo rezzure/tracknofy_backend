@@ -14,10 +14,10 @@ router.post('/queries',verification, upload.array('photos'), queryController.cre
 router.get('/queries/client/:clientId', queryController.getClientQueries);
 
 // Add client reply
-router.patch('/queries/:queryId/reply', upload.array('attachments'), queryController.addClientReply);
+router.patch('/queries/:queryId/reply', upload.array('attachments'), verification, queryController.addClientReply);
 
 //admin section
 router.get('/all-quaries',getAllQueries)
-router.patch('/queries/:queryId/response', responseQuery);
+router.patch('/queries/:queryId/response', verification, responseQuery);
 
 module.exports = router;

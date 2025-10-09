@@ -3,6 +3,7 @@ const express = require('express');
 const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, updateMaterialRequestStatus, getMaterialMaster } = require('../../controllers/Admin/Material&Purchase/materialRequest');
 const getAssignUserSite = require('../../controllers/Admin/Material&Purchase/getAssignUserSite');
 const { getApprovedMaterialRequests, getPurchaseOrdersByEngineer, createPurchaseOrder, getAllPurchaseOrders } = require('../../controllers/Admin/Material&Purchase/purchaseOrder');
+const { createGRN, getPendingDeliveries, getGRNHistory, getAllGRNs } = require('../../controllers/Admin/Material&Purchase/grn');
 const router = express.Router();
 
 
@@ -41,10 +42,10 @@ router.get('/purchase-orders/engineer', getPurchaseOrdersByEngineer);
 router.get('/approved-requests', getApprovedMaterialRequests);
 
 // // GRN Routes
-// router.post('/grn', createGRN);
-// router.get('/pending-deliveries', getPendingDeliveries);
-// router.get('/grn-history', getGRNHistory);
-// router.get('/grns', getAllGRNs);
+router.post('/grn', createGRN);
+router.get('/pending-deliveries', getPendingDeliveries);
+router.get('/grn-history', getGRNHistory);
+router.get('/grns', getAllGRNs);
 
 
 

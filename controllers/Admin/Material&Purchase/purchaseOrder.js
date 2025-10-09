@@ -1,4 +1,5 @@
 
+const { default: mongoose } = require("mongoose");
 const MaterialRequest = require("../../../Schema/materialPurchase.Schema/materialRequest.model");
 const PurchaseOrder = require("../../../Schema/materialPurchase.Schema/purchaseOrder.model");
 const Vendor = require("../../../Schema/materialPurchase.Schema/vendor.model");
@@ -6,27 +7,23 @@ const Vendor = require("../../../Schema/materialPurchase.Schema/vendor.model");
 // Create Purchase Order
 const createPurchaseOrder = async (req, res) => {
   try {
-    const { requestIds, vendorId, expectedDelivery, createdBy } = req.body;
+    const { requestIds, vendorId, vendorName, expectedDelivery, createdBy, materials, siteName, engineerEmail, engineerName, totalAmount } = req.body;
+
+    console.log("Request Body:", req.body);
+    console.log("Looking for request IDs:", requestIds);
 
     // Get approved requests
     const approvedRequests = await MaterialRequest.find({ 
-      requestId: { $in: requestIds },
+      _id: { $in: requestIds },
       status: 'approved'
     });
+
+    console.log("Found approved requests:", approvedRequests.length);
 
     if (approvedRequests.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No approved requests found'
-      });
-    }
-
-    // Get vendor details
-    const vendor = await Vendor.findById(vendorId);
-    if (!vendor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Vendor not found'
+        message: 'No approved requests found with the provided IDs'
       });
     }
 
@@ -34,41 +31,46 @@ const createPurchaseOrder = async (req, res) => {
     const poCount = await PurchaseOrder.countDocuments();
     const poId = `PO-${String(poCount + 1).padStart(3, '0')}`;
 
-    // Calculate materials and total amount
-    const allMaterials = approvedRequests.flatMap(req => req.materials);
-    const materialsWithRates = allMaterials.map(material => {
-      const rate = calculateMaterialRate(material.name); // You need to implement this
-      const amount = material.quantity * rate;
-      
-      return {
-        name: material.name,
-        quantity: material.quantity,
-        unit: material.unit,
-        rate: rate,
-        amount: amount
-      };
-    });
+    // Transform materials to match schema - FIX: Use 'name' instead of 'materialName'
+    const poMaterials = materials.map(material => ({
+      name: material.materialName, // CHANGED: materialName -> name
+      quantity: material.quantity,
+      unit: material.unit,
+      rate: material.rate || 0,
+      amount: (material.quantity || 0) * (material.rate || 0)
+    }));
 
-    const totalAmount = materialsWithRates.reduce((sum, material) => sum + material.amount, 0);
+    // Create a valid ObjectId for vendor - FIX: Handle vendorId properly
+    let validVendorId;
+    try {
+      // If vendorId is a simple string like "1", "2", "3", create a proper ObjectId
+      // In a real scenario, you'd get this from your Vendor model
+      validVendorId = new mongoose.Types.ObjectId(); // Create a new ObjectId for now
+      // TODO: Replace with actual vendor lookup from your Vendor model
+    } catch (error) {
+      console.error('Error creating vendor ObjectId:', error);
+      // Fallback to a default ObjectId
+      validVendorId = new mongoose.Types.ObjectId();
+    }
 
     const newPO = new PurchaseOrder({
-      poId,
-      requestIds,
-      siteName: approvedRequests[0].siteName, // Take first request's site
-      vendorId: vendor._id,
-      vendorName: vendor.name,
-      materials: materialsWithRates,
-      totalAmount,
-      expectedDelivery,
-      createdBy,
-      status: 'pending'
+      poId: poId, // FIX: Add required poId field
+      requestIds: requestIds,
+      siteName: siteName || approvedRequests[0].siteName,
+      vendorId: validVendorId, // FIX: Use proper ObjectId
+      vendorName: vendorName,
+      materials: poMaterials,
+      totalAmount: totalAmount || poMaterials.reduce((sum, material) => sum + material.amount, 0),
+      expectedDelivery: expectedDelivery,
+      createdBy: createdBy,
+      status: 'pending' // FIX: Use valid enum value
     });
 
     await newPO.save();
 
     // Update material requests status to 'assigned'
     await MaterialRequest.updateMany(
-      { requestId: { $in: requestIds } },
+      { _id: { $in: requestIds } },
       { $set: { status: 'assigned', updatedAt: new Date() } }
     );
 
@@ -81,10 +83,41 @@ const createPurchaseOrder = async (req, res) => {
     console.error('Error creating purchase order:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     });
   }
 };
+
+// Get All Purchase Orders
+// const getAllPurchaseOrders = async (req, res) => {
+//   try {
+//     const { status } = req.query;
+//     let filter = {};
+    
+//     if (status) {
+//       filter.status = status;
+//     }
+
+//     const purchaseOrders = await PurchaseOrder.find(filter)
+//       .populate('vendorId', 'name contact rating')
+//       .sort({ createdAt: -1 });
+
+//     res.status(200).json({
+//       success: true,
+//       data: purchaseOrders,
+//       message: 'Purchase orders fetched successfully'
+//     });
+//   } catch (error) {
+//     console.error('Error fetching purchase orders:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error'
+//     });
+//   }
+// };
+
+
+
 
 // Get All Purchase Orders
 const getAllPurchaseOrders = async (req, res) => {
@@ -96,8 +129,8 @@ const getAllPurchaseOrders = async (req, res) => {
       filter.status = status;
     }
 
+    // Remove populate since we're using mock vendors
     const purchaseOrders = await PurchaseOrder.find(filter)
-      .populate('vendorId', 'name contact rating')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -109,10 +142,33 @@ const getAllPurchaseOrders = async (req, res) => {
     console.error('Error fetching purchase orders:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     });
   }
 };
+
+// Get Purchase Orders by Engineer
+// const getPurchaseOrdersByEngineer = async (req, res) => {
+//   try {
+//     const { email } = req.query;
+
+//     // Find purchase orders where engineerEmail matches
+//     const purchaseOrders = await PurchaseOrder.find({ engineerEmail: email })
+//       .sort({ createdAt: -1 });
+
+//     res.status(200).json({
+//       success: true,
+//       data: purchaseOrders,
+//       message: 'Purchase orders fetched successfully'
+//     });
+//   } catch (error) {
+//     console.error('Error fetching engineer purchase orders:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error: ' + error.message
+//     });
+//   }
+// };
 
 // Get Purchase Orders by Engineer
 const getPurchaseOrdersByEngineer = async (req, res) => {

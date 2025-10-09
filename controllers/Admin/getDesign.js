@@ -3,9 +3,6 @@ const Design = require("../../Schema/designApproval.schema/designApproval.model"
 const getDesign = async (req, res) => {
   try {
     const { siteId } = req.params;
-    
-    console.log("=== DEBUG GET DESIGNS ===");
-    console.log("Fetching designs for site:", siteId);
 
     const designs = await Design.find({ siteId: siteId }).sort({ createdAt: -1 });
 
@@ -18,8 +15,6 @@ const getDesign = async (req, res) => {
         fileType: design.fileType
       });
     });
-
-    console.log("=== END DEBUG ===");
 
     return res.status(200).send({
       success: true,

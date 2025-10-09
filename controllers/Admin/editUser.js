@@ -3,6 +3,8 @@ const Client = require("../../Schema/client.schema/client.model")
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model")
 const User = require("../../Schema/users.schema/users.model")
 
+const bcrypt = require("bcrypt");
+
 
 const editUser = async(req,res)=>{
   const {id} =req.params

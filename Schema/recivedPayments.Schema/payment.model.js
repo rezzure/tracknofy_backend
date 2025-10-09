@@ -1,68 +1,145 @@
+// const mongoose = require("mongoose");
+// const {Schema} = mongoose;
+// const paymentSchema = new Schema({
+//     clientId: {
+//     type: Schema.Types.ObjectId,
+//     ref: 'Client', 
+//     required: [true, 'Client ID is required']
+//   },
+//   clientName:{
+//     type:String,
+//     required:true
+//   },
+//   siteName: {
+//     type: String,
+//     required: [true, 'Site name is required']
+//   },
+//   amount: {
+//     type: Number,
+//     required: [true, 'Amount is required'],
+//     min: [0.01, 'Amount must be greater than 0'],
+//     default: 0
+//   },
+//   mode: {
+//     type: String,
+//     required: [true, 'Payment mode is required'],
+//     enum: {
+//       values: ['credit_card', 'debit_card', 'Bank Transfer', 'UPI', 'Cash', 'Cheque', 'other'],
+//       message: '{VALUE} is not a valid payment mode'
+//     }
+//   },
+//   transactionDate: {
+//     type: Date,
+//     // required: [true, 'Transaction date is required'],
+//     default: Date.now
+//   },
+//   receiptURL: {
+//     type: String,
+//     // validate: {
+//     //   validator: function(v) {
+//     //     return /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/.test(v);
+//     //   },
+//     //   message: props => `${props.value} is not a valid URL!`
+//     // }
+//   },
+//   status: {
+//     type: String,
+//     enum: {
+//       values: ['pending', 'approved', 'failed', 'refunded'],
+//       message: '{VALUE} is not a valid status'
+//     },
+//     default: 'pending'
+//   },
+//   createdAt: {
+//     type: Date,
+//     default: Date.now
+//   },
+//   updatedAt: {
+//     type: Date,
+//     default: Date.now
+//   },
+//   transactionId:{
+//     type:String,
+//     required:true,
+//   }
+// })
+
+// const Payments = mongoose.model("Payment",paymentSchema);
+// module.exports = Payments
+
+
+// new code
+
+
 const mongoose = require("mongoose");
 const {Schema} = mongoose;
+
 const paymentSchema = new Schema({
     clientId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Client', 
-    required: [true, 'Client ID is required']
-  },
-  clientName:{
-    type:String,
-    required:true
-  },
-  siteName: {
-    type: String,
-    required: [true, 'Site name is required']
-  },
-  amount: {
-    type: Number,
-    required: [true, 'Amount is required'],
-    min: [0.01, 'Amount must be greater than 0'],
-    default: 0
-  },
-  mode: {
-    type: String,
-    required: [true, 'Payment mode is required'],
-    enum: {
-      values: ['credit_card', 'debit_card', 'Bank Transfer', 'UPI', 'Cash', 'Cheque', 'other'],
-      message: '{VALUE} is not a valid payment mode'
-    }
-  },
-  transactionDate: {
-    type: Date,
-    // required: [true, 'Transaction date is required'],
-    default: Date.now
-  },
-  receiptURL: {
-    type: String,
-    // validate: {
-    //   validator: function(v) {
-    //     return /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/.test(v);
-    //   },
-    //   message: props => `${props.value} is not a valid URL!`
-    // }
-  },
-  status: {
-    type: String,
-    enum: {
-      values: ['pending', 'approved', 'failed', 'refunded'],
-      message: '{VALUE} is not a valid status'
+        type: Schema.Types.ObjectId,
+        ref: 'Client', 
+        required: [true, 'Client ID is required']
     },
-    default: 'pending'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  },
-  transactionId:{
-    type:String,
-    required:true,
-  }
-})
+    clientName: {
+        type: String,
+        required: true
+    },
+    siteName: {
+        type: String,
+        required: [true, 'Site name is required']
+    },
+    amount: {
+        type: Number,
+        required: [true, 'Amount is required'],
+        min: [0.01, 'Amount must be greater than 0'],
+        default: 0
+    },
+    mode: {
+        type: String,
+        required: [true, 'Payment mode is required'],
+        enum: {
+            values: ['UPI', 'Cheque', 'Bank Transfer', 'Cash', 'credit_card', 'debit_card', 'other'],
+            message: '{VALUE} is not a valid payment mode'
+        }
+    },
+    transactionDate: {
+        type: Date,
+        default: Date.now
+    },
+    transactionId: {
+        type: String,
+        required: true,
+    },
+    remarks: {
+        type: String,
+        default: ''
+    },
+    status: {
+        type: String,
+        enum: {
+            values: ['pending', 'approved', 'rejected', 'failed', 'refunded'],
+            message: '{VALUE} is not a valid status'
+        },
+        default: 'pending'
+    },
+    receiptURL: {
+        type: String,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+});
 
-const Payments = mongoose.model("Payment",paymentSchema);
-module.exports = Payments
+// Update the updatedAt field before saving
+paymentSchema.pre('save', function(next) {
+    this.updatedAt = Date.now();
+    next();
+});
+
+const Payments = mongoose.model("Payment", paymentSchema);
+module.exports = Payments;

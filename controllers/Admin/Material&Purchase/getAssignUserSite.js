@@ -2,10 +2,9 @@ const Supervisor = require("../../../Schema/supervisor.schema/supervisor.model")
 
  const getAssignUserSite = async (req, res)=> {
      const email = req.query.email
-     console.log(email)
+    
      try {
         const assignUserSite = await Supervisor.find({email : email})
-        console.log("assignUserSite", assignUserSite)
         if(!assignUserSite){
            return res.status(400).send({
               success : false,
@@ -26,4 +25,4 @@ const Supervisor = require("../../../Schema/supervisor.schema/supervisor.model")
      }
  }
 
- module.exports=getAssignUserSite;
+module.exports=getAssignUserSite;

@@ -22,6 +22,6 @@ router.patch("/tickets/:ticketId/resolve", resolveTicket);
 router.patch("/status/:entityType/:entityId", updateStatus);
 
 
-router.get('/get/assignUserSite', getAssignUserSite)
+
 
 module.exports = router;

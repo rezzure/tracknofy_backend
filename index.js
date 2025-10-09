@@ -73,7 +73,7 @@ app.use("/api", require("./router/query.router/query.router.js"));
 app.use("/api", require("./router/superAdmin.router/addCompany.router.js"));
 app.use("/api", require("./router/ticketRouter/ticket.router.js"))
 app.use('/api', require("./router/manualQuotation.router/manualQuotationRouter.js"));
-// app.use('/api', require("./router/materialPurchaseRouter/materialPurchase.router.js"));
+app.use('/api', require("./router/materialPurchaseRouter/materialPurchase.router.js"));
 
 
 

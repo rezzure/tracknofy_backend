@@ -1,8 +1,13 @@
-// models/GRN.js
+
+
 const mongoose = require('mongoose');
 
 const grnMaterialSchema = new mongoose.Schema({
   name: {
+    type: String,
+    required: true
+  },
+  materialType: {  // ADD THIS FIELD
     type: String,
     required: true
   },
@@ -17,6 +22,10 @@ const grnMaterialSchema = new mongoose.Schema({
   unit: {
     type: String,
     required: true
+  },
+  rate: {
+    type: Number,
+    required: true
   }
 });
 
@@ -26,8 +35,13 @@ const grnSchema = new mongoose.Schema({
     unique: true,
     required: true
   },
-  purchaseOrderId: {
+  purchaseOrderId: {  // CHANGE TO STRING
     type: String,
+    required: true
+  },
+  originalPurchaseOrderId: {  // ADD THIS FOR MONGODB _ID REFERENCE
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PurchaseOrder',
     required: true
   },
   siteName: {
@@ -39,6 +53,10 @@ const grnSchema = new mongoose.Schema({
     required: true
   },
   materials: [grnMaterialSchema],
+  totalAmount: {
+    type: Number,
+    required: true
+  },
   deliveryDate: {
     type: Date,
     default: Date.now
@@ -46,6 +64,10 @@ const grnSchema = new mongoose.Schema({
   receivedBy: {
     type: String,
     required: true
+  },
+  engineerEmail: {  // ADD THIS FIELD
+    type: String,
+    // required: true
   },
   status: {
     type: String,
@@ -63,4 +85,4 @@ const grnSchema = new mongoose.Schema({
 
 const GRN = mongoose.model('GRN', grnSchema);
 
-module.exports=GRN;
+module.exports = GRN;

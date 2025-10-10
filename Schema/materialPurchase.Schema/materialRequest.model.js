@@ -5,9 +5,9 @@ const materialItemSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  materialName: {
+  name: {
     type: String,
-    required: true
+    // required: true
   },
   quantity: {
     type: Number,

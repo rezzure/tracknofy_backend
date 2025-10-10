@@ -4,13 +4,41 @@ const MaterialRequest = require("../../../Schema/materialPurchase.Schema/materia
 const PurchaseOrder = require("../../../Schema/materialPurchase.Schema/purchaseOrder.model");
 const Vendor = require("../../../Schema/materialPurchase.Schema/vendor.model");
 
-// Create Purchase Order
+
+// Create Purchase Order 
 const createPurchaseOrder = async (req, res) => {
   try {
-    const { requestIds, vendorId, vendorName, expectedDelivery, createdBy, materials, siteName, engineerEmail, engineerName, totalAmount } = req.body;
+    const { 
+      requestIds, 
+      vendorId, 
+      vendorName, 
+      expectedDelivery, 
+      createdBy, 
+      materials, 
+      siteName, 
+      siteId,
+      engineerEmail, 
+      engineerName, 
+      totalAmount 
+    } = req.body;
 
     console.log("Request Body:", req.body);
     console.log("Looking for request IDs:", requestIds);
+
+    // Validate required fields
+    if (!requestIds || requestIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No request IDs provided'
+      });
+    }
+
+    if (!vendorId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vendor ID is required'
+      });
+    }
 
     // Get approved requests
     const approvedRequests = await MaterialRequest.find({ 
@@ -31,40 +59,50 @@ const createPurchaseOrder = async (req, res) => {
     const poCount = await PurchaseOrder.countDocuments();
     const poId = `PO-${String(poCount + 1).padStart(3, '0')}`;
 
-    // Transform materials to match schema - FIX: Use 'name' instead of 'materialName'
+    // Transform materials to match schema - FIXED: Include all required fields
     const poMaterials = materials.map(material => ({
-      name: material.materialName, // CHANGED: materialName -> name
+      name: material.name, // Use 'name' directly from frontend
+      materialType: material.materialType, // Include materialType
       quantity: material.quantity,
       unit: material.unit,
       rate: material.rate || 0,
       amount: (material.quantity || 0) * (material.rate || 0)
     }));
 
-    // Create a valid ObjectId for vendor - FIX: Handle vendorId properly
+    console.log("Transformed materials:", poMaterials);
+
+    // Use the actual vendorId from request - FIXED: Don't create fake ObjectId
     let validVendorId;
     try {
-      // If vendorId is a simple string like "1", "2", "3", create a proper ObjectId
-      // In a real scenario, you'd get this from your Vendor model
-      validVendorId = new mongoose.Types.ObjectId(); // Create a new ObjectId for now
-      // TODO: Replace with actual vendor lookup from your Vendor model
+      validVendorId = new mongoose.Types.ObjectId(vendorId);
     } catch (error) {
       console.error('Error creating vendor ObjectId:', error);
-      // Fallback to a default ObjectId
-      validVendorId = new mongoose.Types.ObjectId();
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid vendor ID format'
+      });
     }
 
+    // Use data from first selected request for missing fields - FIXED
+    const firstRequest = approvedRequests[0];
+
     const newPO = new PurchaseOrder({
-      poId: poId, // FIX: Add required poId field
+      poId: poId,
       requestIds: requestIds,
-      siteName: siteName || approvedRequests[0].siteName,
-      vendorId: validVendorId, // FIX: Use proper ObjectId
+      siteName: siteName || firstRequest.siteName,
+      siteId: siteId || firstRequest.siteId, // FIXED: Include siteId
+      vendorId: validVendorId,
       vendorName: vendorName,
       materials: poMaterials,
       totalAmount: totalAmount || poMaterials.reduce((sum, material) => sum + material.amount, 0),
       expectedDelivery: expectedDelivery,
       createdBy: createdBy,
-      status: 'pending' // FIX: Use valid enum value
+      engineerEmail: engineerEmail || firstRequest.engineerEmail,
+      engineerName: engineerName || firstRequest.engineer, // FIXED: Include engineerName
+      status: 'pending'
     });
+
+    console.log("Final PO data to save:", newPO);
 
     await newPO.save();
 
@@ -87,37 +125,6 @@ const createPurchaseOrder = async (req, res) => {
     });
   }
 };
-
-// Get All Purchase Orders
-// const getAllPurchaseOrders = async (req, res) => {
-//   try {
-//     const { status } = req.query;
-//     let filter = {};
-    
-//     if (status) {
-//       filter.status = status;
-//     }
-
-//     const purchaseOrders = await PurchaseOrder.find(filter)
-//       .populate('vendorId', 'name contact rating')
-//       .sort({ createdAt: -1 });
-
-//     res.status(200).json({
-//       success: true,
-//       data: purchaseOrders,
-//       message: 'Purchase orders fetched successfully'
-//     });
-//   } catch (error) {
-//     console.error('Error fetching purchase orders:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Internal server error'
-//     });
-//   }
-// };
-
-
-
 
 // Get All Purchase Orders
 const getAllPurchaseOrders = async (req, res) => {
@@ -147,28 +154,7 @@ const getAllPurchaseOrders = async (req, res) => {
   }
 };
 
-// Get Purchase Orders by Engineer
-// const getPurchaseOrdersByEngineer = async (req, res) => {
-//   try {
-//     const { email } = req.query;
 
-//     // Find purchase orders where engineerEmail matches
-//     const purchaseOrders = await PurchaseOrder.find({ engineerEmail: email })
-//       .sort({ createdAt: -1 });
-
-//     res.status(200).json({
-//       success: true,
-//       data: purchaseOrders,
-//       message: 'Purchase orders fetched successfully'
-//     });
-//   } catch (error) {
-//     console.error('Error fetching engineer purchase orders:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Internal server error: ' + error.message
-//     });
-//   }
-// };
 
 // Get Purchase Orders by Engineer
 const getPurchaseOrdersByEngineer = async (req, res) => {

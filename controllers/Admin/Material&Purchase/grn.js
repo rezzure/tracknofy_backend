@@ -3,41 +3,62 @@ const GRN = require("../../../Schema/materialPurchase.Schema/grn.model");
 const MaterialRequest = require("../../../Schema/materialPurchase.Schema/materialRequest.model");
 const PurchaseOrder = require("../../../Schema/materialPurchase.Schema/purchaseOrder.model");
 
-// Create GRN
+
+// Create GRN - COMPLETELY FIXED VERSION
 const createGRN = async (req, res) => {
   try {
-    const { purchaseOrderId, materials, receivedBy, notes } = req.body;
+    const { purchaseOrderId, materials, receivedBy, notes, engineerEmail } = req.body;
 
-    // Get purchase order
-    const purchaseOrder = await PurchaseOrder.findOne({ poId: purchaseOrderId });
+    console.log("GRN Creation Request:", { 
+      purchaseOrderId, 
+      materials, 
+      receivedBy,
+      engineerEmail 
+    });
+
+    // FIX: Use findById since frontend sends MongoDB _id
+    const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
     if (!purchaseOrder) {
+      console.log("Purchase order not found for ID:", purchaseOrderId);
       return res.status(404).json({
         success: false,
         message: 'Purchase order not found'
       });
     }
 
-    // Validate delivered quantities
+    console.log("Found Purchase Order:", purchaseOrder.poId);
+
+    // Validate delivered quantities and prepare GRN materials
     const grnMaterials = materials.map(deliveredMaterial => {
+      // Find the corresponding material in purchase order
       const orderedMaterial = purchaseOrder.materials.find(
-        m => m.name === deliveredMaterial.name
+        m => m.name === deliveredMaterial.materialName
       );
       
       if (!orderedMaterial) {
-        throw new Error(`Material ${deliveredMaterial.name} not found in purchase order`);
+        console.log("Material not found:", deliveredMaterial.materialName);
+        console.log("Available materials:", purchaseOrder.materials.map(m => m.name));
+        throw new Error(`Material ${deliveredMaterial.materialName} not found in purchase order`);
       }
 
       if (deliveredMaterial.deliveredQuantity > orderedMaterial.quantity) {
-        throw new Error(`Delivered quantity for ${deliveredMaterial.name} exceeds ordered quantity`);
+        throw new Error(`Delivered quantity for ${deliveredMaterial.materialName} exceeds ordered quantity`);
       }
 
       return {
-        name: deliveredMaterial.name,
+        name: deliveredMaterial.materialName,
+        materialType: deliveredMaterial.materialType || orderedMaterial.materialType || 'General',
         orderedQuantity: orderedMaterial.quantity,
         deliveredQuantity: deliveredMaterial.deliveredQuantity,
-        unit: orderedMaterial.unit
+        unit: orderedMaterial.unit,
+        rate: orderedMaterial.rate || 0
       };
     });
+
+    // Calculate total amount
+    const totalAmount = grnMaterials.reduce((total, material) => {
+      return total + (material.deliveredQuantity * material.rate);
+    }, 0);
 
     // Determine GRN status
     const isFullyDelivered = grnMaterials.every(
@@ -51,24 +72,28 @@ const createGRN = async (req, res) => {
 
     const newGRN = new GRN({
       grnId,
-      purchaseOrderId,
+      purchaseOrderId: purchaseOrder.poId, // Store the string PO ID
+      originalPurchaseOrderId: purchaseOrderId, // Store the MongoDB _id
       siteName: purchaseOrder.siteName,
       vendorName: purchaseOrder.vendorName,
       materials: grnMaterials,
+      totalAmount,
       receivedBy,
+      engineerEmail: engineerEmail || purchaseOrder.engineerEmail,
       status,
-      notes
+      notes: notes || `GRN created for ${purchaseOrder.poId}`
     });
 
     await newGRN.save();
+    console.log("GRN created successfully:", newGRN.grnId);
 
-    // Update purchase order status if fully delivered
-    if (isFullyDelivered) {
-      await PurchaseOrder.findOneAndUpdate(
-        { poId: purchaseOrderId },
-        { $set: { status: 'delivered' } }
-      );
-    }
+    // Update purchase order status
+    const newPOStatus = isFullyDelivered ? 'delivered' : 'partial';
+    await PurchaseOrder.findByIdAndUpdate(
+      purchaseOrderId,
+      { $set: { status: newPOStatus } }
+    );
+    console.log("Purchase order status updated to:", newPOStatus);
 
     res.status(201).json({
       success: true,
@@ -84,76 +109,6 @@ const createGRN = async (req, res) => {
   }
 };
 
-// Get Pending Deliveries
-const getPendingDeliveries = async (req, res) => {
-  try {
-    const { email } = req.query;
-
-    let filter = { status: { $in: ['pending', 'approved'] } };
-
-    // If supervisor, only show their site's POs
-    if (email) {
-      const materialRequests = await MaterialRequest.find({ engineerEmail: email });
-      const requestIds = materialRequests.map(req => req.requestId);
-
-      const purchaseOrders = await PurchaseOrder.find({
-        requestIds: { $in: requestIds },
-        status: { $in: ['pending', 'approved'] }
-      });
-
-      const pendingDeliveries = purchaseOrders.map(po => ({
-        id: po.poId,
-        purchaseOrderId: po.poId,
-        siteName: po.siteName,
-        vendor: po.vendorName,
-        materials: po.materials.map(material => ({
-          name: material.name,
-          quantity: material.quantity,
-          unit: material.unit,
-          delivered: 0
-        })),
-        expectedDelivery: po.expectedDelivery,
-        status: po.status
-      }));
-
-      return res.status(200).json({
-        success: true,
-        data: pendingDeliveries,
-        message: 'Pending deliveries fetched successfully'
-      });
-    }
-
-    // Admin view - all pending deliveries
-    const purchaseOrders = await PurchaseOrder.find(filter).sort({ expectedDelivery: 1 });
-
-    const pendingDeliveries = purchaseOrders.map(po => ({
-      id: po.poId,
-      purchaseOrderId: po.poId,
-      siteName: po.siteName,
-      vendor: po.vendorName,
-      materials: po.materials.map(material => ({
-        name: material.name,
-        quantity: material.quantity,
-        unit: material.unit,
-        delivered: 0
-      })),
-      expectedDelivery: po.expectedDelivery,
-      status: po.status
-    }));
-
-    res.status(200).json({
-      success: true,
-      data: pendingDeliveries,
-      message: 'Pending deliveries fetched successfully'
-    });
-  } catch (error) {
-    console.error('Error fetching pending deliveries:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
-  }
-};
 
 // Get GRN History
 const getGRNHistory = async (req, res) => {
@@ -209,6 +164,84 @@ const getAllGRNs = async (req, res) => {
     });
   }
 };
+
+
+// Get Pending Deliveries - FIXED VERSION
+const getPendingDeliveries = async (req, res) => {
+  try {
+    const { email } = req.query;
+    console.log("email", email)
+
+    let filter = { status: { $in: ['pending', 'approved'] } };
+
+    if (email) {
+      // For supervisor - get POs based on their material requests
+      const purchaseOrders = await PurchaseOrder.find({
+        engineerEmail: email,
+        status: { $in: ['pending', 'approved'] }
+      }).sort({ expectedDelivery: 1 });
+
+      const pendingDeliveries = purchaseOrders.map(po => ({
+        _id: po._id, // Include MongoDB _id for GRN creation
+        poId: po.poId,
+        poNumber: po.poId,
+        siteName: po.siteName,
+        vendorName: po.vendorName,
+        materials: po.materials.map(material => ({
+          materialName: material.name,
+          materialType: material.materialType || 'General', // Add fallback
+          quantity: material.quantity,
+          unit: material.unit,
+          rate: material.rate || 0,
+          delivered: 0 // Initialize delivered quantity
+        })),
+        expectedDelivery: po.expectedDelivery,
+        status: po.status,
+        engineerEmail: po.engineerEmail
+      }));
+
+      return res.status(200).json({
+        success: true,
+        data: pendingDeliveries
+      });
+    }
+
+    // Admin view - all pending deliveries
+    const purchaseOrders = await PurchaseOrder.find(filter).sort({ expectedDelivery: 1 });
+
+    const pendingDeliveries = purchaseOrders.map(po => ({
+      _id: po._id,
+      poId: po.poId,
+      poNumber: po.poId,
+      siteName: po.siteName,
+      vendorName: po.vendorName,
+      materials: po.materials.map(material => ({
+        materialName: material.name,
+        materialType: material.materialType || 'General',
+        quantity: material.quantity,
+        unit: material.unit,
+        rate: material.rate || 0,
+        delivered: 0
+      })),
+      expectedDelivery: po.expectedDelivery,
+      status: po.status,
+      engineerEmail: po.engineerEmail
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: pendingDeliveries
+    });
+  } catch (error) {
+    console.error('Error fetching pending deliveries:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+
 
 module.exports = {
   createGRN,

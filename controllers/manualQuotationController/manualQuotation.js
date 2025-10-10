@@ -32,7 +32,7 @@ const generateQuotationId = async () => {
   return `QT-MANUAL-${timestamp}-${random}`;
 };
 
-// Generate unique quotation ID for revisions
+// Generate unique quotation ID for versions
 const generateUniqueQuotationId = async (baseQuotationId, versionNumber) => {
   let attempt = 0;
   const maxAttempts = 5;
@@ -111,7 +111,8 @@ exports.createManualQuotation = async (req, res) => {
       workItems,
       createdBy: email,
       assignedTo: assignedTo || null,
-      versionNumber: 1,
+      // NEW: Start with version 0 for unapproved quotations
+      versionNumber: 0,
       isLatestVersion: true
     });
 
@@ -245,7 +246,7 @@ exports.getManualQuotationById = async (req, res) => {
 exports.updateManualQuotation = async (req, res) => {
   try {
     const { id } = req.params;
-    const email = req.query.email; // Get email from query params
+    const email = req.query.email;
     const updateData = req.body;
 
     console.log('Updating quotation:', id, 'by user:', email);
@@ -271,9 +272,8 @@ exports.updateManualQuotation = async (req, res) => {
     // Add updated date
     updateData.updatedDate = new Date();
 
-    // FIX: Remove the createdBy filter since we're using email
     const quotation = await ManualQuotation.findOneAndUpdate(
-      { _id: id }, // Removed: createdBy: req.user._id
+      { _id: id },
       updateData,
       { 
         new: true, 
@@ -394,12 +394,188 @@ exports.updateQuotationStatus = async (req, res) => {
   }
 };
 
+// NEW: Mark quotation as version 1 (Admin action)
+exports.markAsVersionOne = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const email = req.query.email;
+
+    const quotation = await ManualQuotation.findById(id);
+    
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found'
+      });
+    }
+
+    // Only allow marking as version 1 if status is Approved
+    if (quotation.status !== 'Approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only approved quotations can be marked as version 1'
+      });
+    }
+
+    // Update to version 1
+    quotation.versionNumber = 1;
+    quotation.updatedDate = new Date();
+    
+    await quotation.save();
+
+    const populatedQuotation = await ManualQuotation.findById(quotation._id)
+      .populate('assignedTo.userId', 'name email role')
+      .populate('assignedTo.assignedBy', 'name email')
+      .populate('createdBy', 'name email');
+
+    res.status(200).json({
+      success: true,
+      message: 'Quotation marked as version 1 successfully',
+      data: populatedQuotation
+    });
+  } catch (error) {
+    console.error('Error marking quotation as version 1:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
 // Update quotation status by client (Client actions)
+// exports.updateQuotationStatusByClient = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { status, clientRemarks, workItemComments } = req.body;
+//     console.log(id, status, clientRemarks, workItemComments)
+    
+//     if (!status || !['Approved', 'Revised'].includes(status)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Valid status is required (Approved or Revised)'
+//       });
+//     }
+
+//     const quotation = await ManualQuotation.findById(id);
+
+//     if (!quotation) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'Quotation not found'
+//       });
+//     }
+
+//     // Check if user is assigned to this quotation or is the client
+//     const email = req.query.email;
+//     console.log(email)
+//     const isAssignedUser = quotation.assignedTo && quotation.assignedTo.email === email;
+//     console.log(isAssignedUser)
+//     const isClient = quotation.clientData && quotation.clientData.clientEmail === email;
+//     console.log(isClient)
+//     if (!isAssignedUser && !isClient) {
+//       return res.status(403).json({
+//         success: false,
+//         message: 'Access denied. You are not assigned to this quotation.'
+//       });
+//     }
+
+//     let updateData = {
+//       status,
+//       updatedDate: new Date(),
+//       clientRemarks: clientRemarks || '',
+//       workItemComments: workItemComments || {}
+//     };
+
+//     // If client approves, create version 1
+//     if (status === 'Approved') {
+//       // Create version history entry for current version
+//       const versionHistoryEntry = {
+//         versionNumber: 1, // First approved version becomes version 1
+//         quotationId: quotation.quotationId,
+//         createdDate: new Date(),
+//         changes: 'Approved by client - Version 1 created',
+//         createdBy: quotation.createdBy,
+//         status: 'Approved',
+//         totalAmount: quotation.totalAmount,
+//         clientRemarks: clientRemarks || '',
+//         workItemComments: workItemComments || {}
+//       };
+
+//       // Generate new quotation ID for version 1
+//       const newQuotationId = await generateUniqueQuotationId(quotation.quotationId, 1);
+
+//       // Update current quotation to not be latest and mark as approved with version 1
+//       await ManualQuotation.findByIdAndUpdate(id, {
+//         isLatestVersion: false,
+//         status: 'Approved',
+//         versionNumber: 0, // Keep original as version 0
+//         versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry]
+//       });
+
+//       // Create new approved version with version 1
+//       const newQuotation = new ManualQuotation({
+//         ...quotation.toObject(),
+//         _id: undefined,
+//         quotationId: newQuotationId,
+//         versionNumber: 1, // This becomes version 1
+//         status: 'Approved',
+//         isLatestVersion: true,
+//         versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry],
+//         clientRemarks: clientRemarks || '',
+//         workItemComments: workItemComments || {},
+//         generatedDate: new Date(),
+//         updatedDate: new Date()
+//       });
+
+//       const savedQuotation = await newQuotation.save();
+//       const populatedQuotation = await ManualQuotation.findById(savedQuotation._id)
+//         .populate('assignedTo.userId', 'name email role')
+//         .populate('assignedTo.assignedBy', 'name email')
+//         .populate('createdBy', 'name email');
+
+//       return res.status(200).json({
+//         success: true,
+//         message: 'Quotation approved successfully and marked as version 1',
+//         data: populatedQuotation
+//       });
+//     }
+
+//     // If client requests revisions, update status
+//     if (status === 'Revised') {
+//       updateData.status = 'Revised';
+      
+//       const updatedQuotation = await ManualQuotation.findByIdAndUpdate(
+//         id,
+//         updateData,
+//         { new: true, runValidators: true }
+//       )
+//       .populate('assignedTo.userId', 'name email role')
+//       .populate('assignedTo.assignedBy', 'name email')
+//       .populate('createdBy', 'name email');
+
+//       return res.status(200).json({
+//         success: true,
+//         message: 'Revision requested successfully. Admin will review your feedback.',
+//         data: updatedQuotation
+//       });
+//     }
+
+//   } catch (error) {
+//     console.error('Error updating quotation status by client:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//       error: error.message
+//     });
+//   }
+// };
+// Update quotation status by client (Client actions) - FIXED VERSION
 exports.updateQuotationStatusByClient = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, clientRemarks, workItemComments } = req.body;
-    console.log(id,status, clientRemarks, workItemComments)
+    console.log("Client status update:", id, status, clientRemarks, workItemComments);
     
     if (!status || !['Approved', 'Revised'].includes(status)) {
       return res.status(400).json({
@@ -408,7 +584,7 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       });
     }
 
-    const quotation = await ManualQuotation.findById({_id:id});
+    const quotation = await ManualQuotation.findById(id);
 
     if (!quotation) {
       return res.status(404).json({
@@ -419,11 +595,12 @@ exports.updateQuotationStatusByClient = async (req, res) => {
 
     // Check if user is assigned to this quotation or is the client
     const email = req.query.email;
-    console.log(email)
+    console.log("Client email:", email);
     const isAssignedUser = quotation.assignedTo && quotation.assignedTo.email === email;
-    console.log(isAssignedUser)
     const isClient = quotation.clientData && quotation.clientData.clientEmail === email;
-    console.log(isClient)
+    
+    console.log("Access check - isAssignedUser:", isAssignedUser, "isClient:", isClient);
+    
     if (!isAssignedUser && !isClient) {
       return res.status(403).json({
         success: false,
@@ -431,21 +608,14 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       });
     }
 
-    let updateData = {
-      status,
-      updatedDate: new Date(),
-      clientRemarks: clientRemarks || '',
-      workItemComments: workItemComments || {}
-    };
-
-    // If client approves, create a new approved version
+    // If client approves, create version 1
     if (status === 'Approved') {
       // Create version history entry for current version
       const versionHistoryEntry = {
-        versionNumber: quotation.versionNumber,
+        versionNumber: 1, // First approved version becomes version 1
         quotationId: quotation.quotationId,
-        createdDate: quotation.generatedDate,
-        changes: 'Approved by client',
+        createdDate: new Date(),
+        changes: 'Approved by client - Version 1 created',
         createdBy: quotation.createdBy,
         status: 'Approved',
         totalAmount: quotation.totalAmount,
@@ -453,23 +623,23 @@ exports.updateQuotationStatusByClient = async (req, res) => {
         workItemComments: workItemComments || {}
       };
 
-      // Update current quotation to not be latest and mark as approved
+      // Generate new quotation ID for version 1
+      const newQuotationId = await generateUniqueQuotationId(quotation.quotationId, 1);
+
+      // Update current quotation to not be latest and mark as approved with version 1
       await ManualQuotation.findByIdAndUpdate(id, {
         isLatestVersion: false,
         status: 'Approved',
+        versionNumber: 0, // Keep original as version 0
         versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry]
       });
 
-      // Generate unique quotation ID for the new approved version
-      const newVersionNumber = quotation.versionNumber + 1;
-      const newQuotationId = await generateUniqueQuotationId(quotation.quotationId, newVersionNumber);
-
-      // Create new approved version (same data but marked as approved and latest)
+      // Create new approved version with version 1
       const newQuotation = new ManualQuotation({
         ...quotation.toObject(),
         _id: undefined,
         quotationId: newQuotationId,
-        versionNumber: newVersionNumber,
+        versionNumber: 1, // This becomes version 1
         status: 'Approved',
         isLatestVersion: true,
         versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry],
@@ -487,15 +657,23 @@ exports.updateQuotationStatusByClient = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: 'Quotation approved successfully',
+        message: 'Quotation approved successfully and marked as version 1',
         data: populatedQuotation
       });
     }
 
-    // If client requests revisions, update status and auto-create revision
+    // If client requests revisions, update status and save comments - FIXED
     if (status === 'Revised') {
-      updateData.status = 'Revised';
+      console.log("Updating quotation with revision feedback");
       
+      // Update the current quotation with client feedback
+      const updateData = {
+        status: 'Revised',
+        updatedDate: new Date(),
+        clientRemarks: clientRemarks || '',
+        workItemComments: workItemComments || {}
+      };
+
       const updatedQuotation = await ManualQuotation.findByIdAndUpdate(
         id,
         updateData,
@@ -505,8 +683,7 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       .populate('assignedTo.assignedBy', 'name email')
       .populate('createdBy', 'name email');
 
-      // Auto-create revision for admin to work on
-      await this.createRevisionFromClientFeedback(id, clientRemarks, workItemComments, req.user._id);
+      console.log("Updated quotation:", updatedQuotation);
 
       return res.status(200).json({
         success: true,
@@ -525,65 +702,198 @@ exports.updateQuotationStatusByClient = async (req, res) => {
   }
 };
 
-// Helper function to create revision from client feedback
-exports.createRevisionFromClientFeedback = async (quotationId, clientRemarks, workItemComments, userId) => {
+// Create revision of quotation (Admin action after client requests revision)
+exports.createRevision = async (req, res) => {
   try {
-    const originalQuotation = await ManualQuotation.findById(quotationId);
-    
-    if (!originalQuotation) {
-      throw new Error('Quotation not found');
+    const { id } = req.params;
+    const { revisionReason, changes } = req.body;
+
+    if (!revisionReason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Revision reason is required'
+      });
     }
+
+    // Find the original quotation
+    const originalQuotation = await ManualQuotation.findOne({
+      _id: id
+    });
+
+    if (!originalQuotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found'
+      });
+    }
+
+    // Get the next version number (increment from current version)
+    const nextVersionNumber = originalQuotation.versionNumber + 1;
 
     // Create version history entry for original quotation
     const versionHistoryEntry = {
       versionNumber: originalQuotation.versionNumber,
       quotationId: originalQuotation.quotationId,
       createdDate: originalQuotation.generatedDate,
-      changes: 'Client requested revisions: ' + (clientRemarks || 'No specific remarks'),
+      changes: changes || `Revised: ${revisionReason}`,
       createdBy: originalQuotation.createdBy,
-      status: 'Revised',
+      status: originalQuotation.status,
       totalAmount: originalQuotation.totalAmount,
-      clientRemarks: clientRemarks || '',
-      workItemComments: workItemComments || {}
+      clientRemarks: originalQuotation.clientRemarks,
+      workItemComments: originalQuotation.workItemComments
     };
 
     // Update original quotation to not be latest version
-    await ManualQuotation.findByIdAndUpdate(quotationId, {
+    await ManualQuotation.findByIdAndUpdate(id, {
       isLatestVersion: false,
       status: 'Revised',
       versionHistory: [...(originalQuotation.versionHistory || []), versionHistoryEntry]
     });
 
-    // Create new revision with client feedback
-    const newVersionNumber = originalQuotation.versionNumber + 1;
-    
-    // FIX: Generate unique quotation ID for the revision
-    const newQuotationId = await generateUniqueQuotationId(originalQuotation.quotationId, newVersionNumber);
+    // Generate new quotation ID for the revision
+    const newQuotationId = await generateUniqueQuotationId(originalQuotation.quotationId, nextVersionNumber);
 
     const revisionQuotation = new ManualQuotation({
       ...originalQuotation.toObject(),
       _id: undefined,
       quotationId: newQuotationId,
-      versionNumber: newVersionNumber,
+      versionNumber: nextVersionNumber,
       isLatestVersion: true,
       parentQuotationId: originalQuotation._id,
       generatedDate: new Date(),
       updatedDate: new Date(),
-      status: 'Draft',
-      revisionReason: `Client requested revisions: ${clientRemarks || 'No specific remarks'}`,
+      status: 'Sent', // Send to client for approval
+      revisionReason: revisionReason,
       clientRemarks: '',
       workItemComments: {},
       versionHistory: [],
       assignedTo: originalQuotation.assignedTo || null,
-      // Set auto-send flag to true so when admin saves, it automatically sends to client
-      autoSendToClient: true
+      autoSendToClient: false
     });
 
-    await revisionQuotation.save();
-    
+    const savedRevision = await revisionQuotation.save();
+
+    // Populate the saved revision
+    const populatedRevision = await ManualQuotation.findById(savedRevision._id)
+      .populate('assignedTo.userId', 'name email role')
+      .populate('assignedTo.assignedBy', 'name email')
+      .populate('createdBy', 'name email');
+
+    res.status(201).json({
+      success: true,
+      message: 'Quotation revision created and sent to client successfully',
+      data: populatedRevision
+    });
   } catch (error) {
-    console.error('Error creating revision from client feedback:', error);
-    throw error;
+    console.error('Error creating quotation revision:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+// Get all versions of a quotation
+exports.getQuotationVersions = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the root quotation (the one that was clicked)
+    const rootQuotation = await ManualQuotation.findById(id);
+    
+    if (!rootQuotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found'
+      });
+    }
+
+    // Find all versions - either parent is the root or the quotation itself is the root
+    let versions;
+    
+    if (rootQuotation.parentQuotationId) {
+      // If this quotation has a parent, get all versions from the parent
+      versions = await ManualQuotation.find({
+        $or: [
+          { _id: rootQuotation.parentQuotationId },
+          { parentQuotationId: rootQuotation.parentQuotationId }
+        ]
+      })
+      .sort({ versionNumber: 1 })
+      .populate('assignedTo.userId', 'name email role')
+      .populate('assignedTo.assignedBy', 'name email')
+      .populate('createdBy', 'name email');
+    } else {
+      // If this is the root quotation, get all its versions
+      versions = await ManualQuotation.find({
+        $or: [
+          { _id: rootQuotation._id },
+          { parentQuotationId: rootQuotation._id }
+        ]
+      })
+      .sort({ versionNumber: 1 })
+      .populate('assignedTo.userId', 'name email role')
+      .populate('assignedTo.assignedBy', 'name email')
+      .populate('createdBy', 'name email');
+    }
+
+    if (!versions || versions.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No quotation versions found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Quotation versions fetched successfully',
+      data: versions
+    });
+  } catch (error) {
+    console.error('Error fetching quotation versions:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
+// Get specific version of quotation
+exports.getQuotationVersion = async (req, res) => {
+  try {
+    const { id, versionNumber } = req.params;
+
+    const version = await ManualQuotation.findOne({
+      $or: [
+        { _id: id, versionNumber: parseInt(versionNumber) },
+        { parentQuotationId: id, versionNumber: parseInt(versionNumber) }
+      ]
+    })
+    .populate('assignedTo.userId', 'name email role')
+    .populate('assignedTo.assignedBy', 'name email')
+    .populate('createdBy', 'name email');
+
+    if (!version) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation version not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Quotation version fetched successfully',
+      data: version
+    });
+  } catch (error) {
+    console.error('Error fetching quotation version:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
   }
 };
 
@@ -694,202 +1004,6 @@ exports.removeAssignedUser = async (req, res) => {
     });
   } catch (error) {
     console.error('Error removing assigned user from quotation:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
-};
-
-// Create revision of quotation
-exports.createRevision = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { revisionReason, changes } = req.body;
-
-    if (!revisionReason) {
-      return res.status(400).json({
-        success: false,
-        message: 'Revision reason is required'
-      });
-    }
-
-    // Find the original quotation
-    const originalQuotation = await ManualQuotation.findOne({
-      _id: id
-    });
-
-    if (!originalQuotation) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quotation not found'
-      });
-    }
-
-    // Create version history entry for original quotation
-    const versionHistoryEntry = {
-      versionNumber: originalQuotation.versionNumber,
-      quotationId: originalQuotation.quotationId,
-      createdDate: originalQuotation.generatedDate,
-      changes: changes || 'Initial version',
-      createdBy: originalQuotation.createdBy,
-      status: originalQuotation.status,
-      totalAmount: originalQuotation.totalAmount,
-      clientRemarks: originalQuotation.clientRemarks,
-      workItemComments: originalQuotation.workItemComments
-    };
-
-    // Update original quotation to not be latest version
-    await ManualQuotation.findByIdAndUpdate(id, {
-      isLatestVersion: false,
-      status: 'Revised',
-      versionHistory: [...(originalQuotation.versionHistory || []), versionHistoryEntry]
-    });
-
-    // Create new revision
-    const newVersionNumber = originalQuotation.versionNumber + 1;
-    
-    // FIX: Generate unique quotation ID for the revision
-    const newQuotationId = await generateUniqueQuotationId(originalQuotation.quotationId, newVersionNumber);
-
-    const revisionQuotation = new ManualQuotation({
-      ...originalQuotation.toObject(),
-      _id: undefined, // Let MongoDB generate new _id
-      quotationId: newQuotationId,
-      versionNumber: newVersionNumber,
-      isLatestVersion: true,
-      parentQuotationId: originalQuotation._id,
-      generatedDate: new Date(),
-      updatedDate: new Date(),
-      status: 'Draft',
-      revisionReason: revisionReason,
-      clientRemarks: '',
-      workItemComments: {},
-      versionHistory: [],
-      assignedTo: originalQuotation.assignedTo || null,
-      // Set auto-send to true for automatic sending after admin edits
-      autoSendToClient: true
-    });
-
-    const savedRevision = await revisionQuotation.save();
-
-    // Populate the saved revision
-    const populatedRevision = await ManualQuotation.findById(savedRevision._id)
-      .populate('assignedTo.userId', 'name email role')
-      .populate('assignedTo.assignedBy', 'name email')
-      .populate('createdBy', 'name email');
-
-    res.status(201).json({
-      success: true,
-      message: 'Quotation revision created successfully',
-      data: populatedRevision
-    });
-  } catch (error) {
-    console.error('Error creating quotation revision:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
-};
-
-// Get all versions of a quotation
-exports.getQuotationVersions = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Find the root quotation (the one that was clicked)
-    const rootQuotation = await ManualQuotation.findById(id);
-    
-    if (!rootQuotation) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quotation not found'
-      });
-    }
-
-    // Find all versions - either parent is the root or the quotation itself is the root
-    let versions;
-    
-    if (rootQuotation.parentQuotationId) {
-      // If this quotation has a parent, get all versions from the parent
-      versions = await ManualQuotation.find({
-        $or: [
-          { _id: rootQuotation.parentQuotationId },
-          { parentQuotationId: rootQuotation.parentQuotationId }
-        ]
-      })
-      .sort({ versionNumber: 1 })
-      .populate('assignedTo.userId', 'name email role')
-      .populate('assignedTo.assignedBy', 'name email')
-      .populate('createdBy', 'name email');
-    } else {
-      // If this is the root quotation, get all its versions
-      versions = await ManualQuotation.find({
-        $or: [
-          { _id: rootQuotation._id },
-          { parentQuotationId: rootQuotation._id }
-        ]
-      })
-      .sort({ versionNumber: 1 })
-      .populate('assignedTo.userId', 'name email role')
-      .populate('assignedTo.assignedBy', 'name email')
-      .populate('createdBy', 'name email');
-    }
-
-    if (!versions || versions.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'No quotation versions found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Quotation versions fetched successfully',
-      data: versions
-    });
-  } catch (error) {
-    console.error('Error fetching quotation versions:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message
-    });
-  }
-};
-
-// Get specific version of quotation
-exports.getQuotationVersion = async (req, res) => {
-  try {
-    const { id, versionNumber } = req.params;
-
-    const version = await ManualQuotation.findOne({
-      $or: [
-        { _id: id, versionNumber: parseInt(versionNumber) },
-        { parentQuotationId: id, versionNumber: parseInt(versionNumber) }
-      ]
-    })
-    .populate('assignedTo.userId', 'name email role')
-    .populate('assignedTo.assignedBy', 'name email')
-    .populate('createdBy', 'name email');
-
-    if (!version) {
-      return res.status(404).json({
-        success: false,
-        message: 'Quotation version not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Quotation version fetched successfully',
-      data: version
-    });
-  } catch (error) {
-    console.error('Error fetching quotation version:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',

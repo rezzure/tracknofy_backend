@@ -1,257 +1,3 @@
-// const mongoose = require('mongoose');
-
-// const workCategorySchema = new mongoose.Schema({
-//   id: {
-//     type: String,
-//     // required: true
-//   },
-//   categoryNumber: {
-//     type: Number,
-//     // required: true
-//   },
-//   workCategory: {
-//     type: String,
-//     // required: true
-//   },
-//   workType: {
-//     type: String,
-//     // required: true
-//   },
-//   task: {
-//     type: String,
-//     default: ""
-//   },
-//   materials: {
-//     type: String,
-//     // required: true
-//   },
-//   length: {
-//     type: String,
-//     default: ""
-//   },
-//   width: {
-//     type: String,
-//     default: ""
-//   },
-//   height: {
-//     type: String,
-//     default: ""
-//   },
-//   unit: {
-//     type: String,
-//     default: "sqm"
-//   },
-//   quantity: {
-//     type: String,
-//     // required: true
-//   },
-//   rate: {
-//     type: String,
-//     // required: true
-//   },
-//   totalAmount: {
-//     type: Number,
-//     // required: true
-//   },
-//   remarks: {
-//     type: String,
-//     default: ""
-//   }
-// });
-
-// const workItemSchema = new mongoose.Schema({
-//   id: {
-//     type: Number,
-//     // required: true
-//   },
-//   serialNo: {
-//     type: Number,
-//     // required: true
-//   },
-//   floor: {
-//     type: String,
-//     // required: true
-//   },
-//   roomNumber: {
-//     type: String,
-//     // required: true
-//   },
-//   projectType: {
-//     type: String,
-//     // required: true
-//   },
-//   scopeOfWork: {
-//     type: String,
-//     // required: true
-//   },
-//   workCategories: [workCategorySchema]
-// });
-
-// const clientDataSchema = new mongoose.Schema({
-//   siteName: {
-//     type: String,
-//     // required: true
-//   },
-//   clientName: {
-//     type: String,
-//     // required: true
-//   },
-//   clientEmail: {
-//     type: String,
-//     default: ""
-//   },
-//   clientPhone: {
-//     type: String,
-//     default: ""
-//   },
-//   siteAddress: {
-//     type: String,
-//     default: ""
-//   },
-//   quotationDate: {
-//     type: String,
-//     // required: true
-//   },
-//   validityPeriod: {
-//     type: Number,
-//     default: 30
-//   },
-//   notes: {
-//     type: String,
-//     default: ""
-//   }
-// });
-
-// // const manualQuotationSchema = new mongoose.Schema({
-// //   quotationId: {
-// //     type: String,
-// //     // required: true,
-// //     unique: true
-// //   },
-// //   siteName: {
-// //     type: String,
-// //     // required: true
-// //   },
-// //   clientName: {
-// //     type: String,
-// //     // required: true
-// //   },
-// //   generatedDate: {
-// //     type: Date,
-// //     // required: true
-// //   },
-// //   updatedDate: {
-// //     type: Date,
-// //     default: Date.now
-// //   },
-// //   totalAmount: {
-// //     type: Number,
-// //     // required: true
-// //   },
-// //   status: {
-// //     type: String,
-// //     enum: ['Draft', 'Sent', 'Approved', 'Rejected'],
-// //     default: 'Draft'
-// //   },
-// //   sections: {
-// //     type: Number,
-// //     // required: true
-// //   },
-// //   type: {
-// //     type: String,
-// //     enum: ['manual', 'survey'],
-// //     default: 'manual'
-// //   },
-// //   clientData: clientDataSchema,
-// //   workItems: [workItemSchema],
-// //   createdBy: {
-// //     type: mongoose.Schema.Types.ObjectId,
-// //     ref: 'User',
-// //     // required: true
-// //   }
-// // }
-// const manualQuotationSchema = new mongoose.Schema({
-//   quotationId: {
-//     type: String,
-//     // required: true,
-//     unique: true
-//   },
-//   siteName: {
-//     type: String,
-//     // required: true
-//   },
-//   clientName: {
-//     type: String,
-//     // required: true
-//   },
-//   generatedDate: {
-//     type: Date,
-//     // required: true
-//   },
-//   updatedDate: {
-//     type: Date,
-//     default: Date.now
-//   },
-//   totalAmount: {
-//     type: Number,
-//     // required: true
-//   },
-//   status: {
-//     type: String,
-//     enum: ['Draft', 'Sent', 'Approved', 'Rejected', 'Revised'], // Added 'Revised' status
-//     default: 'Draft'
-//   },
-//   sections: {
-//     type: Number,
-//     // required: true
-//   },
-//   type: {
-//     type: String,
-//     enum: ['manual', 'survey'],
-//     default: 'manual'
-//   },
-//   clientData: clientDataSchema,
-//   workItems: [workItemSchema],
-//   createdBy: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: 'User',
-//     // required: true
-//   },
-//   // NEW FIELDS FOR CLIENT COMMENTS
-//   clientRemarks: {
-//     type: String,
-//     default: ""
-//   },
-//   workItemComments: {
-//     type: mongoose.Schema.Types.Mixed, // Flexible object to store comments by work item and category
-//     default: {}
-//   }
-// }, {
-//   timestamps: true
-// });
-
-
-// // Create index for better query performance
-// manualQuotationSchema.index({ quotationId: 1 });
-// manualQuotationSchema.index({ createdBy: 1 });
-// manualQuotationSchema.index({ status: 1 });
-
-// module.exports = mongoose.model('ManualQuotation', manualQuotationSchema);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const mongoose = require('mongoose');
 
 const workCategorySchema = new mongoose.Schema({
@@ -386,6 +132,46 @@ const assignedUserSchema = new mongoose.Schema({
   }
 });
 
+const versionHistorySchema = new mongoose.Schema({
+  versionNumber: {
+    type: Number,
+    required: true
+  },
+  quotationId: {
+    type: String,
+    required: true
+  },
+  createdDate: {
+    type: Date,
+    default: Date.now
+  },
+  changes: {
+    type: String,
+    default: ""
+  },
+  createdBy: {
+    type:String
+    // type: mongoose.Schema.Types.ObjectId,
+    // ref: 'User',
+  },
+  status: {
+    type: String,
+    enum: ['Draft', 'Sent', 'Approved', 'Rejected', 'Revised'],
+    default: 'Draft'
+  },
+  totalAmount: {
+    type: Number,
+  },
+  clientRemarks: {
+    type: String,
+    default: ""
+  },
+  workItemComments: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  }
+});
+
 const manualQuotationSchema = new mongoose.Schema({
   quotationId: {
     type: String,
@@ -423,8 +209,9 @@ const manualQuotationSchema = new mongoose.Schema({
   clientData: clientDataSchema,
   workItems: [workItemSchema],
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type:String
+    // type: mongoose.Schema.Types.ObjectId,
+    // ref: 'User',
   },
   clientRemarks: {
     type: String,
@@ -434,8 +221,30 @@ const manualQuotationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
-  // NEW FIELD FOR ASSIGNED USER
-  assignedTo: assignedUserSchema
+  assignedTo: assignedUserSchema,
+  // VERSIONING FIELDS
+  versionNumber: {
+    type: Number,
+    default: 1
+  },
+  isLatestVersion: {
+    type: Boolean,
+    default: true
+  },
+  parentQuotationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ManualQuotation'
+  },
+  versionHistory: [versionHistorySchema],
+  revisionReason: {
+    type: String,
+    default: ""
+  },
+  // NEW FIELD FOR AUTO-SEND AFTER REVISION
+  autoSendToClient: {
+    type: Boolean,
+    default: false
+  }
 }, {
   timestamps: true
 });
@@ -445,5 +254,7 @@ manualQuotationSchema.index({ quotationId: 1 });
 manualQuotationSchema.index({ createdBy: 1 });
 manualQuotationSchema.index({ status: 1 });
 manualQuotationSchema.index({ 'assignedTo.userId': 1 });
+manualQuotationSchema.index({ parentQuotationId: 1 });
+manualQuotationSchema.index({ isLatestVersion: 1 });
 
 module.exports = mongoose.model('ManualQuotation', manualQuotationSchema);

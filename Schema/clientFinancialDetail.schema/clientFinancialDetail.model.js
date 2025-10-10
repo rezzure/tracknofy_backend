@@ -5,14 +5,14 @@ const financialDetailSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Client name is required'],
     trim: true,
-    enum: ['xyz', 'abc', 'fdj'],
+    // enum: ['xyz', 'abc', 'fdj'],
     maxlength: [50, 'Client name cannot exceed 50 characters']
   },
   siteName: {
     type: String,
     required: [true, 'Site name is required'],
     trim: true,
-    enum: ['site a', 'site b', 'site c'],
+    // enum: ['site a', 'site b', 'site c'],
     maxlength: [50, 'Site name cannot exceed 50 characters']
   },
   gstNo: {

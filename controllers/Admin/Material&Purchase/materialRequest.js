@@ -3,10 +3,13 @@ const MaterialRequest = require("../../../Schema/materialPurchase.Schema/materia
 
 
 
-// Create Material Request
+// Create Material Request - Improved version
+
 const createMaterialRequest = async (req, res) => {
   try {
     const { siteId, siteName, engineer, engineerEmail, materials, requiredBy, priority } = req.body;
+
+    console.log('Received material request:', req.body);
 
     // Validate required fields
     if (!siteId || !siteName || !engineer || !requiredBy || !materials || materials.length === 0) {
@@ -14,6 +17,16 @@ const createMaterialRequest = async (req, res) => {
         success: false,
         message: 'All required fields must be filled'
       });
+    }
+
+    // Validate materials array
+    for (let material of materials) {
+      if (!material.materialType || !material.name || !material.quantity || !material.unit) {
+        return res.status(400).json({
+          success: false,
+          message: 'All material fields (type, name, quantity, unit) are required'
+        });
+      }
     }
 
     // Generate request ID
@@ -25,10 +38,15 @@ const createMaterialRequest = async (req, res) => {
       siteId,
       siteName,
       engineer,
-      engineerEmail,
-      materials,
+      engineerEmail: engineerEmail || req.user?.email, // Fallback
+      materials: materials.map(material => ({
+        materialType: material.materialType,
+        name: material.name, // Ensure we use 'name' as per schema
+        quantity: material.quantity,
+        unit: material.unit
+      })),
       requiredBy,
-      priority,
+      priority: priority || 'medium',
       status: 'pending'
     });
 
@@ -47,6 +65,25 @@ const createMaterialRequest = async (req, res) => {
     });
   }
 };
+
+
+// In your material requests routes file
+const countMaterialReqDoc = async (req, res) => {
+  try {
+    const count = await MaterialRequest.countDocuments();
+    res.json({
+      success: true,
+      count: count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error counting requests'
+    });
+  }
+};
+
+
 
 // Get All Material Requests (Admin)
 const getAllMaterialRequests = async (req, res) => {
@@ -160,5 +197,6 @@ module.exports = {
   getAllMaterialRequests,
   getMaterialRequestsByEngineer,
   updateMaterialRequestStatus,
-  getMaterialMaster
+  getMaterialMaster,
+  countMaterialReqDoc
 };

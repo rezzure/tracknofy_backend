@@ -1,24 +1,19 @@
+// controllers/Admin/addDesign.js
 const Design = require("../../Schema/designApproval.schema/designApproval.model");
-const Admin = require("../../Schema/admin.schema/admine.model"); // Add this import
-const Supervisor = require("../../Schema/supervisor.schema/supervisor.model"); // Add User import if needed
+const Admin = require("../../Schema/admin.schema/admine.model");
+const Supervisor = require("../../Schema/supervisor.schema/supervisor.model");
 
 const addDesign = async (req, res) => {
   try {
     const email = req.query.email;
-    
-    console.log("Looking for user with email:", email);
-    
-    // First try to find in Admin collection
+
     let user = await Admin.findOne({ email });
     let userModel = "Admin";
 
-    // If not found in Admin, try User collection
     if (!user) {
       user = await Supervisor.findOne({ email });
       userModel = "User";
     }
-
-    console.log("User found:", user);
     
     if (!user) {
       return res.status(404).send({ 
@@ -37,7 +32,7 @@ const addDesign = async (req, res) => {
       imageType,
       title,
       description,
-      project,
+      // project,
       createdBy,
     } = req.body;
 
@@ -66,7 +61,7 @@ const addDesign = async (req, res) => {
         destination: req.file.destination,
         filename: req.file.filename,
         path: relativePath,
-        size: req.file.size
+        size: req.file.size / 1024 // size in KB
       };
     }
 
@@ -80,7 +75,7 @@ const addDesign = async (req, res) => {
       imageType: imageType,
       title: title,
       description: description,
-      project: project || title,
+      // project: project || title,
       image: imageData,
       fileName: req.file.originalname,
       fileType: req.file.mimetype.startsWith('image/') ? 'image' : 'pdf',
@@ -89,14 +84,13 @@ const addDesign = async (req, res) => {
       createdByName: user.name || user.userName || createdBy, // Store the name
       createdByEmail: user.email, // Store the email
       status: "pending",
-      versionNumber: 1
+      versionNumber: 1,
+      workflow_remark: "",
+      comments: [],
+      isChatEnabled: true
     }
 
-    console.log("Creating design with data:", designData);
-
     let data = await Design.create(designData);
-    
-    console.log("Design created successfully:", data);
     
     return res.status(200).send({
       success: true,
@@ -113,4 +107,136 @@ const addDesign = async (req, res) => {
   }
 }
 
-module.exports = addDesign;
+// Update design status with workflow remarks and chat control
+const updateDesignStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks, updatedBy, userRole } = req.body;
+
+    // Validate required fields
+    if (!status) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Status is required" 
+      });
+    }
+
+    // Validate status value
+    const validStatuses = ['pending', 'sent', 'approved', 'review'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` 
+      });
+    }
+
+    // Prepare update data
+    const updateData = {
+      status: status,
+      updatedAt: new Date(),
+      workflow_remark: remarks || ""
+    };
+
+    // Disable chat when design is approved
+    if (status === 'approved') {
+      updateData.isChatEnabled = false;
+    }
+
+    // Add remarks as comment if provided
+    if (remarks && remarks.trim()) {
+      updateData.$push = {
+        comments: {
+          text: remarks.trim(),
+          user: updatedBy || "Unknown",
+          userRole: userRole || "Unknown",
+          date: new Date()
+        }
+      };
+    }
+
+    // Update the design
+    const design = await Design.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true } // Return updated document
+    );
+
+    if (!design) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Design not found" 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      data: design, 
+      message: `Design status updated to ${status}` 
+    });
+  } catch (error) {
+    console.error('Error updating design status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error: " + error.message 
+    });
+  }
+};
+
+// Add comment to design
+const addComments = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text, user, userRole } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Comment text is required"
+      });
+    }
+
+    const design = await Design.findById(id);
+    if (!design) {
+      return res.status(404).json({
+        success: false,
+        message: "Design not found"
+      });
+    }
+
+    // Check if chat is enabled
+    if (!design.isChatEnabled) {
+      return res.status(400).json({
+        success: false,
+        message: "Chat is disabled for this design as it has been approved"
+      });
+    }
+
+    const newComment = {
+      text: text.trim(),
+      user: user || "Unknown",
+      userRole: userRole || "Unknown",
+      date: new Date()
+    };
+
+    design.comments.push(newComment);
+    await design.save();
+
+    res.json({
+      success: true,
+      data: design,
+      message: "Comment added successfully"
+    });
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    res.status(500).json({
+      success: false,
+      message: "Server error: " + error.message
+    });
+  }
+};
+
+module.exports = {
+  addDesign,
+  updateDesignStatus,
+  addComments
+};

@@ -1,5 +1,24 @@
 const mongoose = require("mongoose");
 
+const commentSchema = new mongoose.Schema({
+  text: {
+    type: String,
+    required: true
+  },
+  user: {
+    type: String,
+    required: true
+  },
+  userRole: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const designSchema = new mongoose.Schema(
   {
     siteId: {
@@ -9,27 +28,18 @@ const designSchema = new mongoose.Schema(
     siteName: {
       type: String,
       required: true,
-      trim: true,
     },
     floorName: {
       type: String,
-      required: true,
-      trim: true,
     },
     scopeOfWork: {
       type: String,
-      required: true,
-      trim: true,
     },
     workItem: {
       type: String,
-      required: true,
-      trim: true,
     },
     workType: {
       type: String,
-      required: true,
-      trim: true,
     },
     imageType: {
       type: String,
@@ -39,17 +49,13 @@ const designSchema = new mongoose.Schema(
     },
     title: {
       type: String,
-      required: true,
-      trim: true,
     },
     description: {
       type: String,
-      trim: true,
     },
-    project: {
-      type: String,
-      trim: true,
-    },
+    // project: {
+    //   type: String,
+    // },
     image: {
       fieldname: String,
       originalname: String,
@@ -61,12 +67,10 @@ const designSchema = new mongoose.Schema(
     },
     fileName: {
       type: String,
-      required: true,
     },
     fileType: {
       type: String,
       enum: ["image", "pdf"],
-      required: true,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -75,18 +79,27 @@ const designSchema = new mongoose.Schema(
     },
     createdByModel: {
       type: String,
-      // enum: ["Admin", "Supervisor"],
+      enum: ["Admin", "Supervisor"],
       required: true,
     },
-    status: {
+    status: { 
       type: String,
-      enum: ["pending", "sent", "approved", "rejected", "review"],
+      enum: ["pending", "sent", "approved", "review"],
       default: "pending",
     },
     versionNumber: {
       type: Number,
       default: 1,
     },
+    workflow_remark: {
+      type: String,
+      default: ""
+    },
+    comments: [commentSchema],
+    isChatEnabled: {
+      type: Boolean,
+      default: true
+    }
   },
   {
     timestamps: true,

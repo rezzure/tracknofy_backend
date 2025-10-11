@@ -87,17 +87,20 @@ const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
 const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
 
 // Design Approval Controllers
-const { addDesign, updateDesignStatus, addComments } = require("../../controllers/Admin/addDesign.js"); // Destructure imports
+const { addDesign, addComments } = require("../../controllers/Admin/addDesign.js");
+const updateDesignStatus = require("../../controllers/Admin/updateDesignStatus.js");
+const deleteDesign = require("../../controllers/Admin/deleteDesign.js");
 const getDesign = require("../../controllers/Admin/getDesign.js");
 
-// ==================== DESIGN APPROVAL ROUTES ====================
+// DESIGN APPROVAL ROUTES
 router.post("/add/design", verification, upload.single("designFile"), addDesign);
-router.get("/get/design/site/:siteId", verification, getDesign);
 router.get("/get/design", verification, getDesign);
+router.get("/get/design/site/:siteId", verification, getDesign);
 
 // router for design status update
+router.post('/design/:id/comment', verification, addComments);
 router.patch("/design/:id/status", verification, updateDesignStatus);
-router.post('/design/:id/comment', addComments);
+router.delete("/design/:id", verification, deleteDesign);
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);

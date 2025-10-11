@@ -8,6 +8,20 @@ const getClientDetails = require("../../controllers/Client/getClientDetail.js");
 const getProgressReport = require("../../controllers/Client/getProgressReport.js");
 const getLastPayment = require("../../controllers/Client/getLastPayment.js");
 const getSupervisorDetail = require("../../controllers/Client/getSupervisorDetail.js");
+const {
+  getClientDesigns,
+  handleClientAction,
+  addClientComment,
+  getClientDesignDetails,
+  getClientStats
+} = require('../../controllers/Client/designApproval.js');
+
+// Client design routes
+router.get('/client/designs', getClientDesigns);
+router.get('/client/designs/stats', getClientStats);
+router.get('/client/design/:id', getClientDesignDetails);
+router.patch('/design/:id/client-action', handleClientAction);
+router.post('/design/:id/client-comment', addClientComment);
 
 
 // router for getting client detail

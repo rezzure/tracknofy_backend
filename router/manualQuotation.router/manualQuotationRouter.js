@@ -9,6 +9,9 @@ router.get('/manual-quotation/all', verification, manualQuotationController.getA
 router.get('/manual-quotation/client', verification, manualQuotationController.getClientQuotations);
 router.get('/manual-quotation/:id', verification, manualQuotationController.getManualQuotationById);
 
+// NEW: Approve quotation route
+router.patch('/manual-quotation/:id/approve', verification, manualQuotationController.approveQuotation);
+
 router.put('/manual-quotation/:id', verification, manualQuotationController.updateManualQuotation);
 router.delete('/manual-quotation/:id', verification, manualQuotationController.deleteManualQuotation);
 router.patch('/manual-quotation/:id/status', verification, manualQuotationController.updateQuotationStatus);

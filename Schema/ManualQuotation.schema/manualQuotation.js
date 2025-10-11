@@ -13,9 +13,8 @@ const workCategorySchema = new mongoose.Schema({
   workType: {
     type: String,
   },
-  task: {
-    type: String,
-    default: ""
+  task:{
+    type:String
   },
   materials: {
     type: String,
@@ -132,6 +131,22 @@ const assignedUserSchema = new mongoose.Schema({
   }
 });
 
+// NEW: Approved By Schema
+const approvedBySchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    default: ""
+  },
+  approvedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const versionHistorySchema = new mongoose.Schema({
   versionNumber: {
     type: Number,
@@ -150,9 +165,7 @@ const versionHistorySchema = new mongoose.Schema({
     default: ""
   },
   createdBy: {
-    type:String
-    // type: mongoose.Schema.Types.ObjectId,
-    // ref: 'User',
+    type: String
   },
   status: {
     type: String,
@@ -169,7 +182,9 @@ const versionHistorySchema = new mongoose.Schema({
   workItemComments: {
     type: mongoose.Schema.Types.Mixed,
     default: {}
-  }
+  },
+  // NEW: Add approvedBy to version history
+  approvedBy: approvedBySchema
 });
 
 const manualQuotationSchema = new mongoose.Schema({
@@ -209,9 +224,7 @@ const manualQuotationSchema = new mongoose.Schema({
   clientData: clientDataSchema,
   workItems: [workItemSchema],
   createdBy: {
-    type:String
-    // type: mongoose.Schema.Types.ObjectId,
-    // ref: 'User',
+    type: String
   },
   clientRemarks: {
     type: String,
@@ -222,6 +235,8 @@ const manualQuotationSchema = new mongoose.Schema({
     default: {}
   },
   assignedTo: assignedUserSchema,
+  // NEW: Approved By Field
+  approvedBy: approvedBySchema,
   // VERSIONING FIELDS
   versionNumber: {
     type: Number,
@@ -240,7 +255,6 @@ const manualQuotationSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-  // NEW FIELD FOR AUTO-SEND AFTER REVISION
   autoSendToClient: {
     type: Boolean,
     default: false

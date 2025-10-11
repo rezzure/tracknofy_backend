@@ -12,10 +12,22 @@ const createMaterialRequest = async (req, res) => {
     console.log('Received material request:', req.body);
 
     // Validate required fields
-    if (!siteId || !siteName || !engineer || !requiredBy || !materials || materials.length === 0) {
+    if (!siteId || !siteName || !engineer || !engineerEmail || !requiredBy || !materials || materials.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'All required fields must be filled'
+      });
+    }
+
+    // Validate requiredBy date is not in the past
+    const requiredByDate = new Date(requiredBy);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    if (requiredByDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Required by date cannot be in the past'
       });
     }
 
@@ -27,30 +39,45 @@ const createMaterialRequest = async (req, res) => {
           message: 'All material fields (type, name, quantity, unit) are required'
         });
       }
+
+      // Validate quantity is positive number
+      if (material.quantity <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Material quantity must be greater than 0'
+        });
+      }
     }
 
     // Generate request ID
     const requestCount = await MaterialRequest.countDocuments();
     const requestId = `REQ-${String(requestCount + 1).padStart(3, '0')}`;
 
+    // Prepare materials with all fields
+    const preparedMaterials = materials.map(material => ({
+      materialType: material.materialType,
+      name: material.name,
+      materialBrand: material.materialBrand || '',
+      quantity: Number(material.quantity),
+      unit: material.unit,
+      remarks: material.remarks || ''
+    }));
+
     const newRequest = new MaterialRequest({
       requestId,
       siteId,
       siteName,
       engineer,
-      engineerEmail: engineerEmail || req.user?.email, // Fallback
-      materials: materials.map(material => ({
-        materialType: material.materialType,
-        name: material.name, // Ensure we use 'name' as per schema
-        quantity: material.quantity,
-        unit: material.unit
-      })),
-      requiredBy,
+      engineerEmail: engineerEmail,
+      materials: preparedMaterials,
+      requiredBy: requiredByDate,
       priority: priority || 'medium',
       status: 'pending'
     });
 
     await newRequest.save();
+
+    console.log('Material request created successfully:', newRequest.requestId);
 
     res.status(201).json({
       success: true,
@@ -59,13 +86,30 @@ const createMaterialRequest = async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating material request:', error);
+    
+    // Handle duplicate requestId error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID already exists. Please try again.'
+      });
+    }
+
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${errors.join(', ')}`
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error: ' + error.message
     });
   }
 };
-
 
 // In your material requests routes file
 const countMaterialReqDoc = async (req, res) => {
@@ -111,7 +155,7 @@ const getAllMaterialRequests = async (req, res) => {
   }
 };
 
-// Get Material Requests by Engineer
+// // Get Material Requests by Engineer
 const getMaterialRequestsByEngineer = async (req, res) => {
   try {
     const { email } = req.query;
@@ -131,6 +175,8 @@ const getMaterialRequestsByEngineer = async (req, res) => {
     });
   }
 };
+
+
 
 // Update Material Request Status (Approve/Reject)
 const updateMaterialRequestStatus = async (req, res) => {

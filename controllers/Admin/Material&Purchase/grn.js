@@ -4,7 +4,7 @@ const MaterialRequest = require("../../../Schema/materialPurchase.Schema/materia
 const PurchaseOrder = require("../../../Schema/materialPurchase.Schema/purchaseOrder.model");
 
 
-// Create GRN - COMPLETELY FIXED VERSION
+// Create GRN - FIXED VERSION
 const createGRN = async (req, res) => {
   try {
     const { purchaseOrderId, materials, receivedBy, notes, engineerEmail } = req.body;
@@ -16,7 +16,7 @@ const createGRN = async (req, res) => {
       engineerEmail 
     });
 
-    // FIX: Use findById since frontend sends MongoDB _id
+    // Find purchase order by MongoDB _id
     const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
     if (!purchaseOrder) {
       console.log("Purchase order not found for ID:", purchaseOrderId);
@@ -27,33 +27,42 @@ const createGRN = async (req, res) => {
     }
 
     console.log("Found Purchase Order:", purchaseOrder.poId);
+    console.log("PO Materials:", purchaseOrder.materials);
 
     // Validate delivered quantities and prepare GRN materials
-    const grnMaterials = materials.map(deliveredMaterial => {
+    const grnMaterials = [];
+    
+    for (const deliveredMaterial of materials) {
       // Find the corresponding material in purchase order
       const orderedMaterial = purchaseOrder.materials.find(
         m => m.name === deliveredMaterial.materialName
       );
       
       if (!orderedMaterial) {
-        console.log("Material not found:", deliveredMaterial.materialName);
-        console.log("Available materials:", purchaseOrder.materials.map(m => m.name));
-        throw new Error(`Material ${deliveredMaterial.materialName} not found in purchase order`);
+        console.log("Material not found in PO:", deliveredMaterial.materialName);
+        console.log("Available materials in PO:", purchaseOrder.materials.map(m => m.name));
+        return res.status(400).json({
+          success: false,
+          message: `Material "${deliveredMaterial.materialName}" not found in purchase order`
+        });
       }
 
       if (deliveredMaterial.deliveredQuantity > orderedMaterial.quantity) {
-        throw new Error(`Delivered quantity for ${deliveredMaterial.materialName} exceeds ordered quantity`);
+        return res.status(400).json({
+          success: false,
+          message: `Delivered quantity for ${deliveredMaterial.materialName} exceeds ordered quantity`
+        });
       }
 
-      return {
+      grnMaterials.push({
         name: deliveredMaterial.materialName,
         materialType: deliveredMaterial.materialType || orderedMaterial.materialType || 'General',
         orderedQuantity: orderedMaterial.quantity,
         deliveredQuantity: deliveredMaterial.deliveredQuantity,
         unit: orderedMaterial.unit,
         rate: orderedMaterial.rate || 0
-      };
-    });
+      });
+    }
 
     // Calculate total amount
     const totalAmount = grnMaterials.reduce((total, material) => {

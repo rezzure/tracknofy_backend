@@ -59,6 +59,7 @@ const createPurchaseOrder = async (req, res) => {
     const poCount = await PurchaseOrder.countDocuments();
     const poId = `PO-${String(poCount + 1).padStart(3, '0')}`;
 
+
     // Transform materials to match schema - FIXED: Include all required fields
     const poMaterials = materials.map(material => ({
       name: material.name, // Use 'name' directly from frontend
@@ -155,22 +156,54 @@ const getAllPurchaseOrders = async (req, res) => {
 };
 
 
-
 // Get Purchase Orders by Engineer
+// const getPurchaseOrdersByEngineer = async (req, res) => {
+//   try {
+//     const { email } = req.query;
+
+//     // First get material requests by this engineer
+//     const materialRequests = await MaterialRequest.find({ engineerEmail: email });
+//     const requestIds = materialRequests.map(req => req.requestId);
+
+//     // Then get POs that contain these request IDs
+//     const purchaseOrders = await PurchaseOrder.find({
+//       requestIds: { $in: requestIds }
+//     })
+//     .populate('vendorId', 'name contact rating')
+//     .sort({ createdAt: -1 });
+
+//     res.status(200).json({
+//       success: true,
+//       data: purchaseOrders,
+//       message: 'Purchase orders fetched successfully'
+//     });
+//   } catch (error) {
+//     console.error('Error fetching purchase orders:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error'
+//     });
+//   }
+// };
+
+
+// Fixed Backend Controller
+
+
+
 const getPurchaseOrdersByEngineer = async (req, res) => {
   try {
     const { email } = req.query;
+    console.log('Fetching POs for engineer email:', email);
 
-    // First get material requests by this engineer
-    const materialRequests = await MaterialRequest.find({ engineerEmail: email });
-    const requestIds = materialRequests.map(req => req.requestId);
-
-    // Then get POs that contain these request IDs
-    const purchaseOrders = await PurchaseOrder.find({
-      requestIds: { $in: requestIds }
+    // FIX: Look for purchase orders by engineerEmail directly
+    const purchaseOrders = await PurchaseOrder.find({ 
+      engineerEmail: email 
     })
     .populate('vendorId', 'name contact rating')
     .sort({ createdAt: -1 });
+
+    console.log('Found POs:', purchaseOrders.length);
 
     res.status(200).json({
       success: true,
@@ -185,6 +218,59 @@ const getPurchaseOrdersByEngineer = async (req, res) => {
     });
   }
 };
+
+
+// Get Purchase Orders by Engineer
+// const getPurchaseOrdersByEngineer = async (req, res) => {
+//   try {
+//     const { email } = req.query;
+
+//     if (!email) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Engineer email is required'
+//       });
+//     }
+
+//     console.log('Fetching POs for engineer:', email);
+
+//     // Method 1: Find POs by engineerEmail directly (recommended approach)
+//     let purchaseOrders = await PurchaseOrder.find({ engineerEmail: email })
+//       .populate('vendorId', 'vendorCompany vendorName vendorMobile vendorEmail vendorAddress vendorCategory')
+//       .sort({ createdAt: -1 });
+
+//     // Method 2: If no POs found, try finding by material requests (fallback)
+//     if (!purchaseOrders || purchaseOrders.length === 0) {
+//       console.log('No direct POs found, trying via material requests...');
+      
+//       const materialRequests = await MaterialRequest.find({ engineerEmail: email });
+//       const requestIds = materialRequests.map(req => req._id.toString());
+
+//       if (requestIds.length > 0) {
+//         purchaseOrders = await PurchaseOrder.find({
+//           requestIds: { $in: requestIds }
+//         })
+//         .populate('vendorId', 'vendorCompany vendorName vendorMobile vendorEmail vendorAddress vendorCategory')
+//         .sort({ createdAt: -1 });
+//       }
+//     }
+
+//     console.log(`Found ${purchaseOrders.length} POs for engineer ${email}`);
+
+//     res.status(200).json({
+//       success: true,
+//       data: purchaseOrders,
+//       message: 'Purchase orders fetched successfully'
+//     });
+//   } catch (error) {
+//     console.error('Error fetching purchase orders:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error'
+//     });
+//   }
+// };
+
 
 // Get Approved Material Requests (for Admin PO creation)
 const getApprovedMaterialRequests = async (req, res) => {

@@ -93,7 +93,7 @@ const deleteDesign = require("../../controllers/Admin/deleteDesign.js");
 const getDesign = require("../../controllers/Admin/getDesign.js");
 
 // DESIGN APPROVAL ROUTES
-router.post("/add/design", verification, upload.single("designFile"), addDesign);
+router.post("/add/design", verification, upload.array("designFile", 10), addDesign);
 router.get("/get/design", verification, getDesign);
 router.get("/get/design/site/:siteId", verification, getDesign);
 

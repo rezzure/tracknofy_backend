@@ -56,7 +56,7 @@ const designSchema = new mongoose.Schema(
     // project: {
     //   type: String,
     // },
-    image: {
+    images: [{
       fieldname: String,
       originalname: String,
       mimetype: String,
@@ -64,7 +64,7 @@ const designSchema = new mongoose.Schema(
       filename: String,
       path: String,
       size: Number,
-    },
+    }],
     fileName: {
       type: String,
     },

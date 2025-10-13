@@ -3,6 +3,7 @@ const Design = require("../../Schema/designApproval.schema/designApproval.model"
 const Admin = require("../../Schema/admin.schema/admine.model");
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model");
 
+// controllers/Admin/addDesign.js
 const addDesign = async (req, res) => {
   try {
     const email = req.query.email;
@@ -32,38 +33,40 @@ const addDesign = async (req, res) => {
       imageType,
       title,
       description,
-      // project,
-      createdBy,
     } = req.body;
 
     console.log("Request body:", req.body);
-    console.log("Uploaded file:", req.file);
+    console.log("Uploaded files:", req.files); // Changed to req.files
 
     // Validate required fields
     if (!siteId || !siteName || !floorName || !scopeOfWork || !workItem || !workType || 
-        !imageType || !title || !req.file) {
+        !imageType || !title || !req.files || req.files.length === 0) { // Changed validation
       return res.status(400).send({
         success: false,
-        message: "All required fields must be provided including file"
+        message: "All required fields must be provided including files"
       });
     }
 
-    // Check if file was uploaded
-    let imageData = null;
-    if (req.file) {
-      // Store the relative path that can be served via /uploads
-      const relativePath = `uploads/${req.file.filename}`;
-      
-      imageData = {
-        fieldname: req.file.fieldname,
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        destination: req.file.destination,
-        filename: req.file.filename,
-        path: relativePath,
-        size: req.file.size / 1024 // size in KB
-      };
+    // Process multiple files
+    const imagesData = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        const relativePath = `uploads/${file.filename}`;
+        
+        imagesData.push({
+          fieldname: file.fieldname,
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          destination: file.destination,
+          filename: file.filename,
+          path: relativePath,
+          size: file.size / 1024 // size in KB
+        });
+      });
     }
+
+    // Use first file for fileName and fileType (for backward compatibility)
+    const firstFile = req.files[0];
 
     let designData = {
       siteId: siteId,
@@ -75,14 +78,13 @@ const addDesign = async (req, res) => {
       imageType: imageType,
       title: title,
       description: description,
-      // project: project || title,
-      image: imageData,
-      fileName: req.file.originalname,
-      fileType: req.file.mimetype.startsWith('image/') ? 'image' : 'pdf',
+      images: imagesData, // Store array of images
+      fileName: firstFile.originalname,
+      fileType: firstFile.mimetype.startsWith('image/') ? 'image' : 'pdf',
       createdBy: user._id,
       createdByModel: userModel, 
-      createdByName: user.name || user.userName || createdBy, // Store the name
-      createdByEmail: user.email, // Store the email
+      createdByName: user.name || user.userName, 
+      createdByEmail: user.email,
       status: "pending",
       versionNumber: 1,
       workflow_remark: "",
@@ -94,7 +96,7 @@ const addDesign = async (req, res) => {
     
     return res.status(200).send({
       success: true,
-      message: "Design uploaded successfully",
+      message: "Design uploaded successfully with " + imagesData.length + " files",
       data: data
     });
   }

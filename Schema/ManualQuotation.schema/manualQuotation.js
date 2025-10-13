@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
 
+// NEW: Task schema for storing individual tasks
+const taskSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  workTypeId: {
+    type: String,
+    required: true
+  },
+  index: {
+    type: Number,
+    required: true
+  },
+  workType: {
+    type: String,
+    required: true
+  },
+});
+
 const workCategorySchema = new mongoose.Schema({
   id: {
     type: String,
@@ -13,9 +33,7 @@ const workCategorySchema = new mongoose.Schema({
   workType: {
     type: String,
   },
-  task:{
-    type:String
-  },
+  tasks: [taskSchema], // UPDATED: Now stores array of tasks
   materials: {
     type: String,
   },

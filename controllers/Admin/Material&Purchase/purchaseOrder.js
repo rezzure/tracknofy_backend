@@ -156,39 +156,6 @@ const getAllPurchaseOrders = async (req, res) => {
 };
 
 
-// Get Purchase Orders by Engineer
-// const getPurchaseOrdersByEngineer = async (req, res) => {
-//   try {
-//     const { email } = req.query;
-
-//     // First get material requests by this engineer
-//     const materialRequests = await MaterialRequest.find({ engineerEmail: email });
-//     const requestIds = materialRequests.map(req => req.requestId);
-
-//     // Then get POs that contain these request IDs
-//     const purchaseOrders = await PurchaseOrder.find({
-//       requestIds: { $in: requestIds }
-//     })
-//     .populate('vendorId', 'name contact rating')
-//     .sort({ createdAt: -1 });
-
-//     res.status(200).json({
-//       success: true,
-//       data: purchaseOrders,
-//       message: 'Purchase orders fetched successfully'
-//     });
-//   } catch (error) {
-//     console.error('Error fetching purchase orders:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Internal server error'
-//     });
-//   }
-// };
-
-
-// Fixed Backend Controller
-
 
 
 const getPurchaseOrdersByEngineer = async (req, res) => {
@@ -220,7 +187,6 @@ const getPurchaseOrdersByEngineer = async (req, res) => {
 };
 
 
-// Get Purchase Orders by Engineer
 // const getPurchaseOrdersByEngineer = async (req, res) => {
 //   try {
 //     const { email } = req.query;
@@ -307,9 +273,45 @@ const calculateMaterialRate = (materialName) => {
   return rateMap[materialName] || 100; // Default rate
 };
 
+
+const getApprovedMaterialRequestsByEngineer = async (req, res) => {
+  try {
+    const { email } = req.query;
+
+    // Validate email parameter
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Engineer email is required'
+      });
+    }
+
+    // Fetch only approved material requests for the specific engineer
+    const approvedRequests = await MaterialRequest.find({ 
+      engineerEmail: email,
+      status: 'approved' 
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: approvedRequests,
+      message: `Approved material requests for engineer ${email} fetched successfully`,
+      count: approvedRequests.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching approved requests by engineer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while fetching approved requests'
+    });
+  }
+};
+
 module.exports = {
   createPurchaseOrder,
   getAllPurchaseOrders,
   getPurchaseOrdersByEngineer,
-  getApprovedMaterialRequests
+  getApprovedMaterialRequests,
+  getApprovedMaterialRequestsByEngineer
 };

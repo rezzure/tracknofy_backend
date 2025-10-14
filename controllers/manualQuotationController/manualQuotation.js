@@ -66,6 +66,40 @@ const generateUniqueQuotationId = async (baseQuotationId, versionNumber) => {
   return `${baseId}-V${versionNumber}-${timestamp}`;
 };
 
+// NEW: Validate work items structure including tasks array
+const validateWorkItems = (workItems) => {
+  if (!workItems || !Array.isArray(workItems)) {
+    return { isValid: false, message: 'Work items must be an array' };
+  }
+
+  for (const workItem of workItems) {
+    if (!workItem.workCategories || !Array.isArray(workItem.workCategories)) {
+      return { isValid: false, message: 'Each work item must have workCategories array' };
+    }
+
+    for (const category of workItem.workCategories) {
+      // Validate that tasks is an array (can be empty)
+      if (category.tasks && !Array.isArray(category.tasks)) {
+        return { isValid: false, message: 'Tasks must be an array' };
+      }
+
+      // Validate individual task structure if tasks exist
+      if (category.tasks && category.tasks.length > 0) {
+        for (const task of category.tasks) {
+          if (!task.name || !task.workTypeId || !task.workType || !task.workCategory || !task.scopeOfWork || !task.projectType) {
+            return { 
+              isValid: false, 
+              message: 'Each task must have name, workTypeId, workType, workCategory, scopeOfWork, and projectType fields' 
+            };
+          }
+        }
+      }
+    }
+  }
+
+  return { isValid: true };
+};
+
 // Create new manual quotation
 exports.createManualQuotation = async (req, res) => {
   try {
@@ -85,6 +119,15 @@ exports.createManualQuotation = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields'
+      });
+    }
+
+    // Validate work items structure including tasks array
+    const validationResult = validateWorkItems(workItems);
+    if (!validationResult.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: validationResult.message
       });
     }
 
@@ -340,6 +383,17 @@ exports.updateManualQuotation = async (req, res) => {
         success: false,
         message: 'Manual quotation not found'
       });
+    }
+
+    // Validate work items if they are being updated
+    if (updateData.workItems) {
+      const validationResult = validateWorkItems(updateData.workItems);
+      if (!validationResult.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: validationResult.message
+        });
+      }
     }
 
     delete updateData._id;

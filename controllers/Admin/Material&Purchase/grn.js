@@ -119,27 +119,94 @@ const createGRN = async (req, res) => {
 };
 
 
-// Get GRN History
+// // Get GRN History
+// const getGRNHistory = async (req, res) => {
+//   try {
+//     const { email } = req.query;
+
+//     let filter = {};
+
+//     // If supervisor, only show their site's GRNs
+//     if (email) {
+//       const materialRequests = await MaterialRequest.find({ engineerEmail: email });
+//       const requestIds = materialRequests.map(req => req.requestId);
+
+//       const purchaseOrders = await PurchaseOrder.find({
+//         requestIds: { $in: requestIds }
+//       });
+//       const poIds = purchaseOrders.map(po => po.poId);
+
+//       filter.purchaseOrderId = { $in: poIds };
+//     }
+
+//     const grnHistory = await GRN.find(filter).sort({ createdAt: -1 });
+
+//     res.status(200).json({
+//       success: true,
+//       data: grnHistory,
+//       message: 'GRN history fetched successfully'
+//     });
+//   } catch (error) {
+//     console.error('Error fetching GRN history:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error'
+//     });
+//   }
+// };
+
+// Get GRN History - Enhanced Version
 const getGRNHistory = async (req, res) => {
   try {
     const { email } = req.query;
 
     let filter = {};
 
-    // If supervisor, only show their site's GRNs
     if (email) {
-      const materialRequests = await MaterialRequest.find({ engineerEmail: email });
-      const requestIds = materialRequests.map(req => req.requestId);
-
-      const purchaseOrders = await PurchaseOrder.find({
-        requestIds: { $in: requestIds }
-      });
-      const poIds = purchaseOrders.map(po => po.poId);
-
-      filter.purchaseOrderId = { $in: poIds };
+      console.log('Fetching GRN history for email:', email);
+      
+      // Try multiple approaches to find user's GRNs
+      
+      // Approach 1: Direct filter by engineerEmail in GRN
+      const grnsByEmail = await GRN.find({ engineerEmail: email });
+      if (grnsByEmail.length > 0) {
+        filter.engineerEmail = email;
+      } else {
+        // Approach 2: Find via purchase orders
+        const purchaseOrders = await PurchaseOrder.find({ 
+          $or: [
+            { engineerEmail: email },
+            { createdByEmail: email }
+          ]
+        });
+        
+        const poIds = purchaseOrders.map(po => po._id);
+        console.log('Found purchase orders:', poIds);
+        
+        if (poIds.length > 0) {
+          filter.purchaseOrderId = { $in: poIds };
+        } else {
+          // Approach 3: Find via material requests
+          const materialRequests = await MaterialRequest.find({ 
+            engineerEmail: email 
+          });
+          const requestIds = materialRequests.map(req => req._id);
+          
+          const purchaseOrdersFromRequests = await PurchaseOrder.find({
+            requestIds: { $in: requestIds }
+          });
+          const poIdsFromRequests = purchaseOrdersFromRequests.map(po => po._id);
+          
+          if (poIdsFromRequests.length > 0) {
+            filter.purchaseOrderId = { $in: poIdsFromRequests };
+          }
+        }
+      }
     }
 
+    console.log('GRN filter:', filter);
     const grnHistory = await GRN.find(filter).sort({ createdAt: -1 });
+    console.log('Found GRN history:', grnHistory.length);
 
     res.status(200).json({
       success: true,
@@ -154,6 +221,8 @@ const getGRNHistory = async (req, res) => {
     });
   }
 };
+
+
 
 // Get All GRNs (Admin)
 const getAllGRNs = async (req, res) => {

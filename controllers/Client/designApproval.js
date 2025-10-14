@@ -44,7 +44,7 @@ const getClientDesigns = async (req, res) => {
       workItem: design.workItem || '',
       workType: design.workType || '',
       imageType: design.imageType || '',
-      image: design.image || {},
+      images: design.images || [],
       fileName: design.fileName || '',
       fileType: design.fileType || '',
       status: design.status || 'review',

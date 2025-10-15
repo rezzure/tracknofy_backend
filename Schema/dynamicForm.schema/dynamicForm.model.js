@@ -61,7 +61,7 @@
 
 
 
-// updates for my form
+// 15/10 first code for my form
 
 const mongoose = require('mongoose');
 
@@ -76,6 +76,30 @@ const FormSchema = new mongoose.Schema({
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       },
       message: 'Please provide a valid email address'
+    }
+  }],
+  myForm: [{
+    moduleName: {
+      type: String,
+      required: true,
+      enum: ['My Form'],
+      default: 'My Form'
+    },
+    userEmail: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function(email) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        },
+        message: 'Please provide a valid email address'
+      }
+    },
+    assignedAt: {
+      type: Date,
+      default: Date.now
     }
   }],
   formName: {
@@ -107,36 +131,6 @@ const FormSchema = new mongoose.Schema({
       type: String,
       trim: true
     }]
-  }],
-  // NEW: User Forms for module assignment
-  userForms: [{
-    userEmail: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
-      validate: {
-        validator: function(email) {
-          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        },
-        message: 'Please provide a valid email address'
-      }
-    },
-    moduleName: {
-      type: String,
-      required: true,
-      enum: ['Survey Form', 'My Forms'],
-      default: 'Survey Form'
-    },
-    assignedAt: {
-      type: Date,
-      default: Date.now
-    },
-    status: {
-      type: String,
-      enum: ['active', 'inactive', 'completed'],
-      default: 'active'
-    }
   }],
   isActive: {
     type: Boolean,

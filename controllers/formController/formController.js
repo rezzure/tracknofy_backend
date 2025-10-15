@@ -304,11 +304,11 @@
 
 
 
-// updates for my form
 
-// const Form = require('../models/Form');
+
+
+//  15/10 first code for my form
 const Form = require('../../Schema/dynamicForm.schema/dynamicForm.model');
-// const FormSubmission = require('../models/FormSubmission');
 
 // Get all forms with pagination and search
 exports.getAllForms = async (req, res) => {
@@ -316,7 +316,10 @@ exports.getAllForms = async (req, res) => {
   try {
    if(email){
     const forms = await Form.find({ 
-      userEmail: email,
+      $or: [
+        { userEmail: email },
+        { 'myForm.userEmail': email }
+      ],
       isActive: true 
     }).sort({ createdAt: -1 });
 
@@ -338,7 +341,7 @@ exports.getAllForms = async (req, res) => {
       : { isActive: true };
 
     const forms = await Form.find(query)
-      .select('formName formFields createdAt updatedAt userForms')
+      .select('formName formFields createdAt updatedAt userEmail myForm')
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -452,11 +455,10 @@ exports.createForm = async (req, res) => {
   }
 };
 
-// Update form
 exports.updateForm = async (req, res) => {
   try {
-    const { formName, formFields, userEmail } = req.body;
-    console.log('Update request:', { formName, formFields, userEmail });
+    const { formName, formFields, userEmail, module } = req.body;
+    console.log('Update request:', { formName, formFields, userEmail, module });
     const { _id } = req.params;
 
     if (!formName || !formFields || !Array.isArray(formFields)) {
@@ -475,15 +477,15 @@ exports.updateForm = async (req, res) => {
       });
     }
 
-    // Prepare update data
+    // Prepare update data - start with basic fields
     const updateData = {
       formName,
       formFields,
       updatedAt: new Date()
     };
 
-    // Handle userEmail - add to array if provided and not already present
-    if (userEmail) {
+    // Handle user assignment based on module selection
+    if (userEmail && module) {
       const emailToAdd = userEmail.trim().toLowerCase();
       
       // Validate email format
@@ -495,27 +497,83 @@ exports.updateForm = async (req, res) => {
         });
       }
 
-      // Check if email already exists in the array
-      if (!existingForm.userEmail.includes(emailToAdd)) {
-        updateData.$addToSet = { userEmail: emailToAdd };
+      if (module === 'Survey Form') {
+        // Add to userEmail array for Survey Form
+        if (!existingForm.userEmail.includes(emailToAdd)) {
+          // Use $addToSet to avoid duplicates
+          updateData.$addToSet = { userEmail: emailToAdd };
+        }
+      } else if (module === 'My Forms') {
+        // Add to myForm array for My Forms
+        const myFormEntry = {
+          moduleName: 'My Form',
+          userEmail: emailToAdd,
+          assignedAt: new Date()
+        };
+        
+        // Check if this user already exists in myForm
+        const existingMyFormEntry = existingForm.myForm.find(
+          entry => entry.userEmail === emailToAdd
+        );
+        
+        if (!existingMyFormEntry) {
+          // Use $push to add to myForm array
+          if (!updateData.$push) updateData.$push = {};
+          updateData.$push.myForm = myFormEntry;
+        }
       }
     }
 
+    console.log('Update data being sent to MongoDB:', JSON.stringify(updateData, null, 2));
+
     // Update the form
-    const form = await Form.findByIdAndUpdate(
-      _id,
-      updateData,
-      { new: true, runValidators: true }
-    );
+    let form;
+    try {
+      form = await Form.findByIdAndUpdate(
+        _id,
+        updateData,
+        { new: true, runValidators: true }
+      );
+    } catch (dbError) {
+      console.error('Database update error:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'Database update failed',
+        error: dbError.message
+      });
+    }
+
+    if (!form) {
+      return res.status(404).json({
+        success: false,
+        message: 'Form not found after update'
+      });
+    }
+
+    // Determine the success message based on the operation
+    let message = 'Form updated successfully';
+    if (userEmail && module) {
+      if (module === 'Survey Form') {
+        message = 'Form updated and user assigned to Survey Form successfully';
+      } else if (module === 'My Forms') {
+        message = 'Form updated and user assigned to My Forms successfully';
+      }
+    }
+
+    console.log('Update successful. Final form data:', {
+      userEmail: form.userEmail,
+      myForm: form.myForm
+    });
 
     res.json({
       success: true,
-      message: userEmail ? 'Form updated and user assigned successfully' : 'Form updated successfully',
+      message: message,
       data: {
         ...form.toObject(),
         id: form._id,
         fieldCount: form.formFields.length,
-        assignedUsersCount: form.userEmail.length
+        assignedUsersCount: form.userEmail.length,
+        myFormUsersCount: form.myForm.length
       }
     });
   } catch (error) {
@@ -528,172 +586,95 @@ exports.updateForm = async (req, res) => {
   }
 };
 
-// NEW: Assign forms to My Forms module
-exports.assignToMyForms = async (req, res) => {
+// Alternative update method using find + save for complex operations
+exports.updateFormAlternative = async (req, res) => {
   try {
-    const { formIds, userEmail, moduleName = 'My Forms' } = req.body;
-    
-    if (!formIds || !Array.isArray(formIds) || formIds.length === 0) {
+    const { formName, formFields, userEmail, module } = req.body;
+    const { _id } = req.params;
+
+    if (!formName || !formFields || !Array.isArray(formFields)) {
       return res.status(400).json({
         success: false,
-        message: 'Form IDs are required'
-      });
-    }
-    
-    if (!userEmail) {
-      return res.status(400).json({
-        success: false,
-        message: 'User email is required'
+        message: 'Form name and fields are required'
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(userEmail.trim().toLowerCase())) {
-      return res.status(400).json({
+    // Find the form
+    const form = await Form.findById(_id);
+    if (!form) {
+      return res.status(404).json({
         success: false,
-        message: 'Please provide a valid email address'
+        message: 'Form not found'
       });
     }
 
-    const results = [];
-    const errors = [];
+    // Update basic fields
+    form.formName = formName;
+    form.formFields = formFields;
+    form.updatedAt = new Date();
 
-    // Process each form
-    for (const formId of formIds) {
-      try {
-        const form = await Form.findById(formId);
-        
-        if (!form) {
-          errors.push(`Form ${formId} not found`);
-          continue;
-        }
-
-        // Check if this user already has this form in My Forms
-        const existingAssignment = form.userForms.find(
-          assignment => assignment.userEmail === userEmail.toLowerCase() && 
-                        assignment.moduleName === moduleName
-        );
-
-        if (existingAssignment) {
-          // Update existing assignment
-          const updatedForm = await Form.findOneAndUpdate(
-            { 
-              _id: formId,
-              'userForms.userEmail': userEmail.toLowerCase(),
-              'userForms.moduleName': moduleName
-            },
-            {
-              $set: {
-                'userForms.$.status': 'active',
-                'userForms.$.assignedAt': new Date()
-              }
-            },
-            { new: true }
-          );
-          results.push({
-            formId,
-            formName: form.formName,
-            status: 'updated',
-            message: 'Form assignment updated in My Forms'
-          });
-        } else {
-          // Add new assignment
-          const updatedForm = await Form.findByIdAndUpdate(
-            formId,
-            {
-              $push: {
-                userForms: {
-                  userEmail: userEmail.toLowerCase(),
-                  moduleName: moduleName,
-                  assignedAt: new Date(),
-                  status: 'active'
-                }
-              }
-            },
-            { new: true, runValidators: true }
-          );
-          results.push({
-            formId,
-            formName: form.formName,
-            status: 'assigned',
-            message: 'Form assigned to My Forms successfully'
-          });
-        }
-      } catch (error) {
-        errors.push(`Error processing form ${formId}: ${error.message}`);
-      }
-    }
-
-    res.json({
-      success: errors.length === 0,
-      message: errors.length === 0 ? 'All forms assigned to My Forms successfully' : 'Some forms failed to assign',
-      data: {
-        results,
-        errors: errors.length > 0 ? errors : undefined
-      }
-    });
-  } catch (error) {
-    console.error('Error assigning forms to My Forms:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error assigning forms to My Forms',
-      error: error.message
-    });
-  }
-};
-
-// NEW: Get forms by user and module
-exports.getFormsByUserAndModule = async (req, res) => {
-  try {
-    const { userEmail, moduleName } = req.query;
-    
-    if (!userEmail) {
-      return res.status(400).json({
-        success: false,
-        message: 'User email is required'
-      });
-    }
-
-    const query = {
-      'userForms.userEmail': userEmail.toLowerCase(),
-      isActive: true
-    };
-
-    // Add module filter if provided
-    if (moduleName) {
-      query['userForms.moduleName'] = moduleName;
-    }
-
-    const forms = await Form.find(query)
-      .select('formName formFields userForms createdAt updatedAt')
-      .sort({ updatedAt: -1 });
-
-    // Filter userForms to only include the requested user's assignments
-    const filteredForms = forms.map(form => {
-      const userFormData = form.userForms.filter(
-        uf => uf.userEmail === userEmail.toLowerCase() && 
-              (!moduleName || uf.moduleName === moduleName)
-      );
+    // Handle user assignment based on module selection
+    if (userEmail && module) {
+      const emailToAdd = userEmail.trim().toLowerCase();
       
-      return {
-        ...form.toObject(),
-        userFormAssignments: userFormData,
-        fieldCount: form.formFields.length,
-        id: form._id
-      };
-    });
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailToAdd)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid email address'
+        });
+      }
+
+      if (module === 'Survey Form') {
+        // Add to userEmail array for Survey Form
+        if (!form.userEmail.includes(emailToAdd)) {
+          form.userEmail.push(emailToAdd);
+        }
+      } else if (module === 'My Forms') {
+        // Add to myForm array for My Forms
+        const existingMyFormEntry = form.myForm.find(
+          entry => entry.userEmail === emailToAdd
+        );
+        
+        if (!existingMyFormEntry) {
+          form.myForm.push({
+            moduleName: 'My Form',
+            userEmail: emailToAdd,
+            assignedAt: new Date()
+          });
+        }
+      }
+    }
+
+    // Save the form
+    const savedForm = await form.save();
+
+    let message = 'Form updated successfully';
+    if (userEmail && module) {
+      if (module === 'Survey Form') {
+        message = 'Form updated and user assigned to Survey Form successfully';
+      } else if (module === 'My Forms') {
+        message = 'Form updated and user assigned to My Forms successfully';
+      }
+    }
 
     res.json({
       success: true,
-      data: filteredForms,
-      count: filteredForms.length
+      message: message,
+      data: {
+        ...savedForm.toObject(),
+        id: savedForm._id,
+        fieldCount: savedForm.formFields.length,
+        assignedUsersCount: savedForm.userEmail.length,
+        myFormUsersCount: savedForm.myForm.length
+      }
     });
   } catch (error) {
-    console.error('Error fetching user forms:', error);
+    console.error('Error updating form (alternative method):', error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user forms',
+      message: 'Error updating form',
       error: error.message
     });
   }

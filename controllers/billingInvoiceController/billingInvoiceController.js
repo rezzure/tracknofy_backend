@@ -2,7 +2,7 @@ const Admin = require("../../Schema/admin.schema/admine.model")
 const BillingInvoice = require("../../Schema/BillingInvoice.schema/BillingInvoice.model")
 
 
-exports.getInvoice = async (req, res )=>{
+const getInvoice = async (req, res )=>{
     try {
         const invoiceData = await BillingInvoice.
         find()
@@ -26,7 +26,7 @@ exports.getInvoice = async (req, res )=>{
     }
 }
 
- exports.addInvoice = async (req, res) => {
+const addInvoice = async (req, res) => {
 try {
     const { invoiceNumber, date, dueDate, companyData, clientData, itemDescription, totalAmount, notes, createdBy,  updatedBy } = req.body;
 
@@ -65,7 +65,7 @@ res.status.send({
 }
 
 
-exports.updateBillingInvoice = async (req, res) => {
+const updateBillingInvoice = async (req, res) => {
    const {_id} = req.params
    const {
     invoiceNumber, 
@@ -122,7 +122,7 @@ exports.updateBillingInvoice = async (req, res) => {
 }
 }
 
-exports.deleteInvoice = async (req, res) => {
+const deleteInvoice = async (req, res) => {
     const { _id}= req.params;
 
     try {
@@ -148,4 +148,11 @@ exports.deleteInvoice = async (req, res) => {
             message: "Error: "+ error.message,
         });
     }
+};
+
+module.exports = {
+  getInvoice,
+  addInvoice,
+  updateBillingInvoice,
+  deleteInvoice
 };

@@ -78,6 +78,7 @@ app.use('/api', require("./router/manualQuotation.router/manualQuotationRouter.j
 app.use('/api', require("./router/materialPurchaseRouter/materialPurchase.router.js"));
 
 app.use('/api', require('./router/DMS.router/DMS.router.js'));
+app.use('/api', require('./router/BillingInvoice.router/BillingInvoice.router.js'));
 
 
 

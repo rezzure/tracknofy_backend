@@ -3,7 +3,7 @@ const mongoose = require("mongoose")
 const superAdminSchema = new mongoose.Schema({
   name: {
     type: String,
-    default : "Prabhat Rai" 
+    default : "Super Admin" 
   },
   email: {
     type: String,

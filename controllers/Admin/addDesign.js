@@ -39,8 +39,7 @@ const addDesign = async (req, res) => {
     console.log("Uploaded files:", req.files); // Changed to req.files
 
     // Validate required fields
-    if (!siteId || !siteName || !floorName || !scopeOfWork || !workItem || !workType || 
-        !imageType || !title || !req.files || req.files.length === 0) { // Changed validation
+    if (!title || !req.files || req.files.length === 0) { // Changed validation
       return res.status(400).send({
         success: false,
         message: "All required fields must be provided including files"

@@ -24,7 +24,7 @@ const getClientDesigns = async (req, res) => {
 
     // Get designs for this client - only review and approved status
     const designs = await Design.find({
-      status: { $in: ['review', 'approved'] }
+      status: { $in: ['sent', 'review', 'approved'] }
     })
     .sort({ createdAt: -1 })
     .populate('createdBy', 'name email')

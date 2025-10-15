@@ -2,32 +2,39 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const {
-  getItems,
-  createFolder,
-  uploadFiles,
-  renameItem,
-  deleteItem,
-  downloadFile
-} = require('../../controllers/DMSController/DMS.controller');
+const fs = require('fs');
+const DMSController = require('../../controllers/DMSController/DMS.controller');
+const verification = require('../../middleware/verification');
+
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, '../../uploads');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024 // 100MB limit
+  }
+});
 
-router.get('/items/', getItems);
-router.post('/items/folder', createFolder);
-router.post('/items/upload', upload.array('files'), uploadFiles); // 'files' is the field name
-router.put('/items/:id/rename', renameItem);
-router.delete('/items/:id', deleteItem);
-router.get('/items/:id/download', downloadFile);
-
+// Routes
+router.get('/items',verification, DMSController.getItems);
+router.post('/items/folder',verification, DMSController.createFolder);
+router.post('/items/upload',verification, upload.array('files'), DMSController.uploadFiles);
+router.put('/items/:id/rename',verification, DMSController.renameItem);
+router.delete('/items/:id',verification, DMSController.deleteItem);
+router.get('/items/:id/download',verification, DMSController.downloadFile);
+router.post('/items/:id/assign',verification, DMSController.assignUser);
+router.get('/user-items/:userEmail',verification, DMSController.getUserItems);
 
 module.exports = router;

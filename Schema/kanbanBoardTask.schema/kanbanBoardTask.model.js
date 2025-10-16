@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const taskSchema = new mongoose.Schema({
   title: {
     type: String,
-    // required: true,
+    required: true,
     trim: true
   },
   description: {
@@ -31,49 +31,93 @@ const taskSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['backlog', 'todo', 'inprogress', 'review', 'done'],
-    default: 'backlog'
+    default: 'todo' // Changed default to 'todo' as per requirement
   },
-  // NEW FIELD: Site ID to link tasks to specific sites
+  // Site Information
   siteId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Site', // Reference to your Site model (adjust the model name as needed)
-    // required: true,
-    index: true // Add index for better query performance
+    ref: 'Site',
+    required: true,
+    index: true
   },
-  // NEW FIELD: Site Name
   siteName: {
     type: String,
     trim: true,
-    default: ''
+    required: true
   },
-  // NEW FIELD: Assignor Name
+  // Assignor Information
   assignorName: {
     type: String,
     trim: true,
     default: ''
   },
-  // NEW FIELD: Assignor Email
   assignorEmail: {
     type: String,
     trim: true,
     default: ''
   },
-  // NEW FIELD: Assignee Name
+  // Assignee Information
   assigneeName: {
     type: String,
     trim: true,
     default: ''
   },
-  // NEW FIELD: Assignee Email
   assigneeEmail: {
     type: String,
     trim: true,
     default: ''
   },
-  // Optional: Add user ID if you want to track who created the task
+  // NEW FIELDS: Quotation and Work Information
+  quotationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ManualQuotation',
+    required: true,
+    index: true
+  },
+  workTypeId: {
+    type: String,
+    required: true
+  },
+  workType: {
+    type: String,
+    required: true
+  },
+  workCategory: {
+    type: String,
+    default: ''
+  },
+  projectType: {
+    type: String,
+    default: ''
+  },
+  scopeOfWork: {
+    type: String,
+    default: ''
+  },
+  floor: {
+    type: String,
+    default: ''
+  },
+  roomNumber: {
+    type: String,
+    default: ''
+  },
+  materials: {
+    type: String,
+    default: ''
+  },
+  // Task source information
+  sourceType: {
+    type: String,
+    enum: ['quotation', 'manual'],
+    default: 'quotation'
+  },
+  originalTaskId: {
+    type: String // To track the original task ID from quotation
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Reference to your User model (adjust the model name as needed)
+    ref: 'User',
     index: true
   },
   createdAt: {
@@ -92,13 +136,20 @@ taskSchema.pre('save', function(next) {
   next();
 });
 
-// Add compound index for better query performance
+// Add compound indexes for better query performance
 taskSchema.index({ siteId: 1, status: 1 });
 taskSchema.index({ siteId: 1, createdAt: -1 });
+taskSchema.index({ quotationId: 1, siteId: 1 });
+taskSchema.index({ workTypeId: 1 });
 
 // Static method to get tasks by site
 taskSchema.statics.getTasksBySite = function(siteId, filters = {}) {
   return this.find({ siteId, ...filters }).sort({ createdAt: -1 });
+};
+
+// Static method to get tasks by quotation
+taskSchema.statics.getTasksByQuotation = function(quotationId) {
+  return this.find({ quotationId }).sort({ createdAt: -1 });
 };
 
 // Static method to get task statistics by site

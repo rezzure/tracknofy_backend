@@ -1,4 +1,6 @@
+const Task = require('../../Schema/kanbanBoardTask.schema/kanbanBoardTask.model');
 const ManualQuotation = require('../../Schema/ManualQuotation.schema/manualQuotation');
+const Site = require('../../Schema/site.Schema/site.model');
 const User = require('../../Schema/users.schema/users.model');
 
 // Generate unique quotation ID with retry logic
@@ -66,7 +68,7 @@ const generateUniqueQuotationId = async (baseQuotationId, versionNumber) => {
   return `${baseId}-V${versionNumber}-${timestamp}`;
 };
 
-// NEW: Validate work items structure including tasks array
+// Validate work items structure including tasks array
 const validateWorkItems = (workItems) => {
   if (!workItems || !Array.isArray(workItems)) {
     return { isValid: false, message: 'Work items must be an array' };
@@ -78,12 +80,10 @@ const validateWorkItems = (workItems) => {
     }
 
     for (const category of workItem.workCategories) {
-      // Validate that tasks is an array (can be empty)
       if (category.tasks && !Array.isArray(category.tasks)) {
         return { isValid: false, message: 'Tasks must be an array' };
       }
 
-      // Validate individual task structure if tasks exist
       if (category.tasks && category.tasks.length > 0) {
         for (const task of category.tasks) {
           if (!task.name || !task.workTypeId || !task.workType || !task.workCategory || !task.scopeOfWork || !task.projectType) {
@@ -98,6 +98,64 @@ const validateWorkItems = (workItems) => {
   }
 
   return { isValid: true };
+};
+
+// NEW: Update site creation status
+exports.updateSiteCreationStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { siteId, siteName, clientUserId, clientEmail, createdBy } = req.body;
+
+    if (!siteId || !siteName || !clientUserId || !clientEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields for site creation status update'
+      });
+    }
+
+    const quotation = await ManualQuotation.findById(id);
+    
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found'
+      });
+    }
+
+    // Update site creation status
+    const updatedQuotation = await ManualQuotation.findByIdAndUpdate(
+      id,
+      {
+        siteCreation: {
+          isSiteCreated: true,
+          siteId: siteId,
+          siteName: siteName,
+          clientUserId: clientUserId,
+          clientEmail: clientEmail,
+          createdBy: createdBy || req.query.email,
+          createdAt: new Date()
+        },
+        updatedDate: new Date()
+      },
+      { new: true, runValidators: true }
+    )
+    .populate('assignedTo.userId', 'name email role')
+    .populate('assignedTo.assignedBy', 'name email')
+    .populate('createdBy', 'name email');
+
+    res.status(200).json({
+      success: true,
+      message: 'Site creation status updated successfully',
+      data: updatedQuotation
+    });
+  } catch (error) {
+    console.error('Error updating site creation status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
 };
 
 // Create new manual quotation
@@ -122,7 +180,6 @@ exports.createManualQuotation = async (req, res) => {
       });
     }
 
-    // Validate work items structure including tasks array
     const validationResult = validateWorkItems(workItems);
     if (!validationResult.isValid) {
       return res.status(400).json({
@@ -148,7 +205,16 @@ exports.createManualQuotation = async (req, res) => {
       assignedTo: assignedTo || null,
       versionNumber: 0,
       isLatestVersion: true,
-      isArchived: false // NEW: Default archive status
+      isArchived: false,
+      siteCreation: {
+        isSiteCreated: false,
+        siteId: null,
+        siteName: "",
+        clientUserId: null,
+        clientEmail: "",
+        createdBy: "",
+        createdAt: null
+      }
     });
 
     const savedQuotation = await manualQuotation.save();
@@ -168,12 +234,11 @@ exports.createManualQuotation = async (req, res) => {
   }
 };
 
-// Get all manual quotations for a user (Admin view) - UPDATED with archive filter
+// Get all manual quotations for a user (Admin view)
 exports.getAllManualQuotations = async (req, res) => {
   try {
-    const { showArchived } = req.query; // NEW: Optional query parameter for archive filter
+    const { showArchived } = req.query;
     
-    // Build query based on archive filter
     let query = { isLatestVersion: true };
     
     if (showArchived === 'true') {
@@ -204,7 +269,7 @@ exports.getAllManualQuotations = async (req, res) => {
   }
 };
 
-// NEW: Archive/Restore quotation function
+// Archive/Restore quotation function
 exports.archiveQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -227,7 +292,6 @@ exports.archiveQuotation = async (req, res) => {
       });
     }
 
-    // Check if quotation is already in the requested archive state
     if (quotation.isArchived === isArchived) {
       return res.status(400).json({
         success: false,
@@ -240,7 +304,6 @@ exports.archiveQuotation = async (req, res) => {
       updatedDate: new Date()
     };
 
-    // Set archive details if archiving
     if (isArchived) {
       updateData.archivedBy = {
         email: email,
@@ -248,7 +311,6 @@ exports.archiveQuotation = async (req, res) => {
       };
       updateData.archiveReason = archiveReason || '';
     } else {
-      // Clear archive details if restoring
       updateData.archivedBy = undefined;
       updateData.archiveReason = '';
     }
@@ -277,7 +339,7 @@ exports.archiveQuotation = async (req, res) => {
   }
 };
 
-// NEW: Approve quotation (Admin action)
+// Approve quotation (Admin action)
 exports.approveQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -292,7 +354,6 @@ exports.approveQuotation = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -300,7 +361,6 @@ exports.approveQuotation = async (req, res) => {
       });
     }
 
-    // Check if quotation is already approved
     if (quotation.status === 'Approved') {
       return res.status(400).json({
         success: false,
@@ -308,10 +368,8 @@ exports.approveQuotation = async (req, res) => {
       });
     }
 
-    // Calculate next version number
     const nextVersionNumber = quotation.versionNumber + 1;
 
-    // Create version history entry for current version
     const versionHistoryEntry = {
       versionNumber: quotation.versionNumber,
       quotationId: quotation.quotationId,
@@ -328,10 +386,8 @@ exports.approveQuotation = async (req, res) => {
       }
     };
 
-    // Generate new quotation ID for next version
     const newQuotationId = await generateUniqueQuotationId(quotation.quotationId, nextVersionNumber);
 
-    // Update current quotation to not be latest
     await ManualQuotation.findByIdAndUpdate(id, {
       isLatestVersion: false,
       status: 'Approved',
@@ -342,7 +398,6 @@ exports.approveQuotation = async (req, res) => {
       }
     });
 
-    // Create new approved version
     const newQuotation = new ManualQuotation({
       ...quotation.toObject(),
       _id: undefined,
@@ -350,7 +405,7 @@ exports.approveQuotation = async (req, res) => {
       versionNumber: nextVersionNumber,
       status: 'Approved',
       isLatestVersion: true,
-      isArchived: false, // NEW: Ensure new version is not archived
+      isArchived: false,
       parentQuotationId: quotation.parentQuotationId || quotation._id,
       versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry],
       generatedDate: new Date(),
@@ -382,11 +437,11 @@ exports.approveQuotation = async (req, res) => {
   }
 };
 
-// UPDATED: Get client quotations with archive filter
+// Get client quotations with archive filter
 exports.getClientQuotations = async (req, res) => {
   try {
     const email = req.query.email;
-    const { showArchived } = req.query; // NEW: Archive filter for clients
+    const { showArchived } = req.query;
     
     console.log("Fetching quotations for email:", email);
     
@@ -398,7 +453,6 @@ exports.getClientQuotations = async (req, res) => {
       });
     }
 
-    // Build query with archive filter
     let query = { 
       isLatestVersion: true,
       $or: [
@@ -407,7 +461,6 @@ exports.getClientQuotations = async (req, res) => {
       ]
     };
 
-    // Add archive filter if specified
     if (showArchived === 'true') {
       query.isArchived = true;
     } else {
@@ -474,7 +527,7 @@ exports.getManualQuotationById = async (req, res) => {
   }
 };
 
-// Update manual quotation - UPDATED with archive check
+// Update manual quotation
 exports.updateManualQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -491,7 +544,6 @@ exports.updateManualQuotation = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (existingQuotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -499,7 +551,6 @@ exports.updateManualQuotation = async (req, res) => {
       });
     }
 
-    // Validate work items if they are being updated
     if (updateData.workItems) {
       const validationResult = validateWorkItems(updateData.workItems);
       if (!validationResult.isValid) {
@@ -517,9 +568,10 @@ exports.updateManualQuotation = async (req, res) => {
     delete updateData.versionNumber;
     delete updateData.isLatestVersion;
     delete updateData.parentQuotationId;
-    delete updateData.isArchived; // NEW: Prevent direct archive status modification
-    delete updateData.archivedBy; // NEW: Prevent direct archive modification
-    delete updateData.archiveReason; // NEW: Prevent direct archive modification
+    delete updateData.isArchived;
+    delete updateData.archivedBy;
+    delete updateData.archiveReason;
+    delete updateData.siteCreation; // Prevent direct site creation modification
 
     updateData.updatedDate = new Date();
 
@@ -563,7 +615,7 @@ exports.updateManualQuotation = async (req, res) => {
   }
 };
 
-// Delete manual quotation - UPDATED with archive check
+// Delete manual quotation
 exports.deleteManualQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -580,7 +632,6 @@ exports.deleteManualQuotation = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -607,7 +658,7 @@ exports.deleteManualQuotation = async (req, res) => {
   }
 };
 
-// Update quotation status (Admin only) - UPDATED with archive check
+// Update quotation status (Admin only)
 exports.updateQuotationStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -629,7 +680,6 @@ exports.updateQuotationStatus = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -674,7 +724,7 @@ exports.updateQuotationStatus = async (req, res) => {
   }
 };
 
-// Mark quotation as version 1 (Admin action) - UPDATED with archive check
+// Mark quotation as version 1 (Admin action)
 exports.markAsVersionOne = async (req, res) => {
   try {
     const { id } = req.params;
@@ -689,7 +739,6 @@ exports.markAsVersionOne = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -729,7 +778,7 @@ exports.markAsVersionOne = async (req, res) => {
   }
 };
 
-// UPDATED: Update quotation status by client (Client actions) - Now includes approvedBy and archive check
+// Update quotation status by client (Client actions)
 exports.updateQuotationStatusByClient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -752,7 +801,6 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -771,11 +819,9 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       });
     }
 
-    // UPDATED: If client approves, create next version with approvedBy field
     if (status === 'Approved') {
       const nextVersionNumber = quotation.versionNumber + 1;
       
-      // Create version history entry for current version
       const versionHistoryEntry = {
         versionNumber: quotation.versionNumber,
         quotationId: quotation.quotationId,
@@ -792,10 +838,8 @@ exports.updateQuotationStatusByClient = async (req, res) => {
         }
       };
 
-      // Generate new quotation ID for next version
       const newQuotationId = await generateUniqueQuotationId(quotation.quotationId, nextVersionNumber);
 
-      // Update current quotation to not be latest and set approvedBy
       await ManualQuotation.findByIdAndUpdate(id, {
         isLatestVersion: false,
         status: 'Approved',
@@ -808,7 +852,6 @@ exports.updateQuotationStatusByClient = async (req, res) => {
         }
       });
 
-      // Create new approved version with approvedBy field
       const newQuotation = new ManualQuotation({
         ...quotation.toObject(),
         _id: undefined,
@@ -816,7 +859,7 @@ exports.updateQuotationStatusByClient = async (req, res) => {
         versionNumber: nextVersionNumber,
         status: 'Approved',
         isLatestVersion: true,
-        isArchived: false, // NEW: Ensure new version is not archived
+        isArchived: false,
         parentQuotationId: quotation.parentQuotationId || quotation._id,
         versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry],
         clientRemarks: clientRemarks || '',
@@ -842,7 +885,6 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       });
     }
 
-    // If client requests revisions, update status and save comments
     if (status === 'Revised') {
       console.log("Updating quotation with revision feedback");
       
@@ -881,7 +923,7 @@ exports.updateQuotationStatusByClient = async (req, res) => {
   }
 };
 
-// Get all versions of a quotation - UPDATED with archive awareness
+// Get all versions of a quotation
 exports.getQuotationVersions = async (req, res) => {
   try {
     const { id } = req.params;
@@ -930,7 +972,7 @@ exports.getQuotationVersions = async (req, res) => {
   }
 };
 
-// Create revision - UPDATED with archive check
+// Create revision
 exports.createRevision = async (req, res) => {
   try {
     const { id } = req.params;
@@ -952,7 +994,6 @@ exports.createRevision = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (originalQuotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -990,7 +1031,7 @@ exports.createRevision = async (req, res) => {
       quotationId: newQuotationId,
       versionNumber: nextVersionNumber,
       isLatestVersion: true,
-      isArchived: false, // NEW: Ensure revision is not archived
+      isArchived: false,
       parentQuotationId: rootParentId,
       generatedDate: new Date(),
       updatedDate: new Date(),
@@ -1062,7 +1103,7 @@ exports.getQuotationVersion = async (req, res) => {
   }
 };
 
-// Assign user to quotation - UPDATED with archive check
+// Assign user to quotation
 exports.assignUserToQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1084,7 +1125,6 @@ exports.assignUserToQuotation = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -1148,7 +1188,7 @@ exports.assignUserToQuotation = async (req, res) => {
   }
 };
 
-// Remove assigned user from quotation - UPDATED with archive check
+// Remove assigned user from quotation
 exports.removeAssignedUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1162,7 +1202,6 @@ exports.removeAssignedUser = async (req, res) => {
       });
     }
 
-    // Check if quotation is archived
     if (quotation.isArchived) {
       return res.status(400).json({
         success: false,
@@ -1208,3 +1247,154 @@ exports.removeAssignedUser = async (req, res) => {
     });
   }
 };
+
+
+exports.activateTask = async (req,res)=>{
+  try {
+    const { id } = req.params; // Quotation ID from params
+    const { email } = req.query; // User email from query
+
+    // Validate input
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quotation ID is required'
+      });
+    }
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'User email is required'
+      });
+    }
+
+    // Find the quotation
+    const quotation = await ManualQuotation.findById(id);
+    
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found'
+      });
+    }
+
+    // Check if quotation is approved
+    if (quotation.status !== 'Approved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only approved quotations can be activated for tasks'
+      });
+    }
+
+    // Check if it's the latest version
+    if (!quotation.isLatestVersion) {
+      return res.status(400).json({
+        success: false,
+        message: 'You can only activate tasks from the latest version of the quotation'
+      });
+    }
+
+    // Get client email from quotation
+    const clientEmail = quotation.clientData?.clientEmail;
+    
+    if (!clientEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Client email not found in quotation data'
+      });
+    }
+
+    // Find site by client email
+    const site = await Site.findOne({ clientEmail: clientEmail });
+    
+    if (!site) {
+      return res.status(404).json({
+        success: false,
+        message: 'Site not found for the client email in quotation'
+      });
+    }
+
+    // Extract all tasks from workItems
+    const tasksToCreate = [];
+    let taskCounter = 0;
+
+    // Iterate through workItems and workCategories to extract tasks
+    quotation.workItems.forEach((workItem, workItemIndex) => {
+      workItem.workCategories.forEach((workCategory, categoryIndex) => {
+        if (workCategory.tasks && workCategory.tasks.length > 0) {
+          workCategory.tasks.forEach((task, taskIndex) => {
+            taskCounter++;
+            
+            const newTask = {
+              title: task.name,
+              // description: `Task from quotation: ${quotation.quotationId}. ${workCategory.workCategory} - ${workCategory.workType}`,
+              status: 'todo', // Set status to 'todo' as required
+              siteId: site._id,
+              siteName: site.siteName,
+              quotationId: quotation._id,
+              workTypeId: task.workTypeId,
+              workType: task.workType,
+              workCategory: workCategory.workCategory,
+              projectType: workItem.projectType,
+              scopeOfWork: workItem.scopeOfWork,
+              floor: workItem.floor,
+              roomNumber: workItem.roomNumber,
+              materials: workCategory.materials,
+              sourceType: 'quotation',
+              originalTaskId: task._id || `task-${workItemIndex}-${categoryIndex}-${taskIndex}`,
+              assignorEmail: email,
+              // You can add more fields as needed
+              // tags: [
+              //   workItem.projectType,
+              //   workItem.scopeOfWork,
+              //   workCategory.workCategory,
+              //   'quotation-task'
+              // ].filter(Boolean)
+            };
+
+            tasksToCreate.push(newTask);
+          });
+        }
+      });
+    });
+
+    if (tasksToCreate.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No tasks found in the quotation to activate'
+      });
+    }
+
+    // Create all tasks in the database
+    const createdTasks = await Task.insertMany(tasksToCreate);
+
+    // Update the quotation to mark that tasks have been activated (optional)
+    // You might want to add a field to track this in your ManualQuotation schema
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully activated ${createdTasks.length} tasks from quotation`,
+      data: {
+        tasksCreated: createdTasks.length,
+        siteId: site._id,
+        siteName: site.siteName,
+        quotationId: quotation._id,
+        tasks: createdTasks.map(task => ({
+          id: task._id,
+          title: task.title,
+          status: task.status,
+          workType: task.workType
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Error activating tasks:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error while activating tasks',
+      error: error.message
+    });
+  }
+}

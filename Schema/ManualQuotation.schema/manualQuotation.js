@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const taskSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -31,7 +32,7 @@ const workCategorySchema = new mongoose.Schema({
   workType: {
     type: String,
   },
-  tasks: [taskSchema], // UPDATED: Now stores array of tasks
+  tasks: [taskSchema],
   materials: {
     type: String,
   },
@@ -147,7 +148,6 @@ const assignedUserSchema = new mongoose.Schema({
   }
 });
 
-// NEW: Approved By Schema
 const approvedBySchema = new mongoose.Schema({
   email: {
     type: String,
@@ -163,7 +163,6 @@ const approvedBySchema = new mongoose.Schema({
   }
 });
 
-// NEW: Archived By Schema
 const archivedBySchema = new mongoose.Schema({
   email: {
     type: String,
@@ -176,6 +175,40 @@ const archivedBySchema = new mongoose.Schema({
   archivedAt: {
     type: Date,
     default: Date.now
+  }
+});
+
+// NEW: Site Creation Tracking Schema
+const siteCreationSchema = new mongoose.Schema({
+  isSiteCreated: {
+    type: Boolean,
+    default: false
+  },
+  siteId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Site',
+    default: null
+  },
+  siteName: {
+    type: String,
+    default: ""
+  },
+  clientUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  clientEmail: {
+    type: String,
+    default: ""
+  },
+  createdBy: {
+    type: String,
+    default: ""
+  },
+  createdAt: {
+    type: Date,
+    default: null
   }
 });
 
@@ -215,7 +248,6 @@ const versionHistorySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {}
   },
-  // NEW: Add approvedBy to version history
   approvedBy: approvedBySchema
 });
 
@@ -267,9 +299,7 @@ const manualQuotationSchema = new mongoose.Schema({
     default: {}
   },
   assignedTo: assignedUserSchema,
-  // NEW: Approved By Field
   approvedBy: approvedBySchema,
-  // NEW: Archive Fields
   isArchived: {
     type: Boolean,
     default: false
@@ -279,7 +309,19 @@ const manualQuotationSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
-  // VERSIONING FIELDS
+  // NEW: Site Creation Tracking
+  siteCreation: {
+    type: siteCreationSchema,
+    default: {
+      isSiteCreated: false,
+      siteId: null,
+      siteName: "",
+      clientUserId: null,
+      clientEmail: "",
+      createdBy: "",
+      createdAt: null
+    }
+  },
   versionNumber: {
     type: Number,
     default: 1
@@ -305,13 +347,13 @@ const manualQuotationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create index for better query performance
 manualQuotationSchema.index({ quotationId: 1 });
 manualQuotationSchema.index({ createdBy: 1 });
 manualQuotationSchema.index({ status: 1 });
 manualQuotationSchema.index({ 'assignedTo.userId': 1 });
 manualQuotationSchema.index({ parentQuotationId: 1 });
 manualQuotationSchema.index({ isLatestVersion: 1 });
-manualQuotationSchema.index({ isArchived: 1 }); // NEW: Index for archive queries
+manualQuotationSchema.index({ isArchived: 1 });
+manualQuotationSchema.index({ 'siteCreation.isSiteCreated': 1 }); // NEW: Index for site creation queries
 
 module.exports = mongoose.model('ManualQuotation', manualQuotationSchema);

@@ -21,11 +21,19 @@ const siteSchema = new Schema({
     type:String,
     required:true
   },
+  clientEmail:{
+    type:String,
+    required:true,
+  },
   supervisorId: {
     type: Schema.Types.ObjectId,
     ref: 'Supervisor',
   },
   supervisorName:{
+    type:String,
+    required:true
+  },
+  supervisorEmail:{
     type:String,
     required:true
   },

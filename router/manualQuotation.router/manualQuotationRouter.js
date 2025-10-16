@@ -9,10 +9,13 @@ router.get('/manual-quotation/all', verification, manualQuotationController.getA
 router.get('/manual-quotation/client', verification, manualQuotationController.getClientQuotations);
 router.get('/manual-quotation/:id', verification, manualQuotationController.getManualQuotationById);
 
-// NEW: Approve quotation route
+// NEW: Update site creation status route
+router.patch('/manual-quotation/:id/update-site-creation', verification, manualQuotationController.updateSiteCreationStatus);
+
+// Approve quotation route
 router.patch('/manual-quotation/:id/approve', verification, manualQuotationController.approveQuotation);
 
-// NEW: Archive quotation route
+// Archive quotation route
 router.patch('/manual-quotation/:id/archive', verification, manualQuotationController.archiveQuotation);
 
 router.put('/manual-quotation/:id', verification, manualQuotationController.updateManualQuotation);
@@ -20,7 +23,7 @@ router.delete('/manual-quotation/:id', verification, manualQuotationController.d
 router.patch('/manual-quotation/:id/status', verification, manualQuotationController.updateQuotationStatus);
 router.put('/manual-quotation/:id/client-status', verification, manualQuotationController.updateQuotationStatusByClient);
 
-// NEW ROUTE: Mark as version 1
+// Mark as version 1
 router.patch('/manual-quotation/:id/mark-version-one', verification, manualQuotationController.markAsVersionOne);
 
 // User Assignment Routes
@@ -31,5 +34,6 @@ router.patch('/manual-quotation/:id/remove-assigned-user', verification, manualQ
 router.post('/manual-quotation/:id/create-revision', verification, manualQuotationController.createRevision);
 router.get('/manual-quotation/:id/versions', verification, manualQuotationController.getQuotationVersions);
 router.get('/manual-quotation/:id/version/:versionNumber', verification, manualQuotationController.getQuotationVersion);
+router.post('/manual-quotation/activate-tasks/:id', verification, manualQuotationController.activateTask);
 
 module.exports = router;

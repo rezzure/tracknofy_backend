@@ -37,8 +37,10 @@ const addSite = async (req, res) => {
       mobile : Userdata.mobile,
       clientId: clientdata._id,
       clientName: clientdata.name,
+      clientEmail:clientdata.email,
       supervisorId: supervisordata._id,
       supervisorName: supervisordata.name,
+      supervisorEmail:supervisordata.email,
       status: "active",
     });
     

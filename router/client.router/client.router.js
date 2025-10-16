@@ -13,16 +13,17 @@ const {
   handleClientAction,
   addClientComment,
   getClientDesignDetails,
-  getClientStats
+  getClientStats,
+  getClientDesignVersions
 } = require('../../controllers/Client/designApproval.js');
 
-// Client design routes
-router.get('/client/designs', getClientDesigns);
-router.get('/client/designs/stats', getClientStats);
-router.get('/client/design/:id', getClientDesignDetails);
-router.patch('/design/:id/client-action', handleClientAction);
-router.post('/design/:id/client-comment', addClientComment);
-
+// Add these new routes to your client routes
+router.get("/client/designs", verification, getClientDesigns);
+router.get("/client/design/:designId/versions", verification, getClientDesignVersions);
+router.patch("/design/:id/client-action", verification, handleClientAction);
+router.get("/client/design/:id", verification, getClientDesignDetails);
+router.post("/client/design/:id/comment", verification, addClientComment);
+router.get("/client/stats", verification, getClientStats);
 
 // router for getting client detail
 router.get('/get/clientDetail',verification,getClientDetails)

@@ -6,7 +6,8 @@ const nodemailer = require("nodemailer");
 const Company = require("../../Schema/superAdmin.schema/company.model");
 const CompanyAdmin = require("../../Schema/superAdmin.schema/companyAdmin.model");
 const AddCompany = require("../../Schema/superAdmin.schema/addCompany.model");
-
+const { default: mongoose } = require("mongoose");
+const bcrypt = require("bcrypt");
 
 // Generate random password
 const generateTempPassword = () => {
@@ -343,43 +344,6 @@ const addCompanies = async (req, res) => {
   }
 };
 
-// // Get all companies with their admins
-// const getCompanies = async (req, res) => {
-//   try {
-//     const companies = await Company.find({ isActive: true })
-//       .sort({ createdAt: -1 })
-//       .lean();
-
-//     // Get admin details for each company
-//     const companiesWithAdmins = await Promise.all(
-//       companies.map(async (company) => {
-//         const admin = await CompanyAdmin.findOne({
-//           companyId: company._id,
-//           role: 'Admin',
-//           isActive: true
-//         }).select('name email phone');
-
-//         return {
-//           ...company,
-//           admin: admin || null
-//         };
-//       })
-//     );
-
-//     res.status(201).json({
-//       success : true,
-//       message : "All companies with their admins fetched success ",
-//       companiesWithAdmins : companiesWithAdmins
-//     });
-//   } catch (error) {
-//     console.error('Error fetching companies:', error);
-//     res.status(500).json({
-//       message: 'Server error occurred while fetching companies',
-//       error: error.message
-//     });
-//   }
-// };
-
 
 // Get all companies with their admins
 const getCompanies = async (req, res) => {
@@ -395,7 +359,7 @@ const getCompanies = async (req, res) => {
           companyId: company._id,
           role: 'Admin',
           isActive: true
-        }).select('name email phone companyGST');
+        }).select('name email phone');
 
         return {
           _id: company._id,
@@ -406,17 +370,13 @@ const getCompanies = async (req, res) => {
           companyLogo: company.companyLogo,
           noOfUsers: company.noOfUsers,
           status: company.status,
-          adminEmail: company.adminEmail,
           createdAt: company.createdAt,
           updatedAt: company.updatedAt,
-          admin: admin || {
-            name: 'N/A',
-            email: 'N/A',
-            phone: 'N/A'
-          },
-          // For frontend compatibility
-          adminName: admin ? admin.name : 'N/A',
-          adminContactNo: admin ? admin.phone : 'N/A'
+          admin: admin || null,
+          // For frontend compatibility - ensure these fields are always present
+          adminName: admin ? admin.name : (company.adminName || 'N/A'),
+          adminContactNo: admin ? admin.phone : (company.adminContactNo || 'N/A'),
+          adminEmail: admin ? admin.email : (company.adminEmail || 'N/A')
         };
       })
     );
@@ -436,6 +396,9 @@ const getCompanies = async (req, res) => {
     });
   }
 };
+
+
+
 
 // Get single company by ID
 // exports.getCompanyById = async (req, res) => {
@@ -465,26 +428,47 @@ const getCompanies = async (req, res) => {
 // };
 
 // Update company and admin (only editable fields)
+
+
+
 const updateCompany = async (req, res) => {
   try {
     const {
+      companyName,
+      companyAddress,
+      companyContactNo,
+      companyGST,
       adminName,
       adminContactNo,
       adminEmail,
+      adminPassword,
       noOfUsers
     } = req.body;
 
     const companyId = req.params.id;
-    console.log(`companyId aagya hai bhau ${companyId}`)
+    console.log(`Updating company with ID: ${companyId}`);
 
     // Check if company exists
     const company = await Company.findById(companyId);
     if (!company) {
-      return res.status(404).json({ message: 'Company not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Company not found' 
+      });
     }
 
-    // Update only editable fields
-    company.noOfUsers = parseInt(noOfUsers);
+    // Update company fields - include all editable fields
+    if (companyName !== undefined) company.companyName = companyName;
+    if (companyAddress !== undefined) company.companyAddress = companyAddress;
+    if (companyContactNo !== undefined) company.companyContactNo = companyContactNo;
+    if (companyGST !== undefined) company.companyGST = companyGST;
+    if (noOfUsers !== undefined) company.noOfUsers = parseInt(noOfUsers);
+
+    // Handle company logo file upload if provided
+    if (req.file) {
+      company.companyLogo = req.file.filename;
+    }
+
     await company.save();
 
     // Update admin user
@@ -495,52 +479,88 @@ const updateCompany = async (req, res) => {
 
     if (adminUser) {
       // Check if email is being changed and if it already exists
-      if (adminUser.email !== adminEmail) {
+      if (adminEmail && adminUser.email !== adminEmail) {
         const existingUser = await CompanyAdmin.findOne({
           email: adminEmail,
           _id: { $ne: adminUser._id }
         });
+        
         if (existingUser) {
           return res.status(409).json({
+            success: false,
             message: 'Admin with this email already exists'
           });
         }
       }
 
-      adminUser.name = adminName;
-      adminUser.email = adminEmail;
-      adminUser.phone = adminContactNo;
+      // Update admin fields
+      if (adminName !== undefined) adminUser.name = adminName;
+      if (adminEmail !== undefined) adminUser.email = adminEmail;
+      if (adminContactNo !== undefined) adminUser.phone = adminContactNo;
+      
+      // Update password only if provided and not empty
+      if (adminPassword && adminPassword.trim() !== '') {
+        // Hash the password before saving (assuming you have bcrypt setup)
+        const saltRounds = 10;
+        adminUser.password = await bcrypt.hash(adminPassword, saltRounds);
+      }
+
       await adminUser.save();
     }
 
-    res.status(201).json({
-      message: 'Company and admin updated successfully',
-      success : true,
-      company: {
-        id: company._id,
-        companyName: company.companyName,
-        companyAddress: company.companyAddress,
-        companyContactNo: company.companyContactNo,
-        companyLogo: company.companyLogo,
-        noOfUsers: company.noOfUsers
-      },
+    // Prepare response data matching the frontend expectation
+    const responseData = {
+      _id: company._id,
+      companyName: company.companyName,
+      companyAddress: company.companyAddress,
+      companyContactNo: company.companyContactNo,
+      companyGST: company.companyGST,
+      companyLogo: company.companyLogo,
+      noOfUsers: company.noOfUsers,
+      status: company.status,
+      adminName: adminUser?.name || adminName,
+      adminContactNo: adminUser?.phone || adminContactNo,
+      adminEmail: adminUser?.email || adminEmail,
       admin: adminUser ? {
-        id: adminUser._id,
+        _id: adminUser._id,
         name: adminUser.name,
         email: adminUser.email,
         phone: adminUser.phone
       } : null
+    };
+
+    res.status(200).json({
+      message: 'Company and admin updated successfully',
+      success: true,
+      ...responseData
     });
 
   } catch (error) {
     console.error('Error updating company:', error.message);
+    
+    // Handle specific errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error occurred',
+        error: error.message
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Company with this name or email already exists'
+      });
+    }
+
     res.status(500).json({
+      success: false,
       message: 'Server error occurred while updating company',
       error: error.message
     });
   }
 };
-
 
 // Update company status (Active/InActive)
 const updateCompanyStatus = async (req, res) => {

@@ -147,7 +147,8 @@ exports.createManualQuotation = async (req, res) => {
       createdBy: email,
       assignedTo: assignedTo || null,
       versionNumber: 0,
-      isLatestVersion: true
+      isLatestVersion: true,
+      isArchived: false // NEW: Default archive status
     });
 
     const savedQuotation = await manualQuotation.save();
@@ -167,10 +168,21 @@ exports.createManualQuotation = async (req, res) => {
   }
 };
 
-// Get all manual quotations for a user (Admin view)
+// Get all manual quotations for a user (Admin view) - UPDATED with archive filter
 exports.getAllManualQuotations = async (req, res) => {
   try {
-    const quotations = await ManualQuotation.find({ isLatestVersion: true })
+    const { showArchived } = req.query; // NEW: Optional query parameter for archive filter
+    
+    // Build query based on archive filter
+    let query = { isLatestVersion: true };
+    
+    if (showArchived === 'true') {
+      query.isArchived = true;
+    } else {
+      query.isArchived = false;
+    }
+
+    const quotations = await ManualQuotation.find(query)
       .sort({ createdAt: -1 })
       .select('-__v')
       .populate('assignedTo.userId', 'name email role')
@@ -192,6 +204,79 @@ exports.getAllManualQuotations = async (req, res) => {
   }
 };
 
+// NEW: Archive/Restore quotation function
+exports.archiveQuotation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const email = req.query.email;
+    const { isArchived, archiveReason } = req.body;
+
+    if (typeof isArchived !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'isArchived field is required and must be a boolean'
+      });
+    }
+
+    const quotation = await ManualQuotation.findById(id);
+    
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Quotation not found'
+      });
+    }
+
+    // Check if quotation is already in the requested archive state
+    if (quotation.isArchived === isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: `Quotation is already ${isArchived ? 'archived' : 'active'}`
+      });
+    }
+
+    const updateData = {
+      isArchived: isArchived,
+      updatedDate: new Date()
+    };
+
+    // Set archive details if archiving
+    if (isArchived) {
+      updateData.archivedBy = {
+        email: email,
+        archivedAt: new Date()
+      };
+      updateData.archiveReason = archiveReason || '';
+    } else {
+      // Clear archive details if restoring
+      updateData.archivedBy = undefined;
+      updateData.archiveReason = '';
+    }
+
+    const updatedQuotation = await ManualQuotation.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    )
+    .populate('assignedTo.userId', 'name email role')
+    .populate('assignedTo.assignedBy', 'name email')
+    .populate('createdBy', 'name email');
+
+    res.status(200).json({
+      success: true,
+      message: `Quotation ${isArchived ? 'archived' : 'restored'} successfully`,
+      data: updatedQuotation
+    });
+  } catch (error) {
+    console.error('Error archiving/restoring quotation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
 // NEW: Approve quotation (Admin action)
 exports.approveQuotation = async (req, res) => {
   try {
@@ -204,6 +289,14 @@ exports.approveQuotation = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot approve an archived quotation'
       });
     }
 
@@ -257,6 +350,7 @@ exports.approveQuotation = async (req, res) => {
       versionNumber: nextVersionNumber,
       status: 'Approved',
       isLatestVersion: true,
+      isArchived: false, // NEW: Ensure new version is not archived
       parentQuotationId: quotation.parentQuotationId || quotation._id,
       versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry],
       generatedDate: new Date(),
@@ -288,9 +382,11 @@ exports.approveQuotation = async (req, res) => {
   }
 };
 
+// UPDATED: Get client quotations with archive filter
 exports.getClientQuotations = async (req, res) => {
   try {
     const email = req.query.email;
+    const { showArchived } = req.query; // NEW: Archive filter for clients
     
     console.log("Fetching quotations for email:", email);
     
@@ -302,13 +398,23 @@ exports.getClientQuotations = async (req, res) => {
       });
     }
 
-    const quotations = await ManualQuotation.find({ 
+    // Build query with archive filter
+    let query = { 
       isLatestVersion: true,
       $or: [
         { 'assignedTo.email': email },
         { 'clientData.clientEmail': email }
       ]
-    })
+    };
+
+    // Add archive filter if specified
+    if (showArchived === 'true') {
+      query.isArchived = true;
+    } else {
+      query.isArchived = false;
+    }
+
+    const quotations = await ManualQuotation.find(query)
     .populate('assignedTo.userId', 'name email role')
     .populate('assignedTo.assignedBy', 'name email')
     .populate('createdBy', 'name email')
@@ -368,7 +474,7 @@ exports.getManualQuotationById = async (req, res) => {
   }
 };
 
-// Update manual quotation
+// Update manual quotation - UPDATED with archive check
 exports.updateManualQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -382,6 +488,14 @@ exports.updateManualQuotation = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Manual quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (existingQuotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot update an archived quotation'
       });
     }
 
@@ -403,6 +517,9 @@ exports.updateManualQuotation = async (req, res) => {
     delete updateData.versionNumber;
     delete updateData.isLatestVersion;
     delete updateData.parentQuotationId;
+    delete updateData.isArchived; // NEW: Prevent direct archive status modification
+    delete updateData.archivedBy; // NEW: Prevent direct archive modification
+    delete updateData.archiveReason; // NEW: Prevent direct archive modification
 
     updateData.updatedDate = new Date();
 
@@ -446,12 +563,12 @@ exports.updateManualQuotation = async (req, res) => {
   }
 };
 
-// Delete manual quotation
+// Delete manual quotation - UPDATED with archive check
 exports.deleteManualQuotation = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const quotation = await ManualQuotation.findOneAndDelete({
+    const quotation = await ManualQuotation.findOne({
       _id: id,
       createdBy: req.user._id
     });
@@ -462,6 +579,19 @@ exports.deleteManualQuotation = async (req, res) => {
         message: 'Manual quotation not found'
       });
     }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete an archived quotation. Please restore it first.'
+      });
+    }
+
+    await ManualQuotation.findOneAndDelete({
+      _id: id,
+      createdBy: req.user._id
+    });
 
     res.status(200).json({
       success: true,
@@ -477,7 +607,7 @@ exports.deleteManualQuotation = async (req, res) => {
   }
 };
 
-// Update quotation status (Admin only)
+// Update quotation status (Admin only) - UPDATED with archive check
 exports.updateQuotationStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -490,7 +620,24 @@ exports.updateQuotationStatus = async (req, res) => {
       });
     }
 
-    const quotation = await ManualQuotation.findOneAndUpdate(
+    const quotation = await ManualQuotation.findOne({ _id: id });
+
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Manual quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot update status of an archived quotation'
+      });
+    }
+
+    const updatedQuotation = await ManualQuotation.findOneAndUpdate(
       { 
         _id: id, 
         createdBy: req.user._id 
@@ -505,7 +652,7 @@ exports.updateQuotationStatus = async (req, res) => {
     .populate('assignedTo.assignedBy', 'name email')
     .populate('createdBy', 'name email');
 
-    if (!quotation) {
+    if (!updatedQuotation) {
       return res.status(404).json({
         success: false,
         message: 'Manual quotation not found'
@@ -515,7 +662,7 @@ exports.updateQuotationStatus = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Quotation status updated successfully',
-      data: quotation
+      data: updatedQuotation
     });
   } catch (error) {
     console.error('Error updating quotation status:', error);
@@ -527,7 +674,7 @@ exports.updateQuotationStatus = async (req, res) => {
   }
 };
 
-// Mark quotation as version 1 (Admin action)
+// Mark quotation as version 1 (Admin action) - UPDATED with archive check
 exports.markAsVersionOne = async (req, res) => {
   try {
     const { id } = req.params;
@@ -539,6 +686,14 @@ exports.markAsVersionOne = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot modify an archived quotation'
       });
     }
 
@@ -574,7 +729,7 @@ exports.markAsVersionOne = async (req, res) => {
   }
 };
 
-// UPDATED: Update quotation status by client (Client actions) - Now includes approvedBy
+// UPDATED: Update quotation status by client (Client actions) - Now includes approvedBy and archive check
 exports.updateQuotationStatusByClient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -594,6 +749,14 @@ exports.updateQuotationStatusByClient = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot update status of an archived quotation'
       });
     }
 
@@ -653,6 +816,7 @@ exports.updateQuotationStatusByClient = async (req, res) => {
         versionNumber: nextVersionNumber,
         status: 'Approved',
         isLatestVersion: true,
+        isArchived: false, // NEW: Ensure new version is not archived
         parentQuotationId: quotation.parentQuotationId || quotation._id,
         versionHistory: [...(quotation.versionHistory || []), versionHistoryEntry],
         clientRemarks: clientRemarks || '',
@@ -717,7 +881,7 @@ exports.updateQuotationStatusByClient = async (req, res) => {
   }
 };
 
-// Get all versions of a quotation
+// Get all versions of a quotation - UPDATED with archive awareness
 exports.getQuotationVersions = async (req, res) => {
   try {
     const { id } = req.params;
@@ -766,7 +930,7 @@ exports.getQuotationVersions = async (req, res) => {
   }
 };
 
-// Create revision
+// Create revision - UPDATED with archive check
 exports.createRevision = async (req, res) => {
   try {
     const { id } = req.params;
@@ -785,6 +949,14 @@ exports.createRevision = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (originalQuotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot create revision from an archived quotation'
       });
     }
 
@@ -818,6 +990,7 @@ exports.createRevision = async (req, res) => {
       quotationId: newQuotationId,
       versionNumber: nextVersionNumber,
       isLatestVersion: true,
+      isArchived: false, // NEW: Ensure revision is not archived
       parentQuotationId: rootParentId,
       generatedDate: new Date(),
       updatedDate: new Date(),
@@ -889,7 +1062,7 @@ exports.getQuotationVersion = async (req, res) => {
   }
 };
 
-// Assign user to quotation
+// Assign user to quotation - UPDATED with archive check
 exports.assignUserToQuotation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -899,6 +1072,23 @@ exports.assignUserToQuotation = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'User ID, name, email, and role are required'
+      });
+    }
+
+    const quotation = await ManualQuotation.findById(id);
+
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Manual quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot assign user to an archived quotation'
       });
     }
 
@@ -919,7 +1109,7 @@ exports.assignUserToQuotation = async (req, res) => {
       assignedAt: new Date()
     };
 
-    const quotation = await ManualQuotation.findOneAndUpdate(
+    const updatedQuotation = await ManualQuotation.findOneAndUpdate(
       { 
         _id: id
       },
@@ -936,7 +1126,7 @@ exports.assignUserToQuotation = async (req, res) => {
     .populate('assignedTo.assignedBy', 'name email')
     .populate('createdBy', 'name email');
 
-    if (!quotation) {
+    if (!updatedQuotation) {
       return res.status(404).json({
         success: false,
         message: 'Manual quotation not found'
@@ -946,7 +1136,7 @@ exports.assignUserToQuotation = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'User assigned to quotation successfully',
-      data: quotation
+      data: updatedQuotation
     });
   } catch (error) {
     console.error('Error assigning user to quotation:', error);
@@ -958,12 +1148,29 @@ exports.assignUserToQuotation = async (req, res) => {
   }
 };
 
-// Remove assigned user from quotation
+// Remove assigned user from quotation - UPDATED with archive check
 exports.removeAssignedUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const quotation = await ManualQuotation.findOneAndUpdate(
+    const quotation = await ManualQuotation.findById(id);
+
+    if (!quotation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Manual quotation not found'
+      });
+    }
+
+    // Check if quotation is archived
+    if (quotation.isArchived) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot modify an archived quotation'
+      });
+    }
+
+    const updatedQuotation = await ManualQuotation.findOneAndUpdate(
       { 
         _id: id
       },
@@ -980,7 +1187,7 @@ exports.removeAssignedUser = async (req, res) => {
     .populate('assignedTo.assignedBy', 'name email')
     .populate('createdBy', 'name email');
 
-    if (!quotation) {
+    if (!updatedQuotation) {
       return res.status(404).json({
         success: false,
         message: 'Manual quotation not found'
@@ -990,7 +1197,7 @@ exports.removeAssignedUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Assigned user removed from quotation successfully',
-      data: quotation
+      data: updatedQuotation
     });
   } catch (error) {
     console.error('Error removing assigned user from quotation:', error);

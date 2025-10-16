@@ -12,6 +12,9 @@ router.get('/manual-quotation/:id', verification, manualQuotationController.getM
 // NEW: Approve quotation route
 router.patch('/manual-quotation/:id/approve', verification, manualQuotationController.approveQuotation);
 
+// NEW: Archive quotation route
+router.patch('/manual-quotation/:id/archive', verification, manualQuotationController.archiveQuotation);
+
 router.put('/manual-quotation/:id', verification, manualQuotationController.updateManualQuotation);
 router.delete('/manual-quotation/:id', verification, manualQuotationController.deleteManualQuotation);
 router.patch('/manual-quotation/:id/status', verification, manualQuotationController.updateQuotationStatus);

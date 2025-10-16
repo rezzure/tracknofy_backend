@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-
-// NEW: Task schema for storing individual tasks
 const taskSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -165,6 +163,22 @@ const approvedBySchema = new mongoose.Schema({
   }
 });
 
+// NEW: Archived By Schema
+const archivedBySchema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    default: ""
+  },
+  archivedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const versionHistorySchema = new mongoose.Schema({
   versionNumber: {
     type: Number,
@@ -255,6 +269,16 @@ const manualQuotationSchema = new mongoose.Schema({
   assignedTo: assignedUserSchema,
   // NEW: Approved By Field
   approvedBy: approvedBySchema,
+  // NEW: Archive Fields
+  isArchived: {
+    type: Boolean,
+    default: false
+  },
+  archivedBy: archivedBySchema,
+  archiveReason: {
+    type: String,
+    default: ""
+  },
   // VERSIONING FIELDS
   versionNumber: {
     type: Number,
@@ -288,5 +312,6 @@ manualQuotationSchema.index({ status: 1 });
 manualQuotationSchema.index({ 'assignedTo.userId': 1 });
 manualQuotationSchema.index({ parentQuotationId: 1 });
 manualQuotationSchema.index({ isLatestVersion: 1 });
+manualQuotationSchema.index({ isArchived: 1 }); // NEW: Index for archive queries
 
 module.exports = mongoose.model('ManualQuotation', manualQuotationSchema);

@@ -3,20 +3,23 @@ const BillingInvoice = require("../../Schema/BillingInvoice.schema/BillingInvoic
 
 
 const getInvoice = async (req, res )=>{
+  console.log("line 6")
     try {
-        const invoiceData = await BillingInvoice.
-        find()
+        const invoiceData = await BillingInvoice.find()
+        console.log("line 9")
         if(BillingInvoice.length === 0) {
             return res.status(404).send({
                 success: false,
                 message:"Invoice data found "
             })
         }
+        console.log("line 15")
         return res.status(200).send({
             seccess: true,
             message: "Invoice data found seccessfully",
             data:invoiceData
         })
+        
     } catch (error) {
         return res.status(500).send({
             success: false,
@@ -26,43 +29,87 @@ const getInvoice = async (req, res )=>{
     }
 }
 
+// const addInvoice = async (req, res) => {
+// try {
+//     const { invoiceNumber, date, dueDate, companyData, clientData, itemDescription, totalAmount, notes, createdBy,  updatedBy } = req.body;
+
+//     console.log ( invoiceNumber, date, dueDate, companyData, clientData, itemDescription, totalAmount, notes, createdBy,  updatedBy )
+
+//     const admin = await Admin.findOne({email:email})
+
+// const newInvoice = new BillingInvoice({
+//     invoiceNumber, 
+//     date,
+//     dueDate,
+//     companyData,
+//     clientData, 
+//     itemDescription,
+//     totalAmount,
+//     notes,
+//     createdBy:admin._id,
+//     updatedBy,
+// });
+// await newInvoice.save()
+
+// res.status.send({
+//     success: true,
+//     message: 'Billing Invoice Data saved',
+//     data: newInvoice
+
+// })
+
+// } catch (error) {
+//     res.status(500).send({
+//         success: false,
+//         message: 'Internal Server Error',
+//         error: error.message
+//     });
+// }
+// }
+
+
+
+
+// FIX: Add missing email variable in addInvoice
 const addInvoice = async (req, res) => {
-try {
-    const { invoiceNumber, date, dueDate, companyData, clientData, itemDescription, totalAmount, notes, createdBy,  updatedBy } = req.body;
+  try {
+    const { invoiceNumber, date, dueDate, companyData, clientData, itemDescription, totalAmount, notes } = req.body;
+    
+    // Get email from request (from verification middleware)
+    const email = req.query.email; // Assuming your verification middleware adds user to req
+    
+    const admin = await Admin.findOne({ email: email });
 
-    console.log ( invoiceNumber, date, dueDate, companyData, clientData, itemDescription, totalAmount, notes, createdBy,  updatedBy )
-
-    const admin = await Admin.findOne({email:email})
-
-const newInvoice = new BillingInvoice({
-    invoiceNumber, 
-    date,
-    dueDate,
-    companyData,
-    clientData, 
-    itemDescription,
-    totalAmount,
-    notes,
-    createdBy:admin._id,
-    updatedBy,
-});
-await newInvoice.save()
-
-res.status.send({
-    success: true,
-    message: 'Billing Invoice Data saved',
-    data: newInvoice
-
-})
-
-} catch (error) {
-    res.status(500).send({
-        success: false,
-        message: 'Internal Server Error',
-        error: error.message
+    const newInvoice = new BillingInvoice({
+      invoiceNumber, 
+      date,
+      dueDate,
+      companyData,
+      clientData, 
+      itemDescription,
+      totalAmount,
+      notes,
+      createdBy: admin._id,
     });
-}
-}
+    
+    await newInvoice.save();
+
+    res.status(201).send({ // FIX: Added status code 201
+      success: true,
+      message: 'Billing Invoice Data saved',
+      data: newInvoice
+    });
+  } catch (error) {
+    res.status(500).send({
+      success: false,
+      message: 'Internal Server Error',
+      error: error.message
+    });
+  }
+};
+
+
+
 
 
 const updateBillingInvoice = async (req, res) => {
@@ -122,33 +169,65 @@ const updateBillingInvoice = async (req, res) => {
 }
 }
 
+// const deleteInvoice = async (req, res) => {
+//     const { _id}= req.params;
+
+//     try {
+//         const Invoice = await Invoice.findById(_id)
+//         if (!Invoice) {
+//             return res.status(404).send({
+//                 seccess: false,
+//                 message: "Invoice is not found"
+//             });
+//         }
+
+//         await Invoice.findByIdAndDelete(_id);
+
+//         return res.status(200).send({
+//             success: true,
+//             message: "Invoice delated successfully"
+
+//         });
+
+//     } catch (error) {
+//         return res.status(500).send({
+//             success: false,
+//             message: "Error: "+ error.message,
+//         });
+//     }
+// };
+
+
+
+// FIX: Change variable name from Invoice to BillingInvoice
 const deleteInvoice = async (req, res) => {
-    const { _id}= req.params;
+  const { _id } = req.params;
 
-    try {
-        const Invoice = await Invoice.findById(_id)
-        if (!Invoice) {
-            return res.status(404).send({
-                seccess: false,
-                message: "Invoice is not found"
-            });
-        }
-
-        await Invoice.findByIdAndDelete(_id);
-
-        return res.status(200).send({
-            success: true,
-            message: "Invoice delated successfully"
-
-        });
-
-    } catch (error) {
-        return res.status(500).send({
-            success: false,
-            message: "Error: "+ error.message,
-        });
+  try {
+    const invoice = await BillingInvoice.findById(_id); // FIX: Changed variable name
+    if (!invoice) {
+      return res.status(404).send({
+        success: false, // FIX: Changed "seccess" to "success"
+        message: "Invoice is not found"
+      });
     }
+
+    await BillingInvoice.findByIdAndDelete(_id); // FIX: Changed variable name
+
+    return res.status(200).send({
+      success: true,
+      message: "Invoice deleted successfully" // FIX: Typo "delated" to "deleted"
+    });
+  } catch (error) {
+    return res.status(500).send({
+      success: false,
+      message: "Error: " + error.message,
+    });
+  }
 };
+
+
+
 
 module.exports = {
   getInvoice,

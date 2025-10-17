@@ -23,6 +23,7 @@ router.put('/update/task/:id', taskController.updateTask);
 // Update task status - FIXED: Removed extra /status at the end
 router.patch('/update/task/status/:id', taskController.updateTaskStatus);
 
+router.patch('/update-progress-status/:id', taskController.updateTaskProgressAndStatus);
 // Delete a task
 router.delete('/delete/task/:id', taskController.deleteTask);
 
@@ -46,6 +47,7 @@ router.post('/log/task-movement',verification,taskMovement.recordNewMovement)
 
 // Get movement statistics for a site
 router.get('/movement-stats/:siteId',verification , taskMovement.getMovementStatsBySiteId)
+
 
 
 module.exports = router;

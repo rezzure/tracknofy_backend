@@ -37,13 +37,13 @@ const taskSchema = new mongoose.Schema({
   siteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Site',
-    required: true,
+    // required: true,
     index: true
   },
   siteName: {
     type: String,
     trim: true,
-    required: true
+    // required: true
   },
   // Assignor Information
   assignorName: {
@@ -71,16 +71,16 @@ const taskSchema = new mongoose.Schema({
   quotationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ManualQuotation',
-    required: true,
+    // required: true,
     index: true
   },
   workTypeId: {
     type: String,
-    required: true
+    // required: true
   },
   workType: {
     type: String,
-    required: true
+    // required: true
   },
   workCategory: {
     type: String,
@@ -120,6 +120,13 @@ const taskSchema = new mongoose.Schema({
     ref: 'User',
     index: true
   },
+  // Add this field to your Task schema
+completionPercentage: {
+  type: Number,
+  default: 0,
+  min: 0,
+  max: 100
+},
   createdAt: {
     type: Date,
     default: Date.now

@@ -372,10 +372,71 @@ exports.updateTask = async (req, res) => {
 };
 
 // Update task status
+// exports.updateTaskStatus = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { status, siteId } = req.body;
+    
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Invalid task ID format'
+//       });
+//     }
+    
+//     if (!status || ![ 'todo', 'inprogress', 'done'].includes(status)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: 'Valid status is required'
+//       });
+//     }
+    
+//     // Build query - include siteId verification if provided
+//     let query = { _id: id };
+//     if (siteId) {
+//       if (!mongoose.Types.ObjectId.isValid(siteId)) {
+//         return res.status(400).json({
+//           success: false,
+//           message: 'Invalid site ID format'
+//         });
+//       }
+//       query.siteId = new mongoose.Types.ObjectId(siteId);
+//     }
+    
+//     const task = await Task.findOneAndUpdate(
+//       query, 
+//       { status, updatedAt: new Date() }, 
+//       { new: true, runValidators: true }
+//     ).populate('siteId', 'name siteName');
+    
+//     if (!task) {
+//       return res.status(404).json({ 
+//         success: false, 
+//         message: 'Task not found or access denied' 
+//       });
+//     }
+    
+//     res.status(200).json({
+//       success: true,
+//       message: 'Task status updated successfully',
+//       data: task
+//     });
+//   } catch (error) {
+//     console.error('Error updating task status:', error);
+//     res.status(400).json({ 
+//       success: false, 
+//       message: 'Failed to update task status', 
+//       error: error.message 
+//     });
+//   }
+// };
+
+
+
 exports.updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, siteId } = req.body;
+    const { status, siteId, completionPercentage } = req.body; // Add completionPercentage
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -403,9 +464,20 @@ exports.updateTaskStatus = async (req, res) => {
       query.siteId = new mongoose.Types.ObjectId(siteId);
     }
     
+    // Build update object with both status and completionPercentage
+    const updateData = { 
+      status, 
+      updatedAt: new Date() 
+    };
+    
+    // Add completionPercentage if provided
+    if (completionPercentage !== undefined) {
+      updateData.completionPercentage = completionPercentage;
+    }
+    
     const task = await Task.findOneAndUpdate(
       query, 
-      { status, updatedAt: new Date() }, 
+      updateData, 
       { new: true, runValidators: true }
     ).populate('siteId', 'name siteName');
     
@@ -570,6 +642,45 @@ exports.getSiteTaskStatistics = async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Failed to fetch site task statistics', 
+      error: error.message 
+    });
+  }
+};
+
+
+// Add this to your task controller file
+exports.updateTaskProgressAndStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { completionPercentage, status } = req.body;
+
+    const task = await Task.findOneAndUpdate(
+      { _id: id }, 
+      { 
+        completionPercentage, 
+        status,
+        updatedAt: new Date() 
+      }, 
+      { new: true, runValidators: true }
+    ).populate('siteId', 'name siteName');
+    
+    if (!task) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Task not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Task progress and status updated successfully',
+      data: task
+    });
+  } catch (error) {
+    console.error('Error updating task progress and status:', error);
+    res.status(400).json({ 
+      success: false, 
+      message: 'Failed to update task progress and status', 
       error: error.message 
     });
   }

@@ -1,4 +1,5 @@
-const connectDB = require("./server.js");
+// const connectDB = require("./server.js");
+const {connectMainDB} = require("./utils/dbConnection.js")
 const formRoutes = require('./router/formRouter/formRouter.js');
 // const submissionRoutes = require('./router/submissionRouter/submissionRouter.js');
 const fileRoutes = require('./router/file.router/fileRouter.js');
@@ -9,7 +10,11 @@ const clientFinancialDetail  = require("./router/clientFinancialDetail.router/cl
 const myFormRoutes   = require("./router/myForm.router/myFormRouter.js")
 const fs = require('fs');
 
-connectDB();
+// connectDB
+// Connect to main database
+connectMainDB();
+// connectDB();
+
 
 require("dotenv").config();
 const port = process.env.PORT;
@@ -54,6 +59,7 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 const upload = require('./middleware/dynamicForm.multer/multer.js');
+// const { connectMainDB } = require("./utils/dbConnection.js");
 app.use((error, req, res, next) => {
   if (error instanceof upload.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
@@ -81,6 +87,22 @@ app.use('/api', require("./router/materialPurchaseRouter/materialPurchase.router
 
 app.use('/api', require('./router/DMS.router/DMS.router.js'));
 app.use('/api', require('./router/BillingInvoice.router/BillingInvoice.router.js'));
+
+
+
+
+// Tenant middleware to set company context
+app.use((req, res, next) => {
+  // Extract company ID from headers, token, or query params
+  const companyId = req.headers['x-company-id'] || req.query.companyId;
+  if (companyId) {
+    req.companyId = companyId;
+  }
+  next();
+});
+
+
+
 
 
 

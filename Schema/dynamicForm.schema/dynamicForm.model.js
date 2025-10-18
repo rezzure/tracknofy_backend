@@ -1,68 +1,3 @@
-// const mongoose = require('mongoose');
-
-// const FormSchema = new mongoose.Schema({
-//   userEmail: [{
-//     type: String,
-//     trim: true,
-//     lowercase: true,
-//     validate: {
-//       validator: function(email) {
-//         // Basic email validation
-//         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-//       },
-//       message: 'Please provide a valid email address'
-//     }
-//   }],
-//   formName: {
-//     type: String,
-//     required: true,
-//     trim: true,
-//     maxLength: 200
-//   },
-//   formFields: [{
-//     id: {
-//       type: String,
-//       required: true
-//     },
-//     type: {
-//       type: String,
-//       required: true,
-//       enum: ['text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'image',"canvas","measurement"]
-//     },
-//     label: {
-//       type: String,
-//       required: true,
-//       trim: true
-//     },
-//     required: {
-//       type: Boolean,
-//       default: false
-//     },
-//     options: [{
-//       type: String,
-//       trim: true
-//     }]
-//   }],
-//   isActive: {
-//     type: Boolean,
-//     default: true
-//   },
-//   createdBy: {
-//     type: String,
-//     default: 'anonymous'
-//   }
-// }, {
-//   timestamps: true
-// });
-
-// const Form = mongoose.model('Form', FormSchema);
-// module.exports = Form;
-
-
-
-
-// 15/10 first code for my form
-
 const mongoose = require('mongoose');
 
 const FormSchema = new mongoose.Schema({
@@ -72,7 +7,6 @@ const FormSchema = new mongoose.Schema({
     lowercase: true,
     validate: {
       validator: function(email) {
-        // Basic email validation
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
       },
       message: 'Please provide a valid email address'
@@ -116,7 +50,7 @@ const FormSchema = new mongoose.Schema({
     type: {
       type: String,
       required: true,
-      enum: ['text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'image',"canvas","measurement"]
+      enum: ['text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'image', "canvas", "measurement"]
     },
     label: {
       type: String,
@@ -130,7 +64,29 @@ const FormSchema = new mongoose.Schema({
     options: [{
       type: String,
       trim: true
-    }]
+    }],
+    // Add measurement-specific fields
+    measurementType: {
+      type: String,
+      enum: ['length', 'weight', 'volume', 'temperature', 'area', 'speed'],
+      // default: 'length'
+    },
+    measurementUnit: {
+      type: String,
+      // default: 'cm'
+    },
+    allowUnitChange: {
+      type: Boolean,
+      default: true
+    },
+    validation: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    dataSource: {
+      type: String,
+      trim: true
+    }
   }],
   isActive: {
     type: Boolean,
@@ -138,7 +94,7 @@ const FormSchema = new mongoose.Schema({
   },
   createdBy: {
     type: String,
-    default: 'anonymous'
+    // default: 'anonymous'
   }
 }, {
   timestamps: true

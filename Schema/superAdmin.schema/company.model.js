@@ -76,8 +76,6 @@
 // module.exports = Company;
 
 
-
-
 const mongoose = require('mongoose');
 
 const companySchema = new mongoose.Schema({
@@ -107,18 +105,26 @@ const companySchema = new mongoose.Schema({
     type: String,
     trim: true,
     uppercase: true,
-    sparse: true,
-    match: [/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/, "Please enter a valid GST number format"]
+    sparse: true, // This allows multiple null values
+    default: null, // Explicitly set default to null
+    validate: {
+      validator: function(v) {
+        // Only validate if GST is provided and not null/empty
+        if (!v || v.trim() === '') return true;
+        return /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/.test(v);
+      },
+      message: "Please enter a valid GST number format (e.g., 07ABCCT1234A1Z5)"
+    }
   },
   companyLogo: {
     type: String,
     default: null
   },
 
-  // Admin Information (Embedded for quick access)
+  // ... rest of your schema remains the same
+  // Admin Information
   adminName: {
     type: String,
-    // required: [true, "Admin name is required"],
     trim: true,
     maxlength: [50, "Admin name cannot exceed 50 characters"],
     match: [/^[a-zA-Z\s]+$/, "Admin name should contain only letters and spaces"]
@@ -172,7 +178,7 @@ const companySchema = new mongoose.Schema({
   },
   currentUserCount: {
     type: Number,
-    default: 1 // Starts with admin user
+    default: 1
   },
 
   // Database Configuration
@@ -213,7 +219,6 @@ const companySchema = new mongoose.Schema({
   admin: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Admin',
-    // required: true
   },
 
   // Timestamps
@@ -239,6 +244,11 @@ companySchema.pre('save', function(next) {
     this.databaseName = `smt_${this.companyName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
   }
   
+  // Ensure companyGST is null if empty
+  if (this.companyGST && this.companyGST.trim() === '') {
+    this.companyGST = null;
+  }
+  
   next();
 });
 
@@ -249,6 +259,9 @@ companySchema.index({ status: 1 });
 companySchema.index({ pricingPlan: 1 });
 companySchema.index({ databaseStatus: 1 });
 companySchema.index({ createdAt: -1 });
+
+// Create sparse index for companyGST
+companySchema.index({ companyGST: 1 }, { sparse: true });
 
 const Company = mongoose.model('Company', companySchema);
 module.exports = Company;

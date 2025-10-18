@@ -1,4 +1,4 @@
-// utils/dbConnection.js
+// utils/dbConnection.js - UPDATED VERSION
 const mongoose = require('mongoose');
 require("dotenv").config();
 
@@ -19,27 +19,37 @@ const connectMainDB = async () => {
     }
 };
 
-// Connect to tenant database
-const connectTenantDB = async (companyId) => {
+// Connect to tenant database - UPDATED TO USE DATABASE NAME
+const connectTenantDB = async (companyId, databaseName) => {
     try {
         if (tenantConnections.has(companyId)) {
             return tenantConnections.get(companyId);
         }
 
-        // Create tenant database URL (appending companyId to main DB URL)
-        const tenantDBUrl = mainDBUrl.replace('/smt', `/smt_${companyId}`);
+        // Use the provided database name instead of companyId
+        const tenantDBUrl = mainDBUrl.replace('/smt', `/${databaseName}`);
         
+        console.log(`🔗 Connecting to tenant database: ${databaseName} (URL: ${tenantDBUrl.replace(/mongodb\+srv:\/\/[^@]+@/, 'mongodb+srv://***@')})`);
+
         const connection = mongoose.createConnection(tenantDBUrl, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+
+        // Wait for connection to be established
+        await new Promise((resolve, reject) => {
+            connection.on('connected', resolve);
+            connection.on('error', reject);
         });
 
         tenantConnections.set(companyId, connection);
         
-        console.log(`Tenant database connected for company: ${companyId}`);
+        console.log(`✅ Tenant database connected: ${databaseName} for company: ${companyId}`);
         return connection;
     } catch (err) {
-        console.error(`Tenant database connection failed for company ${companyId}:`, err.message);
+        console.error(`❌ Tenant database connection failed for ${databaseName} (company: ${companyId}):`, err.message);
         throw err;
     }
 };
@@ -54,6 +64,7 @@ const closeTenantConnection = async (companyId) => {
     if (tenantConnections.has(companyId)) {
         await tenantConnections.get(companyId).close();
         tenantConnections.delete(companyId);
+        console.log(`🔌 Tenant database connection closed for company: ${companyId}`);
     }
 };
 

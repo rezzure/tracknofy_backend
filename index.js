@@ -59,7 +59,6 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 const upload = require('./middleware/dynamicForm.multer/multer.js');
-// const { connectMainDB } = require("./utils/dbConnection.js");
 app.use((error, req, res, next) => {
   if (error instanceof upload.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {

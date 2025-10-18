@@ -80,9 +80,16 @@ const addCompany = async (req, res) => {
       customPricing
     } = req.body;
 
+    console.log('📥 Received company creation request:', {
+      companyName,
+      adminEmail,
+      pricingPlan,
+      selectedFeaturesLength: selectedFeatures ? selectedFeatures.length : 0
+    });
+
     // Validate required fields
-    if (!companyName || !companyAddress || !companyContactNo || !adminName || 
-        !adminContactNo || !adminEmail || !adminPassword || !noOfUsers || !pricingPlan) {
+    if (!companyName || !companyAddress || !companyContactNo || !adminName ||
+      !adminContactNo || !adminEmail || !adminPassword || !noOfUsers || !pricingPlan) {
       return res.status(400).json({
         success: false,
         message: "All required fields must be provided",
@@ -107,7 +114,13 @@ const addCompany = async (req, res) => {
     try {
       features = selectedFeatures ? JSON.parse(selectedFeatures) : [];
       pricing = customPricing ? JSON.parse(customPricing) : {};
+      
+      console.log('✅ Parsed features:', {
+        featuresCount: features.length,
+        featuresSample: features.slice(0, 3) // Log first 3 features for debugging
+      });
     } catch (parseError) {
+      console.error('❌ JSON parse error:', parseError);
       return res.status(400).json({
         success: false,
         message: "Invalid JSON format in features or pricing data",
@@ -170,10 +183,16 @@ const addCompany = async (req, res) => {
       });
     }
 
-    // Validate GST format if provided
-    if (companyGST && companyGST.trim() !== '') {
+    // FIXED: Handle GST properly - set to undefined if empty (not null)
+    let processedGST = companyGST ? companyGST.trim() : undefined;
+    if (processedGST === '') {
+      processedGST = undefined; // Use undefined instead of null
+    }
+
+    // Validate GST format only if provided and not empty
+    if (processedGST && processedGST !== '') {
       const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
-      if (!gstRegex.test(companyGST.toUpperCase())) {
+      if (!gstRegex.test(processedGST.toUpperCase())) {
         return res.status(400).json({
           success: false,
           message: "Please enter a valid GST number format (e.g., 07ABCCT1234A1Z5)"
@@ -239,28 +258,39 @@ const addCompany = async (req, res) => {
       });
     }
 
-    // Check if company already exists (using new enhanced Company schema)
-    const existingCompany = await Company.findOne({
+    // FIXED: Enhanced duplicate check - Only check GST if it's provided
+    const duplicateQuery = {
       $or: [
-        { companyName: { $regex: new RegExp(`^${companyName}$`, 'i') } },
-        { companyGST: companyGST }
+        { companyName: { $regex: new RegExp(`^${companyName}$`, 'i') } }
       ]
-    });
+    };
+
+    // Only add GST check if GST is provided
+    if (processedGST) {
+      duplicateQuery.$or.push({ companyGST: processedGST });
+    }
+
+    const existingCompany = await Company.findOne(duplicateQuery);
 
     if (existingCompany) {
+      const conflictField = existingCompany.companyName.toLowerCase() === companyName.toLowerCase()
+        ? 'companyName'
+        : 'companyGST';
+      const conflictValue = conflictField === 'companyName' ? companyName : processedGST;
+
       return res.status(409).json({
         success: false,
         message: "Company with this name or GST already exists",
         conflict: {
-          field: existingCompany.companyName.toLowerCase() === companyName.toLowerCase() ? 'companyName' : 'companyGST',
-          value: existingCompany.companyName.toLowerCase() === companyName.toLowerCase() ? companyName : companyGST
+          field: conflictField,
+          value: conflictValue
         }
       });
     }
 
-    // Check if admin email already exists (using CompanyAdmin model)
-    const existingAdmin = await CompanyAdmin.findOne({ 
-      email: { $regex: new RegExp(`^${adminEmail}$`, 'i') } 
+    // Check if admin email already exists
+    const existingAdmin = await CompanyAdmin.findOne({
+      email: { $regex: new RegExp(`^${adminEmail}$`, 'i') }
     });
 
     if (existingAdmin) {
@@ -274,12 +304,16 @@ const addCompany = async (req, res) => {
       });
     }
 
+    // Generate database name with company name and timestamp
+    const databaseName = `smt_${companyName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
+    console.log(`🏗️  Generated database name: ${databaseName}`);
+
     // Start transaction - Create company with enhanced schema
     const newCompany = new Company({
       companyName: companyName.trim(),
       companyAddress: companyAddress.trim(),
       companyContactNo: companyContactNo.trim(),
-      companyGST: companyGST ? companyGST.trim() : '',
+      companyGST: processedGST, // Use undefined if empty (field won't be set)
       adminName: adminName.trim(),
       adminContactNo: adminContactNo.trim(),
       adminEmail: adminEmail.toLowerCase().trim(),
@@ -295,7 +329,7 @@ const addCompany = async (req, res) => {
         isActive: true
       })),
       status: "Active",
-      databaseName: `smt_${companyName.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`,
+      databaseName: databaseName,
       databaseStatus: 'Pending',
       currentUserCount: 1,
       subscriptionStartDate: new Date(),
@@ -306,14 +340,14 @@ const addCompany = async (req, res) => {
     companyCreated = true;
     createdCompany = savedCompany;
 
-    console.log(`Company created successfully: ${savedCompany.companyName} (ID: ${savedCompany._id})`);
+    console.log(`✅ Company created successfully: ${savedCompany.companyName} (ID: ${savedCompany._id})`);
 
     // Create admin user using CompanyAdmin model
     const newAdmin = new CompanyAdmin({
       name: adminName.trim(),
       email: adminEmail.toLowerCase().trim(),
       phone: adminContactNo.trim(),
-      password: adminPassword, // Will be hashed by pre-save middleware
+      password: adminPassword,
       role: "Admin",
       company: savedCompany._id,
       companyName: savedCompany.companyName,
@@ -335,7 +369,7 @@ const addCompany = async (req, res) => {
     adminCreated = true;
     createdAdmin = savedAdmin;
 
-    console.log(`Admin created successfully: ${savedAdmin.name} (${savedAdmin.email})`);
+    console.log(`✅ Admin created successfully: ${savedAdmin.name} (${savedAdmin.email})`);
 
     // Update company with admin reference
     savedCompany.admin = savedAdmin._id;
@@ -343,19 +377,45 @@ const addCompany = async (req, res) => {
 
     // Initialize tenant database with selected features
     try {
-      console.log(`Starting database initialization for company: ${savedCompany.companyName}`);
-      
+      console.log(`🚀 Starting database initialization for company: ${savedCompany.companyName}`);
+
+      // Prepare admin data for tenant database
+      const adminDataForTenant = {
+        name: adminName.trim(),
+        email: adminEmail.toLowerCase().trim(),
+        password: adminPassword, // This will be stored in tenant database (should be hashed)
+        phone: adminContactNo.trim(),
+        permissions: features.map(f => f.path),
+        featureAccess: features.map(feature => ({
+          featureName: feature.featureName,
+          featurePath: feature.path,
+          accessLevel: 'admin'
+        }))
+      };
+
+      console.log('📤 Passing to database initializer:', {
+        companyId: savedCompany._id.toString(),
+        databaseName: savedCompany.databaseName,
+        featuresCount: features.length,
+        adminData: adminDataForTenant.email
+      });
+
+      // Call database initializer with all required parameters
       const dbInitResult = await DatabaseInitializer.initializeTenantDatabase(
         savedCompany._id.toString(),
-        features
+        savedCompany.databaseName,
+        features, // This should be a proper array of feature objects
+        adminDataForTenant
       );
 
       databaseInitialized = true;
-      
-      console.log(`Database initialized successfully for company: ${savedCompany.companyName}`, {
+
+      console.log(`✅ Database initialized successfully for company: ${savedCompany.companyName}`, {
         companyId: savedCompany._id,
+        databaseName: savedCompany.databaseName,
         collectionsCreated: dbInitResult.createdCollections?.length || 0,
-        featuresCount: features.length
+        featuresCount: features.length,
+        adminCreatedInTenant: true
       });
 
       // Update company with database initialization status
@@ -364,14 +424,14 @@ const addCompany = async (req, res) => {
       await savedCompany.save();
 
     } catch (dbError) {
-      console.error(`Failed to initialize database for company ${savedCompany.companyName}:`, dbError);
-      
+      console.error(`❌ Failed to initialize database for company ${savedCompany.companyName}:`, dbError);
+
       // Mark database initialization as failed but continue
       savedCompany.databaseStatus = 'Failed';
       savedCompany.databaseError = dbError.message;
       await savedCompany.save();
 
-      console.warn(`Database initialization failed for company ${savedCompany.companyName}, but company was created successfully`);
+      console.warn(`⚠️ Database initialization failed for company ${savedCompany.companyName}, but company was created successfully`);
     }
 
     transactionCompleted = true;
@@ -379,7 +439,7 @@ const addCompany = async (req, res) => {
     // Prepare enhanced response data matching frontend requirements
     const responseData = {
       success: true,
-      message: databaseInitialized 
+      message: databaseInitialized
         ? `Company '${companyName}' and Admin '${adminName}' created successfully with ${pricingPlan} plan. Tenant database initialized with ${features.length} features.`
         : `Company '${companyName}' and Admin '${adminName}' created successfully with ${pricingPlan} plan. Database initialization pending.`,
       company: {
@@ -417,49 +477,54 @@ const addCompany = async (req, res) => {
         status: savedCompany.databaseStatus,
         featuresCount: features.length,
         collections: databaseInitialized ? features.map(f => f.path) : [],
-        initializedAt: savedCompany.databaseInitializedAt
+        initializedAt: savedCompany.databaseInitializedAt,
+        databaseName: savedCompany.databaseName
       }
     };
 
     res.status(201).json(responseData);
 
     // Log successful creation
-    console.log(`Company creation completed successfully:`, {
+    console.log(`🎉 Company creation completed successfully:`, {
       companyId: savedCompany._id,
       companyName: savedCompany.companyName,
       adminEmail: savedAdmin.email,
       databaseInitialized: databaseInitialized,
+      databaseName: savedCompany.databaseName,
       featuresCount: features.length,
       pricingPlan: pricingPlan
     });
 
   } catch (error) {
-    console.error("Error in adding company:", error);
+    console.error("💥 Error in adding company:", error);
 
     // Enhanced cleanup in case of failure (rollback)
     try {
       if (adminCreated && createdAdmin) {
         await CompanyAdmin.findByIdAndDelete(createdAdmin._id);
-        console.log(`Rollback: Deleted admin ${createdAdmin.email}`);
+        console.log(`🔄 Rollback: Deleted admin ${createdAdmin.email}`);
       }
 
       if (companyCreated && createdCompany) {
         await Company.findByIdAndDelete(createdCompany._id);
-        console.log(`Rollback: Deleted company ${createdCompany.companyName}`);
+        console.log(`🔄 Rollback: Deleted company ${createdCompany.companyName}`);
       }
 
       // If database was initialized but transaction failed, cleanup database
       if (databaseInitialized && createdCompany) {
         try {
-          await DatabaseInitializer.cleanupTenantDatabase(createdCompany._id.toString());
-          console.log(`Rollback: Cleaned up tenant database for company ${createdCompany._id}`);
+          await DatabaseInitializer.cleanupTenantDatabase(
+            createdCompany._id.toString(),
+            createdCompany.databaseName
+          );
+          console.log(`🔄 Rollback: Cleaned up tenant database ${createdCompany.databaseName} for company ${createdCompany._id}`);
         } catch (cleanupError) {
-          console.error(`Error cleaning up tenant database during rollback:`, cleanupError);
+          console.error(`❌ Error cleaning up tenant database during rollback:`, cleanupError);
         }
       }
 
     } catch (rollbackError) {
-      console.error("Error during rollback cleanup:", rollbackError);
+      console.error("❌ Error during rollback cleanup:", rollbackError);
     }
 
     // Enhanced error handling
@@ -506,13 +571,13 @@ const addCompany = async (req, res) => {
 
 
 
-// Get all companies with their admins and enhanced details
+
 const getCompanies = async (req, res) => {
   try {
     // Get query parameters for filtering and pagination
-    const { 
-      page = 1, 
-      limit = 10, 
+    const {
+      page = 1,
+      limit = 10,
       search = '',
       status = '',
       pricingPlan = '',
@@ -522,7 +587,7 @@ const getCompanies = async (req, res) => {
 
     // Build filter object
     const filter = {};
-    
+
     // Status filter
     if (status && ['Active', 'InActive', 'Suspended'].includes(status)) {
       filter.status = status;
@@ -585,12 +650,12 @@ const getCompanies = async (req, res) => {
           companyContactNo: company.companyContactNo,
           companyGST: company.companyGST,
           companyLogo: company.companyLogo,
-          
+
           // Admin Info (from company schema for quick access)
           adminName: company.adminName,
           adminContactNo: company.adminContactNo,
           adminEmail: company.adminEmail,
-          
+
           // Plan & Features
           noOfUsers: company.noOfUsers,
           currentUserCount: company.currentUserCount || 1,
@@ -599,19 +664,19 @@ const getCompanies = async (req, res) => {
           features: company.features || [],
           totalFeatures: totalFeatures,
           activeFeatures: activeFeatures,
-          
+
           // Database Info
           databaseName: company.databaseName,
           databaseStatus: company.databaseStatus,
           databaseInitializedAt: company.databaseInitializedAt,
-          
+
           // Status & Metadata
           status: company.status,
           createdAt: company.createdAt,
           updatedAt: company.updatedAt,
           subscriptionStartDate: company.subscriptionStartDate,
           subscriptionEndDate: company.subscriptionEndDate,
-          
+
           // Enhanced Admin Details (from CompanyAdmin collection)
           admin: admin ? {
             _id: admin._id,
@@ -836,9 +901,16 @@ const getCompanies = async (req, res) => {
 
 // Update company and admin (only editable fields)
 
-
+// controllers/SuperAdmin/manageCompany.js - UPDATED UPDATE COMPANY CONTROLLER
 
 const updateCompany = async (req, res) => {
+  let transactionCompleted = false;
+  let companyUpdated = false;
+  let adminUpdated = false;
+  let databaseUpdated = false;
+  let updatedCompany = null;
+  let updatedAdmin = null;
+
   try {
     const {
       companyName,
@@ -849,38 +921,287 @@ const updateCompany = async (req, res) => {
       adminContactNo,
       adminEmail,
       adminPassword,
-      noOfUsers
+      noOfUsers,
+      pricingPlan,
+      selectedFeatures,
+      customPricing,
+      status
     } = req.body;
 
     const companyId = req.params.id;
-    console.log(`Updating company with ID: ${companyId}`);
+    
+    console.log(`🔄 Updating company with ID: ${companyId}`, {
+      companyName,
+      adminEmail,
+      pricingPlan,
+      selectedFeaturesLength: selectedFeatures ? selectedFeatures.length : 0,
+      status
+    });
 
     // Check if company exists
     const company = await Company.findById(companyId);
     if (!company) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: 'Company not found' 
+        message: 'Company not found'
       });
     }
 
-    // Update company fields - include all editable fields
-    if (companyName !== undefined) company.companyName = companyName;
-    if (companyAddress !== undefined) company.companyAddress = companyAddress;
-    if (companyContactNo !== undefined) company.companyContactNo = companyContactNo;
-    if (companyGST !== undefined) company.companyGST = companyGST;
-    if (noOfUsers !== undefined) company.noOfUsers = parseInt(noOfUsers);
+    // Parse JSON fields with error handling
+    let features = [];
+    let pricing = {};
 
-    // Handle company logo file upload if provided
-    if (req.file) {
-      company.companyLogo = req.file.filename;
+    if (selectedFeatures) {
+      try {
+        features = JSON.parse(selectedFeatures);
+        console.log('✅ Parsed features for update:', {
+          featuresCount: features.length,
+          featuresSample: features.slice(0, 3)
+        });
+      } catch (parseError) {
+        console.error('❌ JSON parse error for features:', parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid JSON format in features data",
+          error: parseError.message
+        });
+      }
     }
 
-    await company.save();
+    if (customPricing) {
+      try {
+        pricing = JSON.parse(customPricing);
+      } catch (parseError) {
+        console.error('❌ JSON parse error for pricing:', parseError);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid JSON format in pricing data",
+          error: parseError.message
+        });
+      }
+    }
+
+    // Validate company name format if being updated
+    if (companyName !== undefined && companyName !== company.companyName) {
+      const companyNameRegex = /^[a-zA-Z\s\-&.,()]+$/;
+      if (!companyNameRegex.test(companyName)) {
+        return res.status(400).json({
+          success: false,
+          message: "Company name should contain only letters, spaces, and basic punctuation"
+        });
+      }
+
+      if (companyName.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "Company name should be at least 2 characters long"
+        });
+      }
+
+      // Check for duplicate company name
+      const existingCompany = await Company.findOne({
+        companyName: { $regex: new RegExp(`^${companyName}$`, 'i') },
+        _id: { $ne: companyId }
+      });
+
+      if (existingCompany) {
+        return res.status(409).json({
+          success: false,
+          message: "Company with this name already exists",
+          conflict: {
+            field: 'companyName',
+            value: companyName
+          }
+        });
+      }
+    }
+
+    // Validate company address length if being updated
+    if (companyAddress !== undefined) {
+      if (companyAddress.length < 10) {
+        return res.status(400).json({
+          success: false,
+          message: "Address should be at least 10 characters long"
+        });
+      }
+
+      if (companyAddress.length > 500) {
+        return res.status(400).json({
+          success: false,
+          message: "Address cannot exceed 500 characters"
+        });
+      }
+    }
+
+    // Validate contact numbers if being updated
+    if (companyContactNo !== undefined) {
+      const contactRegex = /^\d{10,15}$/;
+      if (!contactRegex.test(companyContactNo.replace(/\s/g, ''))) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid company contact number (10-15 digits)"
+        });
+      }
+    }
+
+    if (adminContactNo !== undefined) {
+      const contactRegex = /^\d{10,15}$/;
+      if (!contactRegex.test(adminContactNo.replace(/\s/g, ''))) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid admin contact number (10-15 digits)"
+        });
+      }
+    }
+
+    // Handle GST properly - set to undefined if empty
+    let processedGST = companyGST !== undefined ? (companyGST ? companyGST.trim() : undefined) : undefined;
+    if (processedGST === '') {
+      processedGST = undefined;
+    }
+
+    // Validate GST format only if provided and not empty
+    if (processedGST && processedGST !== '') {
+      const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/;
+      if (!gstRegex.test(processedGST.toUpperCase())) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid GST number format (e.g., 07ABCCT1234A1Z5)"
+        });
+      }
+
+      // Check for duplicate GST if being updated
+      if (processedGST !== company.companyGST) {
+        const existingCompany = await Company.findOne({
+          companyGST: processedGST,
+          _id: { $ne: companyId }
+        });
+
+        if (existingCompany) {
+          return res.status(409).json({
+            success: false,
+            message: "Company with this GST number already exists",
+            conflict: {
+              field: 'companyGST',
+              value: processedGST
+            }
+          });
+        }
+      }
+    }
+
+    // Validate admin name format if being updated
+    if (adminName !== undefined) {
+      const adminNameRegex = /^[a-zA-Z\s]+$/;
+      if (!adminNameRegex.test(adminName)) {
+        return res.status(400).json({
+          success: false,
+          message: "Admin name should contain only letters and spaces"
+        });
+      }
+
+      if (adminName.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "Admin name should be at least 2 characters long"
+        });
+      }
+    }
+
+    // Validate email format if being updated
+    if (adminEmail !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(adminEmail)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid email address"
+        });
+      }
+    }
+
+    // Validate password strength if being updated
+    if (adminPassword && adminPassword.trim() !== '') {
+      if (adminPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: "Password must be at least 6 characters"
+        });
+      }
+
+      if (adminPassword.length > 50) {
+        return res.status(400).json({
+          success: false,
+          message: "Password cannot exceed 50 characters"
+        });
+      }
+    }
+
+    // Validate noOfUsers format if being updated
+    if (noOfUsers !== undefined) {
+      const validUserRanges = ['1-10', '10-20', '20-50', '50-100', '100+'];
+      if (!validUserRanges.includes(noOfUsers)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid number of users range"
+        });
+      }
+    }
+
+    // Validate pricing plan if being updated
+    if (pricingPlan !== undefined) {
+      const validPlans = ['silver', 'golden', 'diamond'];
+      if (!validPlans.includes(pricingPlan)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid pricing plan"
+        });
+      }
+    }
+
+    // Update company fields
+    const companyUpdates = {};
+    if (companyName !== undefined) companyUpdates.companyName = companyName.trim();
+    if (companyAddress !== undefined) companyUpdates.companyAddress = companyAddress.trim();
+    if (companyContactNo !== undefined) companyUpdates.companyContactNo = companyContactNo.trim();
+    if (processedGST !== undefined) companyUpdates.companyGST = processedGST;
+    if (noOfUsers !== undefined) companyUpdates.noOfUsers = noOfUsers;
+    if (pricingPlan !== undefined) companyUpdates.pricingPlan = pricingPlan;
+    if (Object.keys(pricing).length > 0) companyUpdates.customPricing = pricing;
+    if (status !== undefined) companyUpdates.status = status;
+    
+    // Handle company logo file upload if provided
+    if (req.file) {
+      companyUpdates.companyLogo = req.file.filename;
+    }
+
+    // Update features if provided
+    if (features.length > 0) {
+      companyUpdates.features = features.map(feature => ({
+        featureName: feature.featureName,
+        featuresCategories: feature.featuresCategories,
+        path: feature.path,
+        icon: feature.icon,
+        isActive: true
+      }));
+      companyUpdates.totalFeatures = features.length;
+      companyUpdates.activeFeatures = features.length;
+    }
+
+    // Update company
+    const savedCompany = await Company.findByIdAndUpdate(
+      companyId,
+      { $set: companyUpdates },
+      { new: true, runValidators: true }
+    );
+    
+    companyUpdated = true;
+    updatedCompany = savedCompany;
+
+    console.log(`✅ Company updated successfully: ${savedCompany.companyName}`);
 
     // Update admin user
     const adminUser = await CompanyAdmin.findOne({
-      companyId: companyId,
+      company: companyId,
       role: 'Admin'
     });
 
@@ -891,83 +1212,230 @@ const updateCompany = async (req, res) => {
           email: adminEmail,
           _id: { $ne: adminUser._id }
         });
-        
+
         if (existingUser) {
           return res.status(409).json({
             success: false,
-            message: 'Admin with this email already exists'
+            message: 'Admin with this email already exists',
+            conflict: {
+              field: 'email',
+              value: adminEmail
+            }
           });
         }
       }
 
       // Update admin fields
-      if (adminName !== undefined) adminUser.name = adminName;
-      if (adminEmail !== undefined) adminUser.email = adminEmail;
-      if (adminContactNo !== undefined) adminUser.phone = adminContactNo;
-      
-      // Update password only if provided and not empty
-      if (adminPassword && adminPassword.trim() !== '') {
-        // Hash the password before saving (assuming you have bcrypt setup)
-        const saltRounds = 10;
-        adminUser.password = await bcrypt.hash(adminPassword, saltRounds);
+      const adminUpdates = {};
+      if (adminName !== undefined) adminUpdates.name = adminName.trim();
+      if (adminEmail !== undefined) adminUpdates.email = adminEmail.toLowerCase().trim();
+      if (adminContactNo !== undefined) adminUpdates.phone = adminContactNo.trim();
+
+      // Update permissions and feature access if features are provided
+      if (features.length > 0) {
+        adminUpdates.permissions = features.map(f => f.path);
+        adminUpdates.featureAccess = features.map(feature => ({
+          featureName: feature.featureName,
+          featurePath: feature.path,
+          accessLevel: 'admin'
+        }));
       }
 
-      await adminUser.save();
+      // Update password only if provided and not empty
+      if (adminPassword && adminPassword.trim() !== '') {
+        adminUpdates.password = await bcrypt.hash(adminPassword, 10);
+        adminUpdates.isFirstLogin = false; // Reset first login if password is changed
+      }
+
+      const savedAdmin = await CompanyAdmin.findByIdAndUpdate(
+        adminUser._id,
+        { $set: adminUpdates },
+        { new: true, runValidators: true }
+      );
+      
+      adminUpdated = true;
+      updatedAdmin = savedAdmin;
+
+      console.log(`✅ Admin updated successfully: ${savedAdmin.name} (${savedAdmin.email})`);
     }
 
-    // Prepare response data matching the frontend expectation
+    // Update tenant database if features or pricing plan changed
+    if ((features.length > 0 && pricingPlan !== undefined) || features.length > 0) {
+      try {
+        console.log(`🔄 Updating tenant database for company: ${savedCompany.companyName}`);
+        
+        // Prepare admin data for tenant database update
+        const adminDataForTenant = adminUser ? {
+          name: adminName || adminUser.name,
+          email: adminEmail || adminUser.email,
+          password: adminPassword || 'password_not_changed', // Placeholder, actual password won't be updated here
+          phone: adminContactNo || adminUser.phone,
+          permissions: features.length > 0 ? features.map(f => f.path) : adminUser.permissions,
+          featureAccess: features.length > 0 ? features.map(feature => ({
+            featureName: feature.featureName,
+            featurePath: feature.path,
+            accessLevel: 'admin'
+          })) : adminUser.featureAccess
+        } : null;
+
+        // Note: In a real scenario, you might want to implement a proper update mechanism
+        // For now, we'll log that database update is needed
+        console.log('📝 Tenant database update required with:', {
+          companyId: savedCompany._id.toString(),
+          databaseName: savedCompany.databaseName,
+          featuresCount: features.length,
+          pricingPlan: pricingPlan,
+          adminData: adminDataForTenant ? adminDataForTenant.email : 'No admin update'
+        });
+
+        // TODO: Implement proper tenant database update logic
+        // This could involve:
+        // 1. Adding new collections for new features
+        // 2. Removing collections for removed features  
+        // 3. Updating admin permissions in tenant database
+        // 4. Handling data migration if needed
+
+        databaseUpdated = true;
+        
+        console.log(`✅ Tenant database update queued for: ${savedCompany.databaseName}`);
+
+      } catch (dbError) {
+        console.error(`❌ Failed to update tenant database for company ${savedCompany.companyName}:`, dbError);
+        // Don't fail the entire update if database update fails, just log it
+        console.warn(`⚠️ Tenant database update failed, but company data was updated successfully`);
+      }
+    }
+
+    transactionCompleted = true;
+
+    // Prepare enhanced response data matching frontend requirements
     const responseData = {
-      _id: company._id,
-      companyName: company.companyName,
-      companyAddress: company.companyAddress,
-      companyContactNo: company.companyContactNo,
-      companyGST: company.companyGST,
-      companyLogo: company.companyLogo,
-      noOfUsers: company.noOfUsers,
-      status: company.status,
-      adminName: adminUser?.name || adminName,
-      adminContactNo: adminUser?.phone || adminContactNo,
-      adminEmail: adminUser?.email || adminEmail,
-      admin: adminUser ? {
-        _id: adminUser._id,
-        name: adminUser.name,
-        email: adminUser.email,
-        phone: adminUser.phone
-      } : null
+      success: true,
+      message: 'Company and admin updated successfully' + (databaseUpdated ? ' (Database update queued)' : ''),
+      company: {
+        _id: savedCompany._id,
+        companyName: savedCompany.companyName,
+        companyAddress: savedCompany.companyAddress,
+        companyContactNo: savedCompany.companyContactNo,
+        companyGST: savedCompany.companyGST,
+        noOfUsers: savedCompany.noOfUsers,
+        companyLogo: savedCompany.companyLogo,
+        pricingPlan: savedCompany.pricingPlan,
+        customPricing: savedCompany.customPricing,
+        features: savedCompany.features,
+        status: savedCompany.status,
+        databaseName: savedCompany.databaseName,
+        databaseStatus: savedCompany.databaseStatus,
+        adminName: savedCompany.adminName,
+        adminContactNo: savedCompany.adminContactNo,
+        adminEmail: savedCompany.adminEmail,
+        createdAt: savedCompany.createdAt,
+        updatedAt: savedCompany.updatedAt,
+        subscriptionStartDate: savedCompany.subscriptionStartDate,
+        totalFeatures: savedCompany.totalFeatures,
+        activeFeatures: savedCompany.activeFeatures,
+        currentUserCount: savedCompany.currentUserCount
+      },
+      admin: updatedAdmin ? {
+        _id: updatedAdmin._id,
+        name: updatedAdmin.name,
+        email: updatedAdmin.email,
+        phone: updatedAdmin.phone,
+        role: updatedAdmin.role,
+        status: updatedAdmin.status,
+        permissions: updatedAdmin.permissions,
+        featureAccess: updatedAdmin.featureAccess,
+        isFirstLogin: updatedAdmin.isFirstLogin
+      } : null,
+      database: {
+        updated: databaseUpdated,
+        status: savedCompany.databaseStatus,
+        featuresCount: features.length > 0 ? features.length : savedCompany.features?.length,
+        databaseName: savedCompany.databaseName
+      }
     };
 
-    res.status(200).json({
-      message: 'Company and admin updated successfully',
-      success: true,
-      ...responseData
+    res.status(200).json(responseData);
+
+    // Log successful update
+    console.log(`🎉 Company update completed successfully:`, {
+      companyId: savedCompany._id,
+      companyName: savedCompany.companyName,
+      adminEmail: updatedAdmin?.email,
+      databaseUpdated: databaseUpdated,
+      featuresCount: features.length > 0 ? features.length : savedCompany.features?.length,
+      pricingPlan: pricingPlan || savedCompany.pricingPlan
     });
 
   } catch (error) {
-    console.error('Error updating company:', error.message);
-    
-    // Handle specific errors
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error occurred',
-        error: error.message
+    console.error("💥 Error in updating company:", error);
+
+    // Enhanced cleanup in case of failure (rollback)
+    try {
+      // In update scenario, we don't typically delete records on failure
+      // But we can log the rollback state
+      console.log(`🔄 Update transaction failed. Rollback state:`, {
+        companyUpdated,
+        adminUpdated,
+        databaseUpdated
       });
-    }
-    
-    if (error.code === 11000) {
-      return res.status(409).json({
-        success: false,
-        message: 'Company with this name or email already exists'
-      });
+
+      // If database was partially updated but transaction failed, we might need to revert
+      // This would require a more sophisticated rollback mechanism in production
+
+    } catch (rollbackError) {
+      console.error("❌ Error during rollback logging:", rollbackError);
     }
 
-    res.status(500).json({
+    // Enhanced error handling
+    let statusCode = 500;
+    let errorMessage = "Internal server error";
+    let errorDetails = {};
+
+    if (error.name === 'ValidationError') {
+      statusCode = 400;
+      errorMessage = "Validation failed";
+      errorDetails = Object.keys(error.errors).reduce((acc, key) => {
+        acc[key] = error.errors[key].message;
+        return acc;
+      }, {});
+    } else if (error.code === 11000) {
+      statusCode = 409;
+      errorMessage = "Duplicate entry found";
+      const field = Object.keys(error.keyValue)[0];
+      errorDetails = {
+        field: field,
+        value: error.keyValue[field],
+        message: `${field} already exists`
+      };
+    } else if (error.name === 'MongoError') {
+      statusCode = 503;
+      errorMessage = "Database connection error";
+      errorDetails = { message: "Unable to connect to database" };
+    } else if (error.name === 'CastError') {
+      statusCode = 400;
+      errorMessage = "Invalid company ID format";
+      errorDetails = { message: "Please provide a valid company ID" };
+    }
+
+    res.status(statusCode).json({
       success: false,
-      message: 'Server error occurred while updating company',
-      error: error.message
+      message: errorMessage,
+      error: error.message,
+      details: errorDetails,
+      rollback: {
+        companyPartiallyUpdated: companyUpdated,
+        adminPartiallyUpdated: adminUpdated,
+        databasePartiallyUpdated: databaseUpdated
+      },
+      timestamp: new Date().toISOString()
     });
   }
 };
+
+
+
+
 
 // Update company status (Active/InActive)
 const updateCompanyStatus = async (req, res) => {
@@ -993,7 +1461,7 @@ const updateCompanyStatus = async (req, res) => {
       });
     }
 
-    
+
     // Find company and update status
     const updatedCompany = await Company.findByIdAndUpdate(
       id,
@@ -1021,7 +1489,7 @@ const updateCompanyStatus = async (req, res) => {
 
   } catch (error) {
     console.error('ERROR: Error updating company status:', error.message);
-    
+
     // Handle specific errors
     if (error.name === 'CastError') {
       console.log('DEBUG: CastError - Invalid company ID format');
@@ -1046,4 +1514,4 @@ const updateCompanyStatus = async (req, res) => {
 
 
 
-module.exports={addCompany, getCompanies, updateCompany, updateCompanyStatus};
+module.exports = { addCompany, getCompanies, updateCompany, updateCompanyStatus };

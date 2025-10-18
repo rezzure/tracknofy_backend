@@ -61,7 +61,7 @@ exports.getAllTasks = async (req, res) => {
       .populate('siteId', 'name siteName')
       .lean();
     
-    res.status(200).json({
+    res.status(200).send({
       success: true,
       data: tasks,
       count: tasks.length,
@@ -69,7 +69,7 @@ exports.getAllTasks = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    res.status(500).json({ 
+    res.status(500).send({ 
       success: false, 
       message: error.message.includes('Invalid site ID') ? error.message : 'Failed to fetch tasks', 
       error: error.message 

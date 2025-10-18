@@ -87,10 +87,10 @@ const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
 const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
 
 // Design Approval Controllers
-const { addDesign, addComments, getDesignVersions, createNewVersion } = require("../../controllers/Admin/addDesign.js");
+const { addDesign, addComments, createNewVersion, switchDesignVersion } = require("../../controllers/Admin/addDesign.js");
 const updateDesignStatus = require("../../controllers/Admin/updateDesignStatus.js");
 const deleteDesign = require("../../controllers/Admin/deleteDesign.js");
-const getDesign = require("../../controllers/Admin/getDesign.js");
+const {getDesign, getDesignVersions} = require("../../controllers/Admin/getDesign.js");
 
 // DESIGN APPROVAL ROUTES
 router.post("/add/design", verification, upload.array("designFile", 10), addDesign);
@@ -102,6 +102,7 @@ router.post('/design/:id/comment', verification, addComments);
 router.patch("/design/:id/status", verification, updateDesignStatus);
 router.delete("/design/:id", verification, deleteDesign);
 
+router.post("/design/:id/switch-version", verification, switchDesignVersion);
 // Create new version of existing design
 router.post("/design/:id/create-version", verification, createNewVersion);
 // Get all versions of a design

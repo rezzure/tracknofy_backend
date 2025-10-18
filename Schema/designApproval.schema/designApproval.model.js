@@ -165,6 +165,8 @@ const designSchema = new mongoose.Schema(
     description: {
       type: String,
     },
+    
+    // Current version data
     images: [{
       fieldname: String,
       originalname: String,
@@ -181,6 +183,80 @@ const designSchema = new mongoose.Schema(
       type: String,
       enum: ["image", "pdf"],
     },
+    
+    // Version control fields
+    versionNumber: {
+      type: Number,
+      default: 0,
+    },
+    versionChanges: {
+      type: String,
+      default: ""
+    },
+    status: { 
+      type: String,
+      enum: ["pending", "sent", "approved", "review"],
+      default: "pending",
+    },
+    isChatEnabled: {
+      type: Boolean,
+      default: true
+    },
+    
+    // Version history - stores all previous versions
+    versionHistory: [{
+      versionNumber: {
+        type: Number,
+        required: true
+      },
+      images: [{
+        fieldname: String,
+        originalname: String,
+        mimetype: String,
+        destination: String,
+        filename: String,
+        path: String,
+        size: Number,
+      }],
+      fileName: {
+        type: String,
+      },
+      fileType: {
+        type: String,
+        enum: ["image", "pdf"],
+      },
+      versionChanges: {
+        type: String,
+        default: ""
+      },
+      status: { 
+        type: String,
+        enum: ["pending", "sent", "approved", "review"],
+      },
+      comments: [commentSchema],
+      isChatEnabled: {
+        type: Boolean,
+        default: true
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now
+      },
+      createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        refPath: "createdByModel"
+      },
+      createdByModel: {
+        type: String,
+        enum: ["Admin", "Supervisor"]
+      }
+    }],
+    
+    // Common fields for all versions
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       refPath: "createdByModel",
@@ -191,34 +267,18 @@ const designSchema = new mongoose.Schema(
       enum: ["Admin", "Supervisor"],
       required: true,
     },
-    status: { 
-      type: String,
-      enum: ["pending", "sent", "approved", "review"],
-      default: "pending",
-    },
-    versionNumber: {
-      type: Number,
-      default: 0, // Changed from 1 to 0
-    },
-    versionChanges: {
-      type: String,
-      default: ""
-    },
+    comments: [commentSchema],
     workflow_remark: {
       type: String,
       default: ""
     },
-    comments: [commentSchema],
-    isChatEnabled: {
+    
+    // Flags
+    isLatestVersion: {
       type: Boolean,
       default: true
     },
-    parentVersion: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Design",
-      default: null
-    },
-    isLatestVersion: {
+    isActive: {
       type: Boolean,
       default: true
     }
@@ -228,8 +288,9 @@ const designSchema = new mongoose.Schema(
   }
 );
 
-// Add index for better performance when querying versions
-designSchema.index({ parentVersion: 1 });
+// Add indexes for better performance
+designSchema.index({ siteId: 1, isActive: 1 });
 designSchema.index({ isLatestVersion: 1 });
+designSchema.index({ "versionHistory.versionNumber": 1 });
 
 module.exports = mongoose.model("Design", designSchema);

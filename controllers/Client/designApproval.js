@@ -400,7 +400,7 @@ const getClientDesigns = async (req, res) => {
       fileName: design.fileName || '',
       fileType: design.fileType || '',
       status: design.status || 'review',
-      versionNumber: design.versionNumber || 1,
+      versionNumber: design.versionNumber || 0,
       createdByName: design.createdBy?.name || design.createdByName || 'Unknown',
       createdByEmail: design.createdBy?.email || '',
       createdAt: design.createdAt,
@@ -690,7 +690,7 @@ const getClientStats = async (req, res) => {
   }
 };
 
-// Get all versions of a design for client - UPDATED
+// Get all versions of a design for client - ENHANCED
 const getClientDesignVersions = async (req, res) => {
   try {
     const { designId } = req.params;
@@ -714,49 +714,207 @@ const getClientDesignVersions = async (req, res) => {
       });
     }
 
-    // Find the root design (the very first version)
-    let rootDesignId = currentDesign.parentVersion || currentDesign._id;
-    
-    // Get all versions in the version chain - NO STATUS FILTER
-    const versions = await Design.find({
-      $or: [
-        { _id: rootDesignId },
-        { parentVersion: rootDesignId }
-      ]
-    })
-    .sort({ versionNumber: 1 }) // Sort by version number ascending
-    .select('-__v')
-    .lean();
+    console.log("Current design version:", currentDesign.versionNumber);
+    console.log("Version history count:", currentDesign.versionHistory?.length || 0);
 
-    // Format versions for client
-    const formattedVersions = versions.map(version => ({
-      _id: version._id,
-      title: version.title || '',
-      versionNumber: version.versionNumber || 0,
-      versionChanges: version.versionChanges || '',
-      status: version.status || 'pending',
+    // Create current version object
+    const currentVersion = {
+      _id: currentDesign._id,
+      versionNumber: currentDesign.versionNumber,
+      images: currentDesign.images || [],
+      fileName: currentDesign.fileName,
+      fileType: currentDesign.fileType,
+      versionChanges: currentDesign.versionChanges || "",
+      status: currentDesign.status,
+      comments: currentDesign.comments || [],
+      isChatEnabled: currentDesign.isChatEnabled !== false,
+      createdAt: currentDesign.createdAt,
+      updatedAt: currentDesign.updatedAt,
+      createdBy: currentDesign.createdBy,
+      createdByModel: currentDesign.createdByModel,
+      isLatestVersion: true,
+      // Include all design metadata
+      siteId: currentDesign.siteId,
+      siteName: currentDesign.siteName,
+      floorName: currentDesign.floorName,
+      scopeOfWork: currentDesign.scopeOfWork,
+      workItem: currentDesign.workItem,
+      workType: currentDesign.workType,
+      imageType: currentDesign.imageType,
+      title: currentDesign.title,
+      description: currentDesign.description,
+      workflow_remark: currentDesign.workflow_remark || "",
+      createdByName: currentDesign.createdByName || 'Unknown'
+    };
+
+    // Create version history objects
+    const versionHistory = (currentDesign.versionHistory || []).map(version => ({
+      _id: currentDesign._id, // Same design ID for all versions
+      versionNumber: version.versionNumber,
       images: version.images || [],
+      fileName: version.fileName,
+      fileType: version.fileType,
+      versionChanges: version.versionChanges || "",
+      status: version.status,
       comments: version.comments || [],
+      isChatEnabled: version.isChatEnabled !== false,
       createdAt: version.createdAt,
       updatedAt: version.updatedAt,
-      isLatestVersion: version.isLatestVersion || false,
-      createdByName: version.createdByName || 'Unknown',
-      floorName: version.floorName || '',
-      scopeOfWork: version.scopeOfWork || '',
-      workItem: version.workItem || '',
-      workType: version.workType || '',
-      imageType: version.imageType || '',
-      description: version.description || '',
-      isChatEnabled: version.isChatEnabled !== false // Include chat status
+      createdBy: version.createdBy,
+      createdByModel: version.createdByModel,
+      isLatestVersion: false,
+      // Include all design metadata
+      siteId: currentDesign.siteId,
+      siteName: currentDesign.siteName,
+      floorName: currentDesign.floorName,
+      scopeOfWork: currentDesign.scopeOfWork,
+      workItem: currentDesign.workItem,
+      workType: currentDesign.workType,
+      imageType: currentDesign.imageType,
+      title: currentDesign.title,
+      description: currentDesign.description,
+      workflow_remark: version.workflow_remark || "",
+      createdByName: currentDesign.createdByName || 'Unknown'
     }));
+
+    // Combine all versions (current + history)
+    const allVersions = [currentVersion, ...versionHistory];
+    
+    // Sort by version number (newest first)
+    allVersions.sort((a, b) => b.versionNumber - a.versionNumber);
+
+    console.log("Returning client versions:", allVersions.length);
+    allVersions.forEach(v => console.log(`- V${v.versionNumber}, status: ${v.status}, images: ${v.images?.length}`));
 
     res.json({
       success: true,
-      data: formattedVersions,
+      data: allVersions,
       message: "Design versions retrieved successfully"
     });
   } catch (error) {
     console.error("Error fetching design versions for client:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error: " + error.message
+    });
+  }
+};
+
+// Add this function to your client controller
+const switchClientDesignVersion = async (req, res) => {
+  try {
+    const { designId } = req.params;
+    const { versionNumber } = req.body;
+    const clientEmail = req.query.email;
+
+    console.log("Client switching to version:", versionNumber, "for design:", designId);
+
+    // Verify client exists
+    const client = await Client.findOne({ email: clientEmail });
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: "Client not found"
+      });
+    }
+
+    const design = await Design.findById(designId);
+    if (!design) {
+      return res.status(404).json({
+        success: false,
+        message: "Design not found"
+      });
+    }
+
+    let versionData;
+
+    if (parseInt(versionNumber) === design.versionNumber) {
+      // Current version
+      versionData = {
+        _id: design._id,
+        versionNumber: design.versionNumber,
+        images: design.images || [],
+        fileName: design.fileName,
+        fileType: design.fileType,
+        versionChanges: design.versionChanges || "",
+        status: design.status,
+        comments: design.comments || [],
+        isChatEnabled: design.isChatEnabled !== false,
+        createdAt: design.createdAt,
+        updatedAt: design.updatedAt,
+        createdBy: design.createdBy,
+        createdByModel: design.createdByModel,
+        isLatestVersion: true,
+        // Design metadata
+        siteId: design.siteId,
+        siteName: design.siteName,
+        floorName: design.floorName,
+        scopeOfWork: design.scopeOfWork,
+        workItem: design.workItem,
+        workType: design.workType,
+        imageType: design.imageType,
+        title: design.title,
+        description: design.description,
+        workflow_remark: design.workflow_remark || "",
+        createdByName: design.createdByName || 'Unknown'
+      };
+    } else {
+      // Find in version history
+      const versionHistory = design.versionHistory || [];
+      const foundVersion = versionHistory.find(
+        v => v.versionNumber === parseInt(versionNumber)
+      );
+      
+      if (!foundVersion) {
+        return res.status(404).json({
+          success: false,
+          message: `Version V${versionNumber} not found in history`
+        });
+      }
+
+      versionData = {
+        _id: design._id,
+        versionNumber: foundVersion.versionNumber,
+        images: foundVersion.images || [],
+        fileName: foundVersion.fileName,
+        fileType: foundVersion.fileType,
+        versionChanges: foundVersion.versionChanges || "",
+        status: foundVersion.status,
+        comments: foundVersion.comments || [],
+        isChatEnabled: foundVersion.isChatEnabled !== false,
+        createdAt: foundVersion.createdAt,
+        updatedAt: foundVersion.updatedAt,
+        createdBy: foundVersion.createdBy,
+        createdByModel: foundVersion.createdByModel,
+        isLatestVersion: false,
+        // Design metadata
+        siteId: design.siteId,
+        siteName: design.siteName,
+        floorName: design.floorName,
+        scopeOfWork: design.scopeOfWork,
+        workItem: design.workItem,
+        workType: design.workType,
+        imageType: design.imageType,
+        title: design.title,
+        description: design.description,
+        workflow_remark: foundVersion.workflow_remark || "",
+        createdByName: design.createdByName || 'Unknown'
+      };
+    }
+
+    console.log("Returning version data for client V" + versionNumber + ":", {
+      images: versionData.images?.length,
+      comments: versionData.comments?.length,
+      status: versionData.status
+    });
+
+    res.json({
+      success: true,
+      data: versionData,
+      message: `Switched to version V${versionNumber}`
+    });
+  } catch (error) {
+    console.error("Error switching client version:", error);
     res.status(500).json({
       success: false,
       message: "Server error: " + error.message
@@ -770,5 +928,6 @@ module.exports = {
   addClientComment,
   getClientDesignDetails,
   getClientStats,
-  getClientDesignVersions // Add this
+  getClientDesignVersions,
+  switchClientDesignVersion
 };

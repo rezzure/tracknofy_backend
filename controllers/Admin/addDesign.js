@@ -221,7 +221,7 @@
 const Design = require("../../Schema/designApproval.schema/designApproval.model");
 const Admin = require("../../Schema/admin.schema/admine.model");
 const Supervisor = require("../../Schema/supervisor.schema/supervisor.model");
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 
 // controllers/Admin/addDesign.js
 // Update the existing addDesign function to start from version 0
@@ -432,128 +432,214 @@ const sendDesignToClient = async (req, res) => {
 const createNewVersion = async (req, res) => {
   try {
     const { id } = req.params;
-    const email = req.query.email;
     const { versionChanges } = req.body;
 
-    let user = await Admin.findOne({ email });
-    let userModel = "Admin";
-
-    if (!user) {
-      user = await Supervisor.findOne({ email });
-      userModel = "User";
-    }
+    // Find the current design
+    const currentDesign = await Design.findById(id);
     
-    if (!user) {
-      return res.status(404).send({ 
-        success: false, 
-        message: "User not found with email: " + email 
-      });
+    if (!currentDesign) {
+      return res.status(404).json({ success: false, message: "Design not found" });
     }
 
-    // Find the original design
-    const originalDesign = await Design.findById(id);
-    if (!originalDesign) {
-      return res.status(404).json({
-        success: false,
-        message: "Original design not found"
-      });
-    }
-
-    // Mark original design as not latest
-    originalDesign.isLatestVersion = false;
-    await originalDesign.save();
-
-    // Create new version based on original design
-    const newVersionData = {
-      ...originalDesign.toObject(),
-      _id: new mongoose.Types.ObjectId(),
-      versionNumber: originalDesign.versionNumber + 1,
-      versionChanges: versionChanges || "",
-      parentVersion: originalDesign._id,
-      isLatestVersion: true,
-      status: "sent", // Reset status to "sent" for new version
-      comments: [], // Start with empty comments for new version
-      isChatEnabled: true, // ENABLE CHAT FOR NEW VERSION
-      workflow_remark: "", // Reset workflow remarks
-      createdAt: new Date(),
-      updatedAt: new Date()
+    // Save current version to history
+    const versionToSave = {
+      versionNumber: currentDesign.versionNumber,
+      images: currentDesign.images,
+      fileName: currentDesign.fileName,
+      fileType: currentDesign.fileType,
+      versionChanges: currentDesign.versionChanges,
+      status: currentDesign.status,
+      comments: currentDesign.comments,
+      isChatEnabled: currentDesign.isChatEnabled,
+      createdAt: currentDesign.createdAt,
+      updatedAt: currentDesign.updatedAt,
+      createdBy: currentDesign.createdBy,
+      createdByModel: currentDesign.createdByModel
     };
 
-    // Remove inherited fields that should be unique to this version
-    delete newVersionData.comments;
-    delete newVersionData.workflow_remark;
+    // Update the design with new version
+    const updatedDesign = await Design.findByIdAndUpdate(
+      id,
+      {
+        $push: { versionHistory: versionToSave },
+        $set: {
+          versionNumber: currentDesign.versionNumber + 1,
+          versionChanges: versionChanges || "",
+          status: "pending", // Reset status for new version
+          comments: [], // Reset comments for new version
+          images: req.files ? processFiles(req.files) : currentDesign.images, // New files or keep current
+          updatedAt: new Date()
+        }
+      },
+      { new: true }
+    );
 
-    const newVersion = await Design.create(newVersionData);
-
-    // Add a comment about the version creation
-    newVersion.comments.push({
-      text: `New version V${newVersion.versionNumber} created. Changes: ${versionChanges}`,
-      user: user.name || user.userName,
-      userRole: userModel,
-      date: new Date()
-    });
-
-    await newVersion.save();
-
-    res.status(201).json({
+    res.json({
       success: true,
-      message: `New version V${newVersion.versionNumber} created successfully`,
-      data: newVersion
+      data: updatedDesign,
+      message: `New version V${updatedDesign.versionNumber} created successfully`
     });
   } catch (error) {
     console.error("Error creating new version:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error: " + error.message
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
 // Get all versions of a design
-const getDesignVersions = async (req, res) => {
+// const getDesignVersions = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     console.log("Fetching versions for design:", id); // Debug log
+
+//     // Find the current design
+//     const currentDesign = await Design.findById(id);
+//     if (!currentDesign) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Design not found"
+//       });
+//     }
+
+//     // Find the root design (the very first version)
+//     let rootDesignId = currentDesign.parentVersion || currentDesign._id;
+//     console.log("Root design ID:", rootDesignId); // Debug log
+    
+//     // Get all versions in the version chain
+//     const versions = await Design.find({
+//       $or: [
+//         { _id: rootDesignId },
+//         { parentVersion: rootDesignId }
+//       ]
+//     })
+//     .sort({ versionNumber: 1 }) // Sort by version number ascending
+//     .select('-__v') // Exclude version field
+//     .lean(); // Convert to plain objects for better performance
+
+//     console.log("Found versions:", versions.length); // Debug log
+
+//     res.json({
+//       success: true,
+//       data: versions,
+//       message: "Design versions retrieved successfully"
+//     });
+//   } catch (error) {
+//     console.error("Error fetching design versions:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error: " + error.message
+//     });
+//   }
+// };
+
+// In your backend - Fix the switchDesignVersion function
+const switchDesignVersion = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("Fetching versions for design:", id); // Debug log
+    const { versionNumber } = req.body;
 
-    // Find the current design
-    const currentDesign = await Design.findById(id);
-    if (!currentDesign) {
+    console.log("Switching to version:", versionNumber, "for design:", id);
+
+    const design = await Design.findById(id);
+    if (!design) {
       return res.status(404).json({
         success: false,
         message: "Design not found"
       });
     }
 
-    // Find the root design (the very first version)
-    let rootDesignId = currentDesign.parentVersion || currentDesign._id;
-    console.log("Root design ID:", rootDesignId); // Debug log
-    
-    // Get all versions in the version chain
-    const versions = await Design.find({
-      $or: [
-        { _id: rootDesignId },
-        { parentVersion: rootDesignId }
-      ]
-    })
-    .sort({ versionNumber: 1 }) // Sort by version number ascending
-    .select('-__v') // Exclude version field
-    .lean(); // Convert to plain objects for better performance
+    let versionData;
 
-    console.log("Found versions:", versions.length); // Debug log
+    if (parseInt(versionNumber) === design.versionNumber) {
+      // Current version
+      versionData = {
+        _id: design._id,
+        versionNumber: design.versionNumber,
+        images: design.images || [],
+        fileName: design.fileName,
+        fileType: design.fileType,
+        versionChanges: design.versionChanges || "",
+        status: design.status,
+        comments: design.comments || [],
+        isChatEnabled: design.isChatEnabled !== false,
+        createdAt: design.createdAt,
+        updatedAt: design.updatedAt,
+        createdBy: design.createdBy,
+        createdByModel: design.createdByModel,
+        isLatestVersion: true,
+        // Design metadata
+        siteId: design.siteId,
+        siteName: design.siteName,
+        floorName: design.floorName,
+        scopeOfWork: design.scopeOfWork,
+        workItem: design.workItem,
+        workType: design.workType,
+        imageType: design.imageType,
+        title: design.title,
+        description: design.description,
+        workflow_remark: design.workflow_remark || ""
+      };
+    } else {
+      // Find in version history
+      const versionHistory = design.versionHistory || [];
+      const foundVersion = versionHistory.find(
+        v => v.versionNumber === parseInt(versionNumber)
+      );
+      
+      if (!foundVersion) {
+        return res.status(404).json({
+          success: false,
+          message: `Version V${versionNumber} not found in history`
+        });
+      }
+
+      versionData = {
+        _id: design._id,
+        versionNumber: foundVersion.versionNumber,
+        images: foundVersion.images || [],
+        fileName: foundVersion.fileName,
+        fileType: foundVersion.fileType,
+        versionChanges: foundVersion.versionChanges || "",
+        status: foundVersion.status,
+        comments: foundVersion.comments || [],
+        isChatEnabled: foundVersion.isChatEnabled !== false,
+        createdAt: foundVersion.createdAt,
+        updatedAt: foundVersion.updatedAt,
+        createdBy: foundVersion.createdBy,
+        createdByModel: foundVersion.createdByModel,
+        isLatestVersion: false,
+        // Design metadata
+        siteId: design.siteId,
+        siteName: design.siteName,
+        floorName: design.floorName,
+        scopeOfWork: design.scopeOfWork,
+        workItem: design.workItem,
+        workType: design.workType,
+        imageType: design.imageType,
+        title: design.title,
+        description: design.description,
+        workflow_remark: foundVersion.workflow_remark || ""
+      };
+    }
+
+    console.log("Returning version data for V" + versionNumber + ":", {
+      images: versionData.images?.length,
+      comments: versionData.comments?.length,
+      status: versionData.status
+    });
 
     res.json({
       success: true,
-      data: versions,
-      message: "Design versions retrieved successfully"
+      data: versionData,
+      message: `Switched to version V${versionNumber}`
     });
   } catch (error) {
-    console.error("Error fetching design versions:", error);
+    console.error("Error switching version:", error);
     res.status(500).json({
       success: false,
       message: "Server error: " + error.message
     });
   }
-};
+}
 
 // Update routes in your backend
 module.exports = {
@@ -561,5 +647,6 @@ module.exports = {
   addComments,
   sendDesignToClient,
   createNewVersion, // Add this
-  getDesignVersions // Add this
+  // getDesignVersions, // Add this
+  switchDesignVersion
 };

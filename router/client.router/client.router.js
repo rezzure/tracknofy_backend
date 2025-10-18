@@ -14,7 +14,8 @@ const {
   addClientComment,
   getClientDesignDetails,
   getClientStats,
-  getClientDesignVersions
+  getClientDesignVersions,
+  switchClientDesignVersion 
 } = require('../../controllers/Client/designApproval.js');
 
 // Add these new routes to your client routes
@@ -24,6 +25,7 @@ router.patch("/design/:id/client-action", verification, handleClientAction);
 router.get("/client/design/:id", verification, getClientDesignDetails);
 router.post("/client/design/:id/comment", verification, addClientComment);
 router.get("/client/stats", verification, getClientStats);
+router.post("/client/design/:designId/switch-version", verification, switchClientDesignVersion);
 
 // router for getting client detail
 router.get('/get/clientDetail',verification,getClientDetails)

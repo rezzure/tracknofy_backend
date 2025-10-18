@@ -6,9 +6,7 @@ const Site = require("../../Schema/site.Schema/site.model");
 const buildQueryFilter = (additionalFilters = {}, siteId = null) => {
   const filter = { ...additionalFilters };
   
-  // Add siteId filter if provided
   if (siteId) {
-    // Validate ObjectId format
     if (!mongoose.Types.ObjectId.isValid(siteId)) {
       throw new Error('Invalid site ID format');
     }
@@ -48,26 +46,26 @@ const validateTaskData = (data, isUpdate = false) => {
 // Get all tasks with optional siteId filtering
 exports.getAllTasks = async (req, res) => {
   try {
-    const { siteId, status, priority, assignee } = req.query;
+    const { siteId, status, priority, assignee, isBlocked } = req.query;
     
-    // Build filter object
     let additionalFilters = {};
     if (status) additionalFilters.status = status;
     if (priority) additionalFilters.priority = priority;
     if (assignee) additionalFilters.assignee = new RegExp(assignee, 'i');
+    if (isBlocked !== undefined) additionalFilters.isBlocked = isBlocked === 'true';
     
     const filter = buildQueryFilter(additionalFilters, siteId);
     
     const tasks = await Task.find(filter)
       .sort({ createdAt: -1 })
-      .populate('siteId', 'name siteName') // Populate site info if needed
+      .populate('siteId', 'name siteName')
       .lean();
     
     res.status(200).json({
       success: true,
       data: tasks,
       count: tasks.length,
-      filters: { siteId, status, priority, assignee }
+      filters: { siteId, status, priority, assignee, isBlocked }
     });
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -108,7 +106,6 @@ exports.getTasksByStatus = async (req, res) => {
     const { status } = req.params;
     const { siteId } = req.query;
     
-    // Validate status
     if (!['todo', 'inprogress', 'done'].includes(status)) {
       return res.status(400).json({
         success: false,
@@ -192,7 +189,6 @@ exports.getTaskById = async (req, res) => {
       });
     }
     
-    // Build query - include siteId filter if provided
     let query = { _id: id };
     if (siteId) {
       if (!mongoose.Types.ObjectId.isValid(siteId)) {
@@ -246,10 +242,10 @@ exports.createTask = async (req, res) => {
       assignorName,
       assignorEmail,
       assigneeName,
-      assigneeEmail
+      assigneeEmail,
+      completionPercentage
     } = req.body;
     
-    // Validate required fields and data format
     const validationErrors = validateTaskData(req.body);
     if (validationErrors.length > 0) {
       return res.status(400).json({
@@ -273,13 +269,13 @@ exports.createTask = async (req, res) => {
       assignorName: assignorName?.trim() || '',
       assignorEmail: assignorEmail?.trim() || '',
       assigneeName: assigneeName?.trim() || '',
-      assigneeEmail: assigneeEmail?.trim() || ''
+      assigneeEmail: assigneeEmail?.trim() || '',
+      completionPercentage: completionPercentage || 0
     };
     
     const task = new Task(taskData);
     const savedTask = await task.save();
     
-    // Populate the site info for response
     await savedTask.populate('siteId', 'name siteName');
     
     res.status(201).json({
@@ -310,7 +306,6 @@ exports.updateTask = async (req, res) => {
       });
     }
     
-    // Validate update data
     const validationErrors = validateTaskData(req.body, true);
     if (validationErrors.length > 0) {
       return res.status(400).json({
@@ -320,13 +315,11 @@ exports.updateTask = async (req, res) => {
       });
     }
     
-    // Build query - include siteId verification if provided
     let query = { _id: id };
     if (bodySiteId) {
       query.siteId = new mongoose.Types.ObjectId(bodySiteId);
     }
     
-    // Clean and prepare update data
     const cleanUpdateData = {};
     if (updateData.title) cleanUpdateData.title = updateData.title.trim();
     if (updateData.description !== undefined) cleanUpdateData.description = updateData.description.trim();
@@ -336,11 +329,17 @@ exports.updateTask = async (req, res) => {
     if (updateData.dueDate !== undefined) cleanUpdateData.dueDate = updateData.dueDate || null;
     if (updateData.status) cleanUpdateData.status = updateData.status;
     
+    // Add blocker fields if provided
+    if (updateData.blocker !== undefined) cleanUpdateData.blocker = updateData.blocker.trim();
+    if (updateData.blockerDescription !== undefined) cleanUpdateData.blockerDescription = updateData.blockerDescription.trim();
+    if (updateData.isBlocked !== undefined) cleanUpdateData.isBlocked = updateData.isBlocked;
+    
     // Add assignor and assignee information if provided
     if (updateData.assignorName !== undefined) cleanUpdateData.assignorName = updateData.assignorName.trim();
     if (updateData.assignorEmail !== undefined) cleanUpdateData.assignorEmail = updateData.assignorEmail.trim();
     if (updateData.assigneeName !== undefined) cleanUpdateData.assigneeName = updateData.assigneeName.trim();
     if (updateData.assigneeEmail !== undefined) cleanUpdateData.assigneeEmail = updateData.assigneeEmail.trim();
+    if (updateData.completionPercentage !== undefined) cleanUpdateData.completionPercentage = updateData.completionPercentage;
     
     cleanUpdateData.updatedAt = new Date();
     
@@ -371,72 +370,140 @@ exports.updateTask = async (req, res) => {
   }
 };
 
-// Update task status
-// exports.updateTaskStatus = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const { status, siteId } = req.body;
+// Update task blocker
+exports.updateTaskBlocker = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { blocker, blockerDescription } = req.body;
     
-//     if (!mongoose.Types.ObjectId.isValid(id)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Invalid task ID format'
-//       });
-//     }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid task ID format'
+      });
+    }
     
-//     if (!status || ![ 'todo', 'inprogress', 'done'].includes(status)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Valid status is required'
-//       });
-//     }
+    if (!blocker || blocker.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Blocker title is required'
+      });
+    }
     
-//     // Build query - include siteId verification if provided
-//     let query = { _id: id };
-//     if (siteId) {
-//       if (!mongoose.Types.ObjectId.isValid(siteId)) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'Invalid site ID format'
-//         });
-//       }
-//       query.siteId = new mongoose.Types.ObjectId(siteId);
-//     }
+    const task = await Task.findById(id);
     
-//     const task = await Task.findOneAndUpdate(
-//       query, 
-//       { status, updatedAt: new Date() }, 
-//       { new: true, runValidators: true }
-//     ).populate('siteId', 'name siteName');
+    if (!task) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Task not found' 
+      });
+    }
     
-//     if (!task) {
-//       return res.status(404).json({ 
-//         success: false, 
-//         message: 'Task not found or access denied' 
-//       });
-//     }
+    // Update blocker fields
+    task.blocker = blocker.trim();
+    task.blockerDescription = blockerDescription?.trim() || '';
+    task.isBlocked = true;
+    task.blockerAddedAt = new Date();
+    task.updatedAt = new Date();
     
-//     res.status(200).json({
-//       success: true,
-//       message: 'Task status updated successfully',
-//       data: task
-//     });
-//   } catch (error) {
-//     console.error('Error updating task status:', error);
-//     res.status(400).json({ 
-//       success: false, 
-//       message: 'Failed to update task status', 
-//       error: error.message 
-//     });
-//   }
-// };
+    const updatedTask = await task.save();
+    await updatedTask.populate('siteId', 'name siteName');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Task blocker updated successfully',
+      data: updatedTask
+    });
+  } catch (error) {
+    console.error('Error updating task blocker:', error);
+    res.status(400).json({ 
+      success: false, 
+      message: 'Failed to update task blocker', 
+      error: error.message 
+    });
+  }
+};
 
+// Resolve task blocker
+exports.resolveTaskBlocker = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid task ID format'
+      });
+    }
+    
+    const task = await Task.findById(id);
+    
+    if (!task) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Task not found' 
+      });
+    }
+    
+    // Clear blocker fields
+    task.blocker = '';
+    task.blockerDescription = '';
+    task.isBlocked = false;
+    task.blockerResolvedAt = new Date();
+    task.updatedAt = new Date();
+    
+    const updatedTask = await task.save();
+    await updatedTask.populate('siteId', 'name siteName');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Task blocker resolved successfully',
+      data: updatedTask
+    });
+  } catch (error) {
+    console.error('Error resolving task blocker:', error);
+    res.status(400).json({ 
+      success: false, 
+      message: 'Failed to resolve task blocker', 
+      error: error.message 
+    });
+  }
+};
 
+// Get blocked tasks by site
+exports.getBlockedTasksBySite = async (req, res) => {
+  try {
+    const { siteId } = req.params;
+    
+    if (!siteId || !mongoose.Types.ObjectId.isValid(siteId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid site ID is required'
+      });
+    }
+    
+    const tasks = await Task.getBlockedTasksBySite(siteId);
+    
+    res.status(200).json({
+      success: true,
+      data: tasks,
+      count: tasks.length,
+      siteId
+    });
+  } catch (error) {
+    console.error('Error fetching blocked tasks:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch blocked tasks', 
+      error: error.message 
+    });
+  }
+};
 
 exports.updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, siteId, completionPercentage } = req.body; // Add completionPercentage
+    const { status, siteId, completionPercentage } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -452,7 +519,6 @@ exports.updateTaskStatus = async (req, res) => {
       });
     }
     
-    // Build query - include siteId verification if provided
     let query = { _id: id };
     if (siteId) {
       if (!mongoose.Types.ObjectId.isValid(siteId)) {
@@ -464,13 +530,11 @@ exports.updateTaskStatus = async (req, res) => {
       query.siteId = new mongoose.Types.ObjectId(siteId);
     }
     
-    // Build update object with both status and completionPercentage
     const updateData = { 
       status, 
       updatedAt: new Date() 
     };
     
-    // Add completionPercentage if provided
     if (completionPercentage !== undefined) {
       updateData.completionPercentage = completionPercentage;
     }
@@ -503,7 +567,7 @@ exports.updateTaskStatus = async (req, res) => {
   }
 };
 
-// Delete a task - FIXED: Removed siteId from req.body for DELETE request
+// Delete a task
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -515,7 +579,6 @@ exports.deleteTask = async (req, res) => {
       });
     }
     
-    // For DELETE requests, we don't expect a body, so we just delete by ID
     const task = await Task.findByIdAndDelete(id);
     
     if (!task) {
@@ -569,19 +632,27 @@ exports.getTasksStatistics = async (req, res) => {
     
     const stats = await Task.aggregate(pipeline);
     
-    // Format the statistics
     const formattedStats = {};
     stats.forEach(stat => {
       formattedStats[stat._id] = stat.count;
     });
     
-    // Ensure all statuses are represented
     const allStatuses = [ 'todo', 'inprogress','done'];
     allStatuses.forEach(status => {
       if (!formattedStats[status]) {
         formattedStats[status] = 0;
       }
     });
+    
+    // Get blocked tasks count
+    let blockedMatch = {};
+    if (siteId) {
+      blockedMatch.siteId = new mongoose.Types.ObjectId(siteId);
+    }
+    blockedMatch.isBlocked = true;
+    
+    const blockedCount = await Task.countDocuments(blockedMatch);
+    formattedStats.blocked = blockedCount;
     
     res.status(200).json({
       success: true,
@@ -612,13 +683,11 @@ exports.getSiteTaskStatistics = async (req, res) => {
     
     const stats = await Task.getStatsBySite(siteId);
     
-    // Format the statistics
     const formattedStats = {};
     stats.forEach(stat => {
       formattedStats[stat._id] = stat.count;
     });
     
-    // Ensure all statuses are represented
     const allStatuses = ['todo', 'inprogress','done'];
     allStatuses.forEach(status => {
       if (!formattedStats[status]) {
@@ -626,7 +695,13 @@ exports.getSiteTaskStatistics = async (req, res) => {
       }
     });
     
-    // Get total count
+    // Get blocked tasks count for the site
+    const blockedCount = await Task.countDocuments({ 
+      siteId: new mongoose.Types.ObjectId(siteId),
+      isBlocked: true 
+    });
+    formattedStats.blocked = blockedCount;
+    
     const totalTasks = Object.values(formattedStats).reduce((sum, count) => sum + count, 0);
     
     res.status(200).json({
@@ -647,12 +722,12 @@ exports.getSiteTaskStatistics = async (req, res) => {
   }
 };
 
-
-// Add this to your task controller file
+// Update task progress and status
 exports.updateTaskProgressAndStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { completionPercentage, status } = req.body;
+    console.log(id,completionPercentage, status)
 
     const task = await Task.findOneAndUpdate(
       { _id: id }, 

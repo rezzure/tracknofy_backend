@@ -17,20 +17,30 @@ router.get('/get/task/:id', taskController.getTaskById);
 // Create a new task
 router.post('/create/task', taskController.createTask);
 
-// Update a task - FIXED: Added missing slash before :id
+// Update a task
 router.put('/update/task/:id', taskController.updateTask);
 
-// Update task status - FIXED: Removed extra /status at the end
+// Update task blocker
+router.patch('/update/task/:id/blocker', taskController.updateTaskBlocker);
+
+// Resolve task blocker
+router.patch('/resolve/task/:id/blocker', taskController.resolveTaskBlocker);
+
+// Get blocked tasks by site
+router.get('/get/blocked-tasks/site/:siteId', taskController.getBlockedTasksBySite);
+
+// Update task status
 router.patch('/update/task/status/:id', taskController.updateTaskStatus);
 
 router.patch('/update-progress-status/:id', taskController.updateTaskProgressAndStatus);
+
 // Delete a task
 router.delete('/delete/task/:id', taskController.deleteTask);
 
 // Get tasks statistics (with optional siteId filtering)
 router.get('/get/stats/summary', taskController.getTasksStatistics);
 
-// Additional site-specific routes (recommended)
+// Additional site-specific routes
 router.get('/get/tasks/site/:siteId', taskController.getTasksBySite);
 router.get('/get/stats/site/:siteId', taskController.getSiteTaskStatistics);
 
@@ -47,7 +57,5 @@ router.post('/log/task-movement',verification,taskMovement.recordNewMovement)
 
 // Get movement statistics for a site
 router.get('/movement-stats/:siteId',verification , taskMovement.getMovementStatsBySiteId)
-
-
 
 module.exports = router;

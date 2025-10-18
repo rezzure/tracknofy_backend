@@ -31,19 +31,17 @@ const taskSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['backlog', 'todo', 'inprogress', 'review', 'done'],
-    default: 'todo' // Changed default to 'todo' as per requirement
+    default: 'todo'
   },
   // Site Information
   siteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Site',
-    // required: true,
     index: true
   },
   siteName: {
     type: String,
-    trim: true,
-    // required: true
+    trim: true
   },
   // Assignor Information
   assignorName: {
@@ -71,16 +69,13 @@ const taskSchema = new mongoose.Schema({
   quotationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ManualQuotation',
-    // required: true,
     index: true
   },
   workTypeId: {
-    type: String,
-    // required: true
+    type: String
   },
   workType: {
-    type: String,
-    // required: true
+    type: String
   },
   workCategory: {
     type: String,
@@ -113,20 +108,41 @@ const taskSchema = new mongoose.Schema({
     default: 'quotation'
   },
   originalTaskId: {
-    type: String // To track the original task ID from quotation
+    type: String
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     index: true
   },
-  // Add this field to your Task schema
-completionPercentage: {
-  type: Number,
-  default: 0,
-  min: 0,
-  max: 100
-},
+  // Completion percentage
+  completionPercentage: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100
+  },
+  // NEW: Blocker fields
+  blocker: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  blockerDescription: {
+    type: String,
+    default: '',
+    trim: true
+  },
+  blockerAddedAt: {
+    type: Date
+  },
+  blockerResolvedAt: {
+    type: Date
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -140,6 +156,18 @@ completionPercentage: {
 // Update the updatedAt field before saving
 taskSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  
+  // Automatically set isBlocked based on blocker field
+  if (this.blocker && this.blocker.trim() !== '') {
+    this.isBlocked = true;
+    if (!this.blockerAddedAt) {
+      this.blockerAddedAt = new Date();
+    }
+  } else {
+    this.isBlocked = false;
+    this.blockerResolvedAt = new Date();
+  }
+  
   next();
 });
 
@@ -148,6 +176,7 @@ taskSchema.index({ siteId: 1, status: 1 });
 taskSchema.index({ siteId: 1, createdAt: -1 });
 taskSchema.index({ quotationId: 1, siteId: 1 });
 taskSchema.index({ workTypeId: 1 });
+taskSchema.index({ isBlocked: 1 }); // New index for blocker queries
 
 // Static method to get tasks by site
 taskSchema.statics.getTasksBySite = function(siteId, filters = {}) {
@@ -172,9 +201,35 @@ taskSchema.statics.getStatsBySite = function(siteId) {
   ]);
 };
 
+// Static method to get blocked tasks by site
+taskSchema.statics.getBlockedTasksBySite = function(siteId) {
+  return this.find({ 
+    siteId: new mongoose.Types.ObjectId(siteId),
+    isBlocked: true 
+  }).sort({ blockerAddedAt: -1 });
+};
+
 // Instance method to validate site ownership (optional)
 taskSchema.methods.validateSiteAccess = function(userSiteIds = []) {
   return userSiteIds.includes(this.siteId.toString());
+};
+
+// Instance method to add blocker
+taskSchema.methods.addBlocker = function(blocker, blockerDescription) {
+  this.blocker = blocker;
+  this.blockerDescription = blockerDescription;
+  this.isBlocked = true;
+  this.blockerAddedAt = new Date();
+  return this.save();
+};
+
+// Instance method to resolve blocker
+taskSchema.methods.resolveBlocker = function() {
+  this.blocker = '';
+  this.blockerDescription = '';
+  this.isBlocked = false;
+  this.blockerResolvedAt = new Date();
+  return this.save();
 };
 
 const Task = mongoose.model('Task', taskSchema);

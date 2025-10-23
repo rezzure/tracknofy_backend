@@ -261,7 +261,7 @@ companySchema.index({ databaseStatus: 1 });
 companySchema.index({ createdAt: -1 });
 
 // Create sparse index for companyGST
-companySchema.index({ companyGST: 1 }, { sparse: true });
+// companySchema.index({ companyGST: 1 }, { sparse: true });
 
 const Company = mongoose.model('Company', companySchema);
 module.exports = Company;

@@ -1,6 +1,6 @@
 // routes/materialRoutes.js
 const express = require('express');
-const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, updateMaterialRequestStatus, getMaterialMaster, countMaterialReqDoc } = require('../../controllers/Admin/Material&Purchase/materialRequest');
+const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, updateMaterialRequestStatus, getMaterialMaster, countMaterialReqDoc, updateMaterialRequest } = require('../../controllers/Admin/Material&Purchase/materialRequest');
 const getAssignUserSite = require('../../controllers/Admin/Material&Purchase/getAssignUserSite');
 const { getApprovedMaterialRequests, getPurchaseOrdersByEngineer, createPurchaseOrder, getAllPurchaseOrders, getApprovedMaterialRequestsByEngineer } = require('../../controllers/Admin/Material&Purchase/purchaseOrder');
 const { createGRN, getPendingDeliveries, getGRNHistory, getAllGRNs } = require('../../controllers/Admin/Material&Purchase/grn');
@@ -14,10 +14,11 @@ const router = express.Router();
 router.post('/material-requests', createMaterialRequest);
 router.get('/material-requests', getAllMaterialRequests);
 router.get('/material-requests/engineer', getMaterialRequestsByEngineer);
-router.put('/material-requests/status', updateMaterialRequestStatus);
+// router.put('/material-requests/status', updateMaterialRequestStatus);
 router.get('/material-master', getMaterialMaster);
 router.get('/get/assignUserSite', getAssignUserSite)
 router.get('/material-requests/count', countMaterialReqDoc)
+router.put('/material-requests/:id', updateMaterialRequest); // Update material request (for editing)
 
 
 // // Purchase Order Routes

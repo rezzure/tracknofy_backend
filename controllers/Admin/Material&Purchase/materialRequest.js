@@ -111,6 +111,140 @@ const createMaterialRequest = async (req, res) => {
   }
 };
 
+
+// Update Material Request (for editing individual materials)
+const updateMaterialRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { siteId, siteName, engineer, engineerEmail, materials, requiredBy, priority } = req.body;
+
+    console.log('Updating material request ID:', id);
+    console.log('Update data:', req.body);
+
+    // Find the existing request by requestId or _id
+    let existingRequest;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      // If it's a valid MongoDB ObjectId, search by _id
+      existingRequest = await MaterialRequest.findById(id);
+    } else {
+      // Otherwise search by requestId
+      existingRequest = await MaterialRequest.findOne({ requestId: id });
+    }
+
+    if (!existingRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Material request not found'
+      });
+    }
+
+    // Check if request is pending (only pending requests can be edited)
+    if (existingRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only pending material requests can be edited'
+      });
+    }
+
+    // Validate required fields
+    if (!siteId || !siteName || !engineer || !engineerEmail || !requiredBy || !materials || materials.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'All required fields must be filled'
+      });
+    }
+
+    // Validate requiredBy date is not in the past
+    const requiredByDate = new Date(requiredBy);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (requiredByDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: 'Required by date cannot be in the past'
+      });
+    }
+
+    // Validate materials array
+    for (let material of materials) {
+      if (!material.materialType || !material.name || !material.quantity || !material.unit) {
+        return res.status(400).json({
+          success: false,
+          message: 'All material fields (type, name, quantity, unit) are required'
+        });
+      }
+
+      // Validate quantity is positive number
+      if (material.quantity <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Material quantity must be greater than 0'
+        });
+      }
+    }
+
+    // Prepare materials with all fields
+    const preparedMaterials = materials.map(material => ({
+      materialType: material.materialType,
+      name: material.name,
+      materialBrand: material.materialBrand || '',
+      quantity: Number(material.quantity),
+      unit: material.unit,
+      remarks: material.remarks || ''
+    }));
+
+    // Update the request using the _id from the found request
+    const updatedRequest = await MaterialRequest.findByIdAndUpdate(
+      existingRequest._id,
+      {
+        siteId,
+        siteName,
+        engineer,
+        engineerEmail,
+        materials: preparedMaterials,
+        requiredBy: requiredByDate,
+        priority: priority || 'medium',
+        updatedAt: new Date()
+      },
+      { new: true, runValidators: true }
+    );
+
+    console.log('Material request updated successfully:', updatedRequest.requestId);
+
+    res.status(200).json({
+      success: true,
+      data: updatedRequest,
+      message: 'Material request updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating material request:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${errors.join(', ')}`
+      });
+    }
+
+    // Handle cast error (invalid ID)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid material request ID'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error: ' + error.message
+    });
+  }
+};
+
+
 // In your material requests routes file
 const countMaterialReqDoc = async (req, res) => {
   try {
@@ -244,5 +378,6 @@ module.exports = {
   getMaterialRequestsByEngineer,
   updateMaterialRequestStatus,
   getMaterialMaster,
-  countMaterialReqDoc
+  countMaterialReqDoc,
+  updateMaterialRequest
 };

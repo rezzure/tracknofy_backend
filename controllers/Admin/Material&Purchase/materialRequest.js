@@ -115,489 +115,6 @@ const createMaterialRequest = async (req, res) => {
 
 
 
-// // Create Material Request - Modified for dual approval workflow
-// const createMaterialRequest = async (req, res) => {
-//   try {
-//     const { siteId, siteName, engineer, engineerEmail, materials, requiredBy, priority, requestStatus } = req.body;
-
-//     console.log('Received material request:', req.body);
-
-//     // Validate required fields
-//     if (!siteId || !siteName || !engineer || !engineerEmail || !requiredBy || !materials || materials.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'All required fields must be filled'
-//       });
-//     }
-
-//     // Validate requiredBy date is not in the past
-//     const requiredByDate = new Date(requiredBy);
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0); // Set to start of day for comparison
-    
-//     if (requiredByDate < today) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Required by date cannot be in the past'
-//       });
-//     }
-
-//     // Validate materials array
-//     for (let material of materials) {
-//       if (!material.materialType || !material.name || !material.quantity || !material.unit) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'All material fields (type, name, quantity, unit) are required'
-//         });
-//       }
-
-//       // Validate quantity is positive number
-//       if (material.quantity <= 0) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'Material quantity must be greater than 0'
-//         });
-//       }
-//     }
-
-//     // Generate request ID
-//     const requestCount = await MaterialRequest.countDocuments();
-//     const requestId = `REQ-${String(requestCount + 1).padStart(3, '0')}`;
-
-//     // Prepare materials with all fields
-//     const preparedMaterials = materials.map(material => ({
-//       materialType: material.materialType,
-//       name: material.name,
-//       materialBrand: material.materialBrand || '',
-//       quantity: Number(material.quantity),
-//       unit: material.unit,
-//       remarks: material.remarks || ''
-//     }));
-
-//     // Determine initial status based on who is creating the request
-//     // If requestStatus is provided and valid, use it (for self-approval)
-//     // Otherwise default to 'pending' for admin approval
-//     let initialStatus = 'pending';
-    
-//     if (requestStatus && ['pending', 'approved'].includes(requestStatus)) {
-//       initialStatus = requestStatus;
-//     }
-
-//     // Additional validation for self-approval
-//     if (initialStatus === 'approved') {
-//       // Check if user has permission to self-approve
-//       // You might want to add role-based validation here
-//       const userRole = req.user?.role; // Assuming user info is in req.user from auth middleware
-      
-//       if (userRole && userRole.toLowerCase() !== 'admin') {
-//         // For non-admin users, you might want to add additional checks
-//         // For example, only certain users can self-approve up to certain limits
-//         console.log(`Self-approval requested by user: ${engineerEmail}`);
-        
-//         // You can add logic here to:
-//         // 1. Check if user has self-approval permission
-//         // 2. Validate quantity limits for self-approval
-//         // 3. Log the self-approval action
-//       }
-//     }
-
-//     const newRequest = new MaterialRequest({
-//       requestId,
-//       siteId,
-//       siteName,
-//       engineer,
-//       engineerEmail: engineerEmail,
-//       materials: preparedMaterials,
-//       requiredBy: requiredByDate,
-//       priority: priority || 'medium',
-//       status: initialStatus,
-//       // Add approval metadata
-//       approvedBy: initialStatus === 'approved' ? engineerEmail : null,
-//       approvedAt: initialStatus === 'approved' ? new Date() : null,
-//       approvalType: initialStatus === 'approved' ? 'self' : 'pending_admin'
-//     });
-
-//     await newRequest.save();
-
-//     console.log('Material request created successfully:', {
-//       requestId: newRequest.requestId,
-//       status: newRequest.status,
-//       approvalType: newRequest.approvalType
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       data: newRequest,
-//       message: initialStatus === 'approved' 
-//         ? 'Material request submitted and approved successfully' 
-//         : 'Material request submitted successfully and pending approval'
-//     });
-//   } catch (error) {
-//     console.error('Error creating material request:', error);
-    
-//     // Handle duplicate requestId error
-//     if (error.code === 11000) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Request ID already exists. Please try again.'
-//       });
-//     }
-
-//     // Handle validation errors
-//     if (error.name === 'ValidationError') {
-//       const errors = Object.values(error.errors).map(err => err.message);
-//       return res.status(400).json({
-//         success: false,
-//         message: `Validation error: ${errors.join(', ')}`
-//       });
-//     }
-
-//     res.status(500).json({
-//       success: false,
-//       message: 'Internal server error: ' + error.message
-//     });
-//   }
-// };
-
-// // Update Individual Material in a Request
-// const updateIndividualMaterial = async (req, res) => {
-//   try {
-//     const { requestId } = req.params;
-//     const { materials, ...otherFields } = req.body;
-
-//     console.log('Updating individual material in request:', requestId);
-//     console.log('Received data:', { materials, otherFields });
-
-//     // Validate request ID
-//     if (!requestId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Request ID is required'
-//       });
-//     }
-
-//     // Find the existing request
-//     const existingRequest = await MaterialRequest.findOne({ 
-//       $or: [
-//         { requestId: requestId },
-//         { _id: requestId }
-//       ]
-//     });
-
-//     if (!existingRequest) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Material request not found'
-//       });
-//     }
-
-//     // Validate that request is in pending status
-//     if (existingRequest.status !== 'pending') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Only materials in pending requests can be edited'
-//       });
-//     }
-
-//     // Validate materials array exists and is not empty
-//     if (!materials || !Array.isArray(materials) || materials.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Materials array is required and cannot be empty'
-//       });
-//     }
-
-//     // Validate each material in the updated array
-//     for (let material of materials) {
-//       if (!material.materialType || !material.name || !material.quantity || !material.unit) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'All material fields (type, name, quantity, unit) are required'
-//         });
-//       }
-
-//       // Validate quantity is positive number
-//       if (material.quantity <= 0) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'Material quantity must be greater than 0'
-//         });
-//       }
-
-//       // Validate material type is from allowed options
-//       const allowedMaterialTypes = ["civil", "carpentry", "plumbing", "electrical", "fabricator", "others"];
-//       if (!allowedMaterialTypes.includes(material.materialType)) {
-//         return res.status(400).json({
-//           success: false,
-//           message: `Invalid material type. Allowed types: ${allowedMaterialTypes.join(', ')}`
-//         });
-//       }
-
-//       // Validate unit is from allowed options
-//       const allowedUnits = ["bags", "kg", "tons", "liters", "pieces", "meter", "feet", "inches", "cubicYards"];
-//       if (!allowedUnits.includes(material.unit)) {
-//         return res.status(400).json({
-//           success: false,
-//           message: `Invalid unit. Allowed units: ${allowedUnits.join(', ')}`
-//         });
-//       }
-//     }
-
-//     // Prepare updated materials with proper data types
-//     const updatedMaterials = materials.map(material => ({
-//       materialType: material.materialType,
-//       name: material.name,
-//       materialBrand: material.materialBrand || '',
-//       quantity: Number(material.quantity),
-//       unit: material.unit,
-//       remarks: material.remarks || ''
-//     }));
-
-//     // Update the request with new materials and maintain other fields
-//     const updatedRequest = await MaterialRequest.findOneAndUpdate(
-//       { 
-//         $or: [
-//           { requestId: requestId },
-//           { _id: requestId }
-//         ],
-//         status: 'pending' // Additional safety check
-//       },
-//       { 
-//         $set: { 
-//           materials: updatedMaterials,
-//           updatedAt: new Date(),
-//           ...otherFields // Include any other fields that might be updated
-//         } 
-//       },
-//       { new: true, runValidators: true }
-//     );
-
-//     if (!updatedRequest) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Material request not found or not in pending status'
-//       });
-//     }
-
-//     console.log('Individual material updated successfully in request:', updatedRequest.requestId);
-
-//     res.status(200).json({
-//       success: true,
-//       data: updatedRequest,
-//       message: 'Material updated successfully'
-//     });
-
-//   } catch (error) {
-//     console.error('Error updating individual material:', error);
-    
-//     // Handle duplicate key errors
-//     if (error.code === 11000) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Duplicate request detected'
-//       });
-//     }
-
-//     // Handle validation errors
-//     if (error.name === 'ValidationError') {
-//       const errors = Object.values(error.errors).map(err => err.message);
-//       return res.status(400).json({
-//         success: false,
-//         message: `Validation error: ${errors.join(', ')}`
-//       });
-//     }
-
-//     // Handle CastError (invalid ID format)
-//     if (error.name === 'CastError') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Invalid request ID format'
-//       });
-//     }
-
-//     res.status(500).json({
-//       success: false,
-//       message: 'Internal server error while updating material: ' + error.message
-//     });
-//   }
-// };
-
-
-// // Delete Individual Material from a Request
-// const deleteIndividualMaterial = async (req, res) => {
-//   try {
-//     const { requestId } = req.params;
-//     const { materialIndex, materialIdentifier } = req.body;
-
-//     console.log('Deleting individual material from request:', requestId);
-//     console.log('Material identifier:', { materialIndex, materialIdentifier });
-
-//     // Validate request ID
-//     if (!requestId) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Request ID is required'
-//       });
-//     }
-
-//     // Find the existing request
-//     const existingRequest = await MaterialRequest.findOne({ 
-//       $or: [
-//         { requestId: requestId },
-//         { _id: requestId }
-//       ]
-//     });
-
-//     if (!existingRequest) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Material request not found'
-//       });
-//     }
-
-//     // Validate that request is in pending status
-//     if (existingRequest.status !== 'pending') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Only materials in pending requests can be deleted'
-//       });
-//     }
-
-//     // Validate materials array exists and has items
-//     if (!existingRequest.materials || existingRequest.materials.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'No materials found in this request'
-//       });
-//     }
-
-//     // Prevent deleting the last material
-//     if (existingRequest.materials.length <= 1) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Cannot delete the last material in a request. Delete the entire request instead.'
-//       });
-//     }
-
-//     let updatedMaterials;
-
-//     // Handle deletion by index
-//     if (materialIndex !== undefined && materialIndex !== null) {
-//       // Validate material index
-//       if (materialIndex < 0 || materialIndex >= existingRequest.materials.length) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'Invalid material index'
-//         });
-//       }
-
-//       // Remove material by index
-//       updatedMaterials = existingRequest.materials.filter((_, index) => index !== materialIndex);
-//     }
-//     // Handle deletion by identifier (name and type)
-//     else if (materialIdentifier) {
-//       const { name, materialType } = materialIdentifier;
-      
-//       if (!name || !materialType) {
-//         return res.status(400).json({
-//           success: false,
-//           message: 'Material name and type are required for identification'
-//         });
-//       }
-
-//       // Find material to delete
-//       const materialToDelete = existingRequest.materials.find(
-//         material => material.name === name && material.materialType === materialType
-//       );
-
-//       if (!materialToDelete) {
-//         return res.status(404).json({
-//           success: false,
-//           message: 'Material not found in the request'
-//         });
-//       }
-
-//       // Remove material by identifier
-//       updatedMaterials = existingRequest.materials.filter(
-//         material => !(material.name === name && material.materialType === materialType)
-//       );
-//     }
-//     else {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Either materialIndex or materialIdentifier is required'
-//       });
-//     }
-
-//     // Validate that we actually removed a material
-//     if (updatedMaterials.length === existingRequest.materials.length) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'No material was removed. Please check the provided identifier.'
-//       });
-//     }
-
-//     // Update the request with filtered materials
-//     const updatedRequest = await MaterialRequest.findOneAndUpdate(
-//       { 
-//         $or: [
-//           { requestId: requestId },
-//           { _id: requestId }
-//         ],
-//         status: 'pending' // Additional safety check
-//       },
-//       { 
-//         $set: { 
-//           materials: updatedMaterials,
-//           updatedAt: new Date()
-//         } 
-//       },
-//       { new: true, runValidators: true }
-//     );
-
-//     if (!updatedRequest) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Material request not found or not in pending status'
-//       });
-//     }
-
-//     console.log('Individual material deleted successfully from request:', updatedRequest.requestId);
-
-//     res.status(200).json({
-//       success: true,
-//       data: updatedRequest,
-//       message: 'Material deleted successfully'
-//     });
-
-//   } catch (error) {
-//     console.error('Error deleting individual material:', error);
-    
-//     // Handle validation errors
-//     if (error.name === 'ValidationError') {
-//       const errors = Object.values(error.errors).map(err => err.message);
-//       return res.status(400).json({
-//         success: false,
-//         message: `Validation error: ${errors.join(', ')}`
-//       });
-//     }
-
-//     // Handle CastError (invalid ID format)
-//     if (error.name === 'CastError') {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Invalid request ID format'
-//       });
-//     }
-
-//     res.status(500).json({
-//       success: false,
-//       message: 'Internal server error while deleting material: ' + error.message
-//     });
-//   }
-// };
-
-// In your material requests routes file
 const countMaterialReqDoc = async (req, res) => {
   try {
     const count = await MaterialRequest.countDocuments();
@@ -738,7 +255,7 @@ const getMaterialRequestsByEngineer = async (req, res) => {
 // };
 
 
-// // Update Material Request Status - For approval workflow
+// Update Material Request Status - For approval workflow
 // const updateMaterialRequestStatus = async (req, res) => {
 //   try {
 //     const { requestIds, status, approvedBy } = req.body;
@@ -823,7 +340,12 @@ const getMaterialRequestsByEngineer = async (req, res) => {
 // };
 
 
-// Get Material Master Data
+
+
+
+
+
+
 const getMaterialMaster = async (req, res) => {
   try {
     const materials = await MaterialMaster.find({ isActive: true });
@@ -858,10 +380,6 @@ const getMaterialMaster = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 
 
@@ -1125,6 +643,458 @@ const updateMaterialRequestStatusAlternative = async (req, res) => {
 
 
 
+
+// Update Individual Material in a Request
+const updateIndividualMaterial = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { materials, siteId, siteName, engineer, engineerEmail, requiredBy, priority } = req.body;
+
+    console.log('📝 UPDATE INDIVIDUAL MATERIAL - Body:', req.body);
+    console.log('📝 UPDATE INDIVIDUAL MATERIAL - Params:', req.params);
+
+    // Validate required fields
+    if (!requestId || !materials || !Array.isArray(materials)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID and materials array are required'
+      });
+    }
+
+    // Find the material request by _id or requestId
+    const materialRequest = await MaterialRequest.findOne({
+      $or: [
+        { _id: requestId },
+        { requestId: requestId }
+      ]
+    });
+
+    if (!materialRequest) {
+      return res.status(404).json({
+        success: false,
+        message: `Material request not found with ID: ${requestId}`
+      });
+    }
+
+    // Check if request is in pending status (only pending requests can be edited)
+    if (materialRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only pending material requests can be edited'
+      });
+    }
+
+    // Validate materials array
+    if (materials.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Materials array cannot be empty'
+      });
+    }
+
+    // Validate each material
+    for (let material of materials) {
+      if (!material.materialType || !material.name || !material.quantity || !material.unit) {
+        return res.status(400).json({
+          success: false,
+          message: 'All material fields (type, name, quantity, unit) are required'
+        });
+      }
+
+      // Validate quantity is positive number
+      if (material.quantity <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Material quantity must be greater than 0'
+        });
+      }
+
+      // Validate material type
+      const validMaterialTypes = ['civil', 'carpentry', 'plumbing', 'electrical', 'fabricator', 'others'];
+      if (!validMaterialTypes.includes(material.materialType)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid material type: ${material.materialType}`
+        });
+      }
+
+      // Validate unit
+      const validUnits = ['bags', 'kg', 'tons', 'liters', 'pieces', 'meter', 'feet', 'inches', 'cubicYards'];
+      if (!validUnits.includes(material.unit)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid unit: ${material.unit}`
+        });
+      }
+    }
+
+    // Prepare updated materials with all fields
+    const updatedMaterials = materials.map(material => ({
+      materialType: material.materialType,
+      name: material.name,
+      materialBrand: material.materialBrand || '',
+      quantity: Number(material.quantity),
+      unit: material.unit,
+      remarks: material.remarks || ''
+    }));
+
+    // Update the material request
+    const updateData = {
+      materials: updatedMaterials,
+      updatedAt: new Date()
+    };
+
+    // Include other fields if provided (for full request update)
+    if (siteId) updateData.siteId = siteId;
+    if (siteName) updateData.siteName = siteName;
+    if (engineer) updateData.engineer = engineer;
+    if (engineerEmail) updateData.engineerEmail = engineerEmail;
+    if (requiredBy) {
+      const requiredByDate = new Date(requiredBy);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (requiredByDate < today) {
+        return res.status(400).json({
+          success: false,
+          message: 'Required by date cannot be in the past'
+        });
+      }
+      updateData.requiredBy = requiredByDate;
+    }
+    if (priority) updateData.priority = priority;
+
+    const updatedRequest = await MaterialRequest.findByIdAndUpdate(
+      materialRequest._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    console.log(`✅ Updated individual material in request: ${materialRequest.requestId}`);
+
+    res.json({
+      success: true,
+      data: updatedRequest,
+      message: 'Material updated successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating individual material:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${errors.join(', ')}`
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error: ' + error.message
+    });
+  }
+};
+
+
+
+// Delete Individual Material from a Request
+const deleteIndividualMaterial = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { materialIndex, materialIdentifier } = req.body;
+
+    console.log('🗑️ DELETE INDIVIDUAL MATERIAL - Body:', req.body);
+    console.log('🗑️ DELETE INDIVIDUAL MATERIAL - Params:', req.params);
+
+    // Validate required fields
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID is required'
+      });
+    }
+
+    if (materialIndex === undefined && !materialIdentifier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Either materialIndex or materialIdentifier is required to identify the material to delete'
+      });
+    }
+
+    // Find the material request by _id or requestId
+    const materialRequest = await MaterialRequest.findOne({
+      $or: [
+        { _id: requestId },
+        { requestId: requestId }
+      ]
+    });
+
+    if (!materialRequest) {
+      return res.status(404).json({
+        success: false,
+        message: `Material request not found with ID: ${requestId}`
+      });
+    }
+
+    // Check if request is in pending status (only pending requests can be modified)
+    if (materialRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only pending material requests can be modified'
+      });
+    }
+
+    // Check if there's more than one material (cannot delete the last material)
+    if (materialRequest.materials.length <= 1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete the last material in a request. Delete the entire request instead.'
+      });
+    }
+
+    let materialToDeleteIndex = -1;
+
+    // Find the material to delete
+    if (materialIndex !== undefined) {
+      // Delete by index
+      if (materialIndex < 0 || materialIndex >= materialRequest.materials.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid material index: ${materialIndex}`
+        });
+      }
+      materialToDeleteIndex = materialIndex;
+    } else if (materialIdentifier) {
+      // Delete by identifier (name and type)
+      materialToDeleteIndex = materialRequest.materials.findIndex(
+        material => 
+          material.name === materialIdentifier.name && 
+          material.materialType === materialIdentifier.materialType
+      );
+
+      if (materialToDeleteIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: 'Material not found in the request'
+        });
+      }
+    }
+
+    // Create new materials array without the deleted material
+    const updatedMaterials = materialRequest.materials.filter(
+      (_, index) => index !== materialToDeleteIndex
+    );
+
+    // Update the material request
+    const updatedRequest = await MaterialRequest.findByIdAndUpdate(
+      materialRequest._id,
+      { 
+        $set: { 
+          materials: updatedMaterials,
+          updatedAt: new Date()
+        } 
+      },
+      { new: true, runValidators: true }
+    );
+
+    console.log(`✅ Deleted material from request: ${materialRequest.requestId}`);
+
+    res.json({
+      success: true,
+      data: updatedRequest,
+      message: 'Material deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error deleting individual material:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${errors.join(', ')}`
+      });
+    }
+
+    // Handle cast errors (invalid ObjectId)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error: ' + error.message
+    });
+  }
+};
+
+
+
+// Update Material Request (General PUT endpoint)
+const updateMaterialRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const updateData = req.body;
+
+    console.log('📝 UPDATE MATERIAL REQUEST - Body:', req.body);
+    console.log('📝 UPDATE MATERIAL REQUEST - Params:', req.params);
+
+    // Validate required fields
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID is required'
+      });
+    }
+
+    // Find the material request by _id or requestId
+    const materialRequest = await MaterialRequest.findOne({
+      $or: [
+        { _id: requestId },
+        { requestId: requestId }
+      ]
+    });
+
+    if (!materialRequest) {
+      return res.status(404).json({
+        success: false,
+        message: `Material request not found with ID: ${requestId}`
+      });
+    }
+
+    // Check if request is in pending status (only pending requests can be edited)
+    if (materialRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only pending material requests can be edited'
+      });
+    }
+
+    // Validate materials array if provided
+    if (updateData.materials && Array.isArray(updateData.materials)) {
+      if (updateData.materials.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Materials array cannot be empty'
+        });
+      }
+
+      // Validate each material
+      for (let material of updateData.materials) {
+        if (!material.materialType || !material.name || !material.quantity || !material.unit) {
+          return res.status(400).json({
+            success: false,
+            message: 'All material fields (type, name, quantity, unit) are required'
+          });
+        }
+
+        if (material.quantity <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'Material quantity must be greater than 0'
+          });
+        }
+
+        const validMaterialTypes = ['civil', 'carpentry', 'plumbing', 'electrical', 'fabricator', 'others'];
+        if (!validMaterialTypes.includes(material.materialType)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid material type: ${material.materialType}`
+          });
+        }
+
+        const validUnits = ['bags', 'kg', 'tons', 'liters', 'pieces', 'meter', 'feet', 'inches', 'cubicYards'];
+        if (!validUnits.includes(material.unit)) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid unit: ${material.unit}`
+          });
+        }
+      }
+
+      // Prepare materials with proper formatting
+      updateData.materials = updateData.materials.map(material => ({
+        materialType: material.materialType,
+        name: material.name,
+        materialBrand: material.materialBrand || '',
+        quantity: Number(material.quantity),
+        unit: material.unit,
+        remarks: material.remarks || ''
+      }));
+    }
+
+    // Validate requiredBy date if provided
+    if (updateData.requiredBy) {
+      const requiredByDate = new Date(updateData.requiredBy);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (requiredByDate < today) {
+        return res.status(400).json({
+          success: false,
+          message: 'Required by date cannot be in the past'
+        });
+      }
+      updateData.requiredBy = requiredByDate;
+    }
+
+    // Add updated timestamp
+    updateData.updatedAt = new Date();
+
+    const updatedRequest = await MaterialRequest.findByIdAndUpdate(
+      materialRequest._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    console.log(`✅ Updated material request: ${materialRequest.requestId}`);
+
+    res.json({
+      success: true,
+      data: updatedRequest,
+      message: 'Material request updated successfully'
+    });
+
+  } catch (error) {
+    console.error('❌ Error updating material request:', error);
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${errors.join(', ')}`
+      });
+    }
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid request ID format'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error: ' + error.message
+    });
+  }
+};
+
+
 module.exports = {
   createMaterialRequest,
   getAllMaterialRequests,
@@ -1135,7 +1105,8 @@ module.exports = {
 
   updateSingleMaterialRequestStatus,
   updateBulkMaterialRequestStatus,
-  updateMaterialRequestStatusAlternative
-  // updateIndividualMaterial,
-  // deleteIndividualMaterial
+  updateMaterialRequestStatusAlternative,
+  updateIndividualMaterial,
+  deleteIndividualMaterial,
+  updateMaterialRequest
 };

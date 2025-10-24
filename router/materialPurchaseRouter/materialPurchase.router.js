@@ -1,6 +1,6 @@
 // routes/materialRoutes.js
 const express = require('express');
-const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, countMaterialReqDoc, updateSingleMaterialRequestStatus, updateBulkMaterialRequestStatus, updateMaterialRequestStatusAlternative } = require('../../controllers/Admin/Material&Purchase/materialRequest');
+const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, countMaterialReqDoc, updateSingleMaterialRequestStatus, updateBulkMaterialRequestStatus, updateMaterialRequestStatusAlternative, updateIndividualMaterial, deleteIndividualMaterial, updateMaterialRequest } = require('../../controllers/Admin/Material&Purchase/materialRequest');
 const getAssignUserSite = require('../../controllers/Admin/Material&Purchase/getAssignUserSite');
 const { getApprovedMaterialRequests, getPurchaseOrdersByEngineer, createPurchaseOrder, getAllPurchaseOrders, getApprovedMaterialRequestsByEngineer } = require('../../controllers/Admin/Material&Purchase/purchaseOrder');
 const { createGRN, getPendingDeliveries, getGRNHistory, getAllGRNs } = require('../../controllers/Admin/Material&Purchase/grn');
@@ -37,10 +37,14 @@ router.put('/material-requests/update-status', updateMaterialRequestStatusAltern
 // router.get('/material-master', getMaterialMaster);
 router.get('/get/assignUserSite', getAssignUserSite)
 router.get('/material-requests/count', countMaterialReqDoc)
-// router.put('/material-requests/:requestId', updateIndividualMaterial); // Update material request (for editing)
-// router.delete('/material-requests/:requestId/material', deleteIndividualMaterial); // Delete individual material
 
-// // Purchase Order Routes
+
+router.put('/material-requests/:requestId', updateMaterialRequest); // General update
+router.put('/material-requests/:requestId/material', updateIndividualMaterial); // Specific material update
+router.delete('/material-requests/:requestId/material', deleteIndividualMaterial); // Delete material
+
+
+
 router.post('/purchase-orders', createPurchaseOrder);
 router.get('/purchase-orders', getAllPurchaseOrders);
 router.get('/purchase-orders/engineer', getPurchaseOrdersByEngineer);
@@ -59,3 +63,5 @@ router.get('/grns', getAllGRNs);
 
 
 module.exports = router;
+
+

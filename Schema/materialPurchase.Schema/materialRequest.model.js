@@ -1,6 +1,8 @@
 
 // const mongoose = require('mongoose');
 
+
+
 // const materialItemSchema = new mongoose.Schema({
 //   materialType: {
 //     type: String,
@@ -93,9 +95,9 @@
 // module.exports = MaterialRequest;
 
 
+const { default: mongoose } = require("mongoose");
 
 
-const mongoose = require('mongoose');
 
 const materialItemSchema = new mongoose.Schema({
   materialType: {

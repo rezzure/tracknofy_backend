@@ -81,10 +81,13 @@ const toggleCommentResolved = require("../../controllers/Admin/progressReport/to
 const deleteComment = require("../../controllers/Admin/progressReport/deleteComment.js");
 const assignQuery = require("../../controllers/Admin/assignQueries.js");
 const { getAllQueries, getQueriesByIds } = require("../../controllers/Admin/querySupport.js");
+
 const { createTicket, getAllTickets, getUserTickets, updateTicketStatus, addTicketCommunication, getTicketById } = require("../../controllers/Admin/ticketController.js");
 const addQuotationTask = require("../../controllers/Admin/addQuotationTask.js");
 const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
 const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
+
+const createUserDetails = require("../../controllers/Admin/createUserDetails.js");
 
 // Design Approval Controllers
 const { addDesign, addComments, createNewVersion, switchDesignVersion } = require("../../controllers/Admin/addDesign.js");
@@ -107,6 +110,9 @@ router.post("/design/:id/switch-version", verification, switchDesignVersion);
 router.post("/design/:id/create-version", verification, createNewVersion);
 // Get all versions of a design
 router.get("/design/:id/versions", verification, getDesignVersions);
+
+// Create User Details
+router.post("/create/user-details", verification ,createUserDetails);
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);

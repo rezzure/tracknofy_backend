@@ -253,7 +253,7 @@ companySchema.pre('save', function(next) {
 });
 
 // Index for better query performance
-companySchema.index({ companyName: 1 });
+// companySchema.index({ companyName: 1 });
 companySchema.index({ adminEmail: 1 });
 companySchema.index({ status: 1 });
 companySchema.index({ pricingPlan: 1 });

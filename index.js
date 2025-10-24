@@ -13,7 +13,7 @@ const fs = require('fs');
 // connectDB
 // Connect to main database
 connectMainDB();
-// connectDB();
+// // connectDB();
 
 
 require("dotenv").config();
@@ -23,6 +23,14 @@ const app = express();
 const cors = require("cors");
 const path = require("path");
 app.use(express.json());
+
+
+
+
+app.use((req, res, next) => {
+  console.log("DEBUG: Incoming request:", req.method, req.originalUrl);
+  next();
+});
 
 app.use(cors({ origin: "*" }));
 app.use(express.urlencoded({ extended: true }));
@@ -84,6 +92,9 @@ app.use("/api", require("./router/ticketRouter/ticket.router.js"))
 app.use('/api', require("./router/manualQuotation.router/manualQuotationRouter.js"));
 app.use('/api', require("./router/materialPurchaseRouter/materialPurchase.router.js"));
 
+
+
+
 app.use('/api', require('./router/DMS.router/DMS.router.js'));
 app.use('/api', require('./router/BillingInvoice.router/BillingInvoice.router.js'));
 
@@ -105,11 +116,6 @@ app.use((req, res, next) => {
 
 
 
-
-app.use((req, res, next) => {
-  console.log("DEBUG: Incoming request:", req.method, req.originalUrl);
-  next();
-});
 
 app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port http://localhost:${port}`);

@@ -216,7 +216,7 @@ const materialRequestSchema = new mongoose.Schema({
 });
 
 // Add indexes for better performance
-materialRequestSchema.index({ requestId: 1 });
+
 materialRequestSchema.index({ engineerEmail: 1 });
 materialRequestSchema.index({ status: 1 });
 materialRequestSchema.index({ createdAt: -1 });

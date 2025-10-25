@@ -30,18 +30,19 @@ router.put('/material-requests/update-status', updateMaterialRequestStatusAltern
 
 
 
-
-
-
-
 // router.get('/material-master', getMaterialMaster);
 router.get('/get/assignUserSite', getAssignUserSite)
 router.get('/material-requests/count', countMaterialReqDoc)
 
 
-router.put('/material-requests/:requestId', updateMaterialRequest); // General update
-router.put('/material-requests/:requestId/material', updateIndividualMaterial); // Specific material update
-router.delete('/material-requests/:requestId/material', deleteIndividualMaterial); // Delete material
+
+// // Individual material management routes(wront end-point doest not match route frontend and backend)
+// router.patch('/material-requests/:requestId/materials/:materialIndex', updateIndividualMaterial);
+// router.delete('/material-requests/:requestId/materials/:materialIndex', deleteIndividualMaterial);
+
+
+router.put('/material-requests/:requestId', updateMaterialRequest);
+router.put('/material-requests/:requestId', deleteIndividualMaterial);
 
 
 

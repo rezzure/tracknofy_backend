@@ -1,51 +1,123 @@
-const mongoose = require("mongoose");
 const UserDetails = require("../../Schema/UserDetails.schema/UserDetails.model");
 const User = require("../../Schema/users.schema/users.model");
+const fs = require("fs");
+const path = require("path");
 
 const createUserDetails = async (req, res) => {
   try {
-    console.log("Request body:", req.body);
-    
-    // Handle both cases (capital and lowercase)
-    const userName = req.body.UserName || req.body.userName;
-    const reportingTo = req.body.ReportingTo || req.body.reportingTo || "";
-    const employmentType = req.body.EmploymentType || req.body.employmentType || "";
-    const probationPeriod = req.body.ProbationPeriod || req.body.probationPeriod || "";
+    const { 
+      userName, 
+      reportingTo, 
+      employmentType, 
+      probationPeriod,
+      dob,
+      doj,
+      contactNumber,
+      aadharNumber,
+      panNumber,
+      bankName,
+      accountNumber,
+      ifscCode
+    } = req.body;
 
-    if (!userName) {
-      return res.send({
-        success: false,
-        message: "User name is required",
-      });
-    }
+    const createdBy = req.user.id; // Assuming you have user info in req.user from auth middleware
 
     // Check if user exists
     const user = await User.findById(userName);
     if (!user) {
-      return res.send({
+      return res.status(404).json({
         success: false,
         message: "User not found",
+      });
+    }
+
+    // Check if user details already exist for this user
+    const existingDetails = await UserDetails.findOne({ 
+      user: userName, 
+      status: 'active' 
+    });
+
+    if (existingDetails) {
+      return res.status(400).json({
+        success: false,
+        message: "User details already exist for this user"
+      });
+    }
+
+    // Check if reportingTo user exists (if provided)
+    if (reportingTo && reportingTo !== "") {
+      const reportingUser = await User.findById(reportingTo);
+      if (!reportingUser) {
+        return res.status(404).json({
+          success: false,
+          message: "Reporting manager not found"
+        });
+      }
+    }
+
+    // Handle file uploads
+    const images = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        images.push({
+          filename: file.filename,
+          originalName: file.originalname,
+          path: file.path,
+          mimetype: file.mimetype,
+          size: file.size,
+          uploadedAt: new Date()
+        });
       });
     }
 
     // Create user details
     const userDetails = new UserDetails({
       user: userName,
-      reportingTo: reportingTo,
-      employmentType: employmentType,
-      probationPeriod: probationPeriod,
+      reportingTo: reportingTo || "",
+      employmentType: employmentType || "",
+      probationPeriod: probationPeriod || "",
+      dob: dob || null,
+      doj: doj || null,
+      contactNumber: contactNumber || "",
+      aadharNumber: aadharNumber || "",
+      panNumber: panNumber || "",
+      bankName: bankName || "",
+      accountNumber: accountNumber || "",
+      ifscCode: ifscCode || "",
+      images: images,
+      createdBy: createdBy
     });
 
     await userDetails.save();
 
-    res.status(200).send({
+    // Populate the user details
+    const populatedDetails = await UserDetails.findById(userDetails._id)
+      .populate('user', 'name email role mobile')
+      .populate('reportingTo', 'name email role')
+      .populate('createdBy', 'name email');
+
+    res.status(201).json({
       success: true,
       message: "User details created successfully",
-      data: userDetails,
+      data: populatedDetails,
     });
   } catch (err) {
-    console.log("Error:", err);
-    res.status(500).send({
+    console.error("Error creating user details:", err);
+    
+    // Clean up uploaded files if there was an error
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        if (fs.existsSync(file.path)) {
+          try {
+            fs.unlinkSync(file.path);
+          } catch (fileError) {
+            console.error(`Error cleaning up file ${file.path}:`, fileError);
+          }
+        }
+      });
+    }
+
+    res.status(500).json({
       success: false,
       message: "Internal server error: " + err.message,
     });

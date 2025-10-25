@@ -88,6 +88,9 @@ const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
 const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
 
 const createUserDetails = require("../../controllers/Admin/createUserDetails.js");
+const getUserDetails = require("../../controllers/Admin/getUserDetails.js");
+const deleteUserDetails = require("../../controllers/Admin/deleteUserDetails.js");
+const updateUserDetails = require("../../controllers/Admin/updateUserDetails.js");
 
 // Design Approval Controllers
 const { addDesign, addComments, createNewVersion, switchDesignVersion } = require("../../controllers/Admin/addDesign.js");
@@ -112,7 +115,10 @@ router.post("/design/:id/create-version", verification, createNewVersion);
 router.get("/design/:id/versions", verification, getDesignVersions);
 
 // Create User Details
-router.post("/create/user-details", verification ,createUserDetails);
+router.post("/create/user-details", verification, upload.array('images', 10), createUserDetails);
+router.get("/get/user-details", verification, getUserDetails);
+router.post("/update/user-details/:id", verification, upload.array('images', 10), updateUserDetails);
+router.get("/delete/user-details/:id", verification, deleteUserDetails);
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);

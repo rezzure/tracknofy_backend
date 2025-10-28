@@ -1,6 +1,6 @@
 // routes/materialRoutes.js
 const express = require('express');
-const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, countMaterialReqDoc, updateSingleMaterialRequestStatus, updateBulkMaterialRequestStatus, updateMaterialRequestStatusAlternative, updateIndividualMaterial, deleteIndividualMaterial, updateMaterialRequest } = require('../../controllers/Admin/Material&Purchase/materialRequest');
+const { createMaterialRequest, getAllMaterialRequests, getMaterialRequestsByEngineer, countMaterialReqDoc, updateSingleMaterialRequestStatus, deleteIndividualMaterial, updateMaterialRequest } = require('../../controllers/Admin/Material&Purchase/materialRequest');
 const getAssignUserSite = require('../../controllers/Admin/Material&Purchase/getAssignUserSite');
 const { getApprovedMaterialRequests, getPurchaseOrdersByEngineer, createPurchaseOrder, getAllPurchaseOrders, getApprovedMaterialRequestsByEngineer } = require('../../controllers/Admin/Material&Purchase/purchaseOrder');
 const { createGRN, getPendingDeliveries, getGRNHistory, getAllGRNs } = require('../../controllers/Admin/Material&Purchase/grn');
@@ -17,15 +17,9 @@ router.get('/material-requests/engineer', getMaterialRequestsByEngineer);
 
 
 
-router.use((req, res, next) => {
-  console.log("🔄 MATERIAL-REQUESTS ROUTE:", req.method, req.originalUrl, req.body);
-  next();
-});
-
 // Add these routes to your existing router
 router.patch('/material-requests/:requestId/status', updateSingleMaterialRequestStatus);
-router.patch('/material-requests/bulk-status', updateBulkMaterialRequestStatus);
-router.put('/material-requests/update-status', updateMaterialRequestStatusAlternative);
+
 
 
 
@@ -36,7 +30,7 @@ router.get('/material-requests/count', countMaterialReqDoc)
 
 
 
-// // Individual material management routes(wront end-point doest not match route frontend and backend)
+ // Individual material management routes(wrong end-point doest not match route frontend and backend)
 // router.patch('/material-requests/:requestId/materials/:materialIndex', updateIndividualMaterial);
 // router.delete('/material-requests/:requestId/materials/:materialIndex', deleteIndividualMaterial);
 

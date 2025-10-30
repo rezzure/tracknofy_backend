@@ -1,14 +1,14 @@
-const UserDetails = require("../../Schema/UserDetails.schema/UserDetails.model");
+const UserDetails = require("../../../Schema/UserDetails.schema/UserDetails.model");
 const fs = require("fs");
 const path = require("path");
 
 const deleteUserDetails = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { _id } = req.params;
 
     // Find the user details first to get image paths
-    const userDetails = await UserDetails.findById(id);
-    
+    const userDetails = await UserDetails.findById(_id);
+
     if (!userDetails) {
       return res.status(404).json({
         success: false,
@@ -31,7 +31,7 @@ const deleteUserDetails = async (req, res) => {
     }
 
     // Delete the user details from database
-    const deletedDetails = await UserDetails.findByIdAndDelete(id);
+    const deletedDetails = await UserDetails.findByIdAndDelete(_id);
 
     res.status(200).json({
       success: true,

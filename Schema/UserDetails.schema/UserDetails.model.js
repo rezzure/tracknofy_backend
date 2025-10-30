@@ -6,9 +6,21 @@ const userDetailsSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
+  user_name: {
+    type: String,
+    required: true
+  },
+  user_email: {
+    type: String,
+    required: true
+  },
   reportingTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    default: ""
+  },
+  reportingTo_name: {
+    type: String,
     default: ""
   },
   employmentType: {
@@ -54,7 +66,7 @@ const userDetailsSchema = new mongoose.Schema({
   images: [{
     filename: {
       type: String,
-      default: ''
+      required: true
     },
     originalName: {
       type: String,

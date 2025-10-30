@@ -87,10 +87,12 @@ const addQuotationTask = require("../../controllers/Admin/addQuotationTask.js");
 const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
 const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
 
-const createUserDetails = require("../../controllers/Admin/createUserDetails.js");
-const getUserDetails = require("../../controllers/Admin/getUserDetails.js");
-const deleteUserDetails = require("../../controllers/Admin/deleteUserDetails.js");
-const updateUserDetails = require("../../controllers/Admin/updateUserDetails.js");
+const createUserDetails = require("../../controllers/Admin/HRMS/createUserDetails.js");
+const getUserDetails = require("../../controllers/Admin/HRMS/getUserDetails.js");
+const deleteUserDetails = require("../../controllers/Admin/HRMS/deleteUserDetails.js");
+const updateUserDetails = require("../../controllers/Admin/HRMS/updateUserDetails.js");
+const markAttendance = require("../../controllers/Admin/HRMS/markAttendance.js");
+const {getAttendance, getAttendanceByDate} = require("../../controllers/Admin/HRMS/getAttendance.js");
 
 // Design Approval Controllers
 const { addDesign, addComments, createNewVersion, switchDesignVersion } = require("../../controllers/Admin/addDesign.js");
@@ -117,8 +119,11 @@ router.get("/design/:id/versions", verification, getDesignVersions);
 // Create User Details
 router.post("/create/user-details", verification, upload.array('images', 10), createUserDetails);
 router.get("/get/user-details", verification, getUserDetails);
-router.post("/update/user-details/:id", verification, upload.array('images', 10), updateUserDetails);
-router.get("/delete/user-details/:id", verification, deleteUserDetails);
+router.put("/update/user-details/:id", verification, upload.array('images', 10), updateUserDetails);
+router.delete("/delete/user-details/:_id", verification, deleteUserDetails);
+router.post("/mark/attendance", verification, markAttendance);
+router.get("/get/attendance", verification, getAttendance);
+router.get("/get/attendance", verification, getAttendanceByDate);
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);

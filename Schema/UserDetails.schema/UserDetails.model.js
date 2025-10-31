@@ -63,6 +63,34 @@ const userDetailsSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+  // Separate profile photo field
+  profilePhoto: {
+    filename: {
+      type: String,
+      default: ''
+    },
+    originalName: {
+      type: String,
+      default: ''
+    },
+    path: {
+      type: String,
+      default: ''
+    },
+    mimetype: {
+      type: String,
+      default: ''
+    },
+    size: {
+      type: Number,
+      default: 0
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  // Other images (multiple)
   images: [{
     filename: {
       type: String,

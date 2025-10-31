@@ -50,7 +50,7 @@ const getAttendanceByDate = async (req, res) => {
 
     const attendance = await Attendance.find({
       date: new Date(date)
-    }).populate('user_id', 'name email role');
+    }).sort({ marked_at: -1 });
 
     res.status(200).json({
       success: true,
@@ -61,7 +61,7 @@ const getAttendanceByDate = async (req, res) => {
     console.error('Error fetching attendance:', error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error: " + error.message
     });
   }
 };

@@ -20,8 +20,22 @@ const attendanceSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['present', 'absent'],
+    enum: ['present', 'absent', 'half-day'],
     required: true
+  },
+  leave_type: {
+    type: String,
+    default: ''
+  },
+  duration: {
+    type: String,
+    enum: ['full-day', 'half-day'],
+    default: null
+  },
+  half_day_timing: {
+    type: String,
+    enum: ['first-half', 'second-half'],
+    default: null
   },
   reason: {
     type: String,

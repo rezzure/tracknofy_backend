@@ -57,10 +57,24 @@ const createUserDetails = async (req, res) => {
       reportingToName = reportingUser.name;
     }
 
-    // Handle file uploads
+    // Handle profile photo upload (single file)
+    let profilePhoto = null;
+    if (req.files && req.files.profilePhoto && req.files.profilePhoto.length > 0) {
+      const file = req.files.profilePhoto[0];
+      profilePhoto = {
+        filename: file.filename,
+        originalName: file.originalname,
+        path: file.path,
+        mimetype: file.mimetype,
+        size: file.size,
+        uploadedAt: new Date(),
+      };
+    }
+
+    // Handle other images upload (multiple files)
     const images = [];
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
+    if (req.files && req.files.images && req.files.images.length > 0) {
+      req.files.images.forEach((file) => {
         images.push({
           filename: file.filename,
           originalName: file.originalname,
@@ -89,6 +103,7 @@ const createUserDetails = async (req, res) => {
       bankName: bankName || "",
       accountNumber: accountNumber || "",
       ifscCode: ifscCode || "",
+      profilePhoto: profilePhoto,
       images: images,
       createdBy: createdBy,
     });
@@ -104,16 +119,32 @@ const createUserDetails = async (req, res) => {
     console.error("Error creating user details:", err);
 
     // Clean up uploaded files if there was an error
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        if (fs.existsSync(file.path)) {
-          try {
-            fs.unlinkSync(file.path);
-          } catch (fileError) {
-            console.error(`Error cleaning up file ${file.path}:`, fileError);
+    if (req.files) {
+      // Clean up profile photo
+      if (req.files.profilePhoto && req.files.profilePhoto.length > 0) {
+        req.files.profilePhoto.forEach((file) => {
+          if (fs.existsSync(file.path)) {
+            try {
+              fs.unlinkSync(file.path);
+            } catch (fileError) {
+              console.error(`Error cleaning up file ${file.path}:`, fileError);
+            }
           }
-        }
-      });
+        });
+      }
+      
+      // Clean up other images
+      if (req.files.images && req.files.images.length > 0) {
+        req.files.images.forEach((file) => {
+          if (fs.existsSync(file.path)) {
+            try {
+              fs.unlinkSync(file.path);
+            } catch (fileError) {
+              console.error(`Error cleaning up file ${file.path}:`, fileError);
+            }
+          }
+        });
+      }
     }
 
     res.status(500).json({

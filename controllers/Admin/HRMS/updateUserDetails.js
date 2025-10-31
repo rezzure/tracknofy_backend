@@ -42,11 +42,25 @@ const updateUserDetails = async (req, res) => {
       reportingToName = reportingUser.name;
     }
 
-    // Handle file uploads
-    const newImages = [];
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        newImages.push({
+    // Handle profile photo upload (single file)
+    let profilePhoto = existingDetails.profilePhoto;
+    if (req.files && req.files.profilePhoto && req.files.profilePhoto.length > 0) {
+      const file = req.files.profilePhoto[0];
+      profilePhoto = {
+        filename: file.filename,
+        originalName: file.originalname,
+        path: file.path,
+        mimetype: file.mimetype,
+        size: file.size,
+        uploadedAt: new Date(),
+      };
+    }
+
+    // Handle other images upload (multiple files)
+    let images = existingDetails.images || [];
+    if (req.files && req.files.images && req.files.images.length > 0) {
+      req.files.images.forEach((file) => {
+        images.push({
           filename: file.filename,
           originalName: file.originalname,
           path: file.path,
@@ -58,30 +72,26 @@ const updateUserDetails = async (req, res) => {
     }
 
     // Update user details
-    const updatedData = {
-      reportingTo: reportingTo || existingDetails.reportingTo,
-      reportingTo_name: reportingToName,
-      employmentType: employmentType || existingDetails.employmentType,
-      probationPeriod: probationPeriod || existingDetails.probationPeriod,
-      dob: dob || existingDetails.dob,
-      doj: doj || existingDetails.doj,
-      contactNumber: contactNumber || existingDetails.contactNumber,
-      aadharNumber: aadharNumber || existingDetails.aadharNumber,
-      panNumber: panNumber || existingDetails.panNumber,
-      bankName: bankName || existingDetails.bankName,
-      accountNumber: accountNumber || existingDetails.accountNumber,
-      ifscCode: ifscCode || existingDetails.ifscCode,
-    };
-
-    // Add new images if any
-    if (newImages.length > 0) {
-      updatedData.images = [...existingDetails.images, ...newImages];
-    }
-
     const updatedDetails = await UserDetails.findByIdAndUpdate(
       id,
-      updatedData,
-      { new: true, runValidators: true }
+      {
+        reportingTo: reportingTo || "",
+        reportingTo_name: reportingToName,
+        employmentType: employmentType || "",
+        probationPeriod: probationPeriod || "",
+        dob: dob || null,
+        doj: doj || null,
+        contactNumber: contactNumber || "",
+        aadharNumber: aadharNumber || "",
+        panNumber: panNumber || "",
+        bankName: bankName || "",
+        accountNumber: accountNumber || "",
+        ifscCode: ifscCode || "",
+        profilePhoto: profilePhoto,
+        images: images,
+        updatedAt: Date.now(),
+      },
+      { new: true }
     );
 
     res.status(200).json({
@@ -91,20 +101,6 @@ const updateUserDetails = async (req, res) => {
     });
   } catch (err) {
     console.error("Error updating user details:", err);
-
-    // Clean up uploaded files if there was an error
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        if (fs.existsSync(file.path)) {
-          try {
-            fs.unlinkSync(file.path);
-          } catch (fileError) {
-            console.error(`Error cleaning up file ${file.path}:`, fileError);
-          }
-        }
-      });
-    }
-
     res.status(500).json({
       success: false,
       message: "Internal server error: " + err.message,

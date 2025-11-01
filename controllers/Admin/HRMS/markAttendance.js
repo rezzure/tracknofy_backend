@@ -1,5 +1,5 @@
-const Attendance = require('../../../Schema/attendance.schema/attendance.modal');
-const User = require('../../../Schema/users.schema/users.model')
+const Attendance = require("../../../Schema/attendance.schema/attendance.model");
+const User = require("../../../Schema/users.schema/users.model");
 
 const markAttendance = async (req, res) => {
   try {
@@ -35,45 +35,43 @@ const markAttendance = async (req, res) => {
       leave_type = '';
       duration = null;
       half_day_timing = null;
-      reason = '';
-    } 
-    else if (status === 'absent') {
+      reason = "";
+    } else if (status === 'absent') {
       // For absent status, require leave type and duration
       if (!leave_type) {
         return res.status(400).json({
           success: false,
-          message: "Leave type is required for absent status"
+          message: "Leave type is required for absent status",
         });
       }
       if (!duration) {
         return res.status(400).json({
           success: false,
-          message: "Duration is required for absent status"
+          message: "Duration is required for absent status",
         });
       }
       // For full-day absent, clear half-day timing
       if (duration === 'full-day') {
         half_day_timing = null;
       }
-    }
-    else if (status === 'half-day') {
+    } else if (status === 'half-day') {
       // For half-day status, require all leave-related fields
       if (!leave_type) {
         return res.status(400).json({
           success: false,
-          message: "Leave type is required for half-day status"
+          message: "Leave type is required for half-day status",
         });
       }
       if (!duration) {
         return res.status(400).json({
           success: false,
-          message: "Duration is required for half-day status"
+          message: "Duration is required for half-day status",
         });
       }
       if (!half_day_timing) {
         return res.status(400).json({
           success: false,
-          message: "Half-day timing is required for half-day status"
+          message: "Half-day timing is required for half-day status",
         });
       }
     }
@@ -83,20 +81,20 @@ const markAttendance = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
     // Check if attendance already exists for this user on this date
     const existingAttendance = await Attendance.findOne({
       user_id,
-      date: new Date(date)
+      date: new Date(date),
     });
 
     if (existingAttendance) {
       return res.status(400).json({
         success: false,
-        message: "Attendance already marked for this date"
+        message: "Attendance already marked for this date",
       });
     }
 
@@ -107,12 +105,12 @@ const markAttendance = async (req, res) => {
       user_mobile: user.mobile,
       date: new Date(date),
       status,
-      leave_type: leave_type || '',
+      leave_type: leave_type || "",
       duration: duration || null,
       half_day_timing: half_day_timing || null,
-      reason: reason || '',
+      reason: reason || "",
       marked_by,
-      location
+      location,
     });
 
     await attendance.save();
@@ -120,31 +118,30 @@ const markAttendance = async (req, res) => {
     res.status(200).json({
       success: true,
       message: `Attendance marked as ${status} successfully`,
-      data: attendance
+      data: attendance,
     });
-
   } catch (error) {
-    console.error('Error marking attendance:', error);
-    
+    console.error("Error marking attendance:", error);
+
     // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: "Attendance already marked for this date"
+        message: "Attendance already marked for this date",
       });
     }
 
     // Handle validation errors
-    if (error.name === 'ValidationError') {
+    if (error.name === "ValidationError") {
       return res.status(400).json({
         success: false,
-        message: `Validation error: ${error.message}`
+        message: `Validation error: ${error.message}`,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: "Internal server error: " + error.message
+      message: "Internal server error: " + error.message,
     });
   }
 };

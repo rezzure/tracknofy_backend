@@ -8,6 +8,7 @@ const leadRoutes = require("./router/crm.router/crmRouter.js")
 const crmRoutes  = require("./router/crmTaskManager.router/crmTaskManager.js")
 const clientFinancialDetail  = require("./router/clientFinancialDetail.router/clientFinancialDetail.router.js")
 const myFormRoutes   = require("./router/myForm.router/myFormRouter.js")
+const demoBookingRoutes = require('./router/bookDemo.router/bookDemoRouter.js');
 const fs = require('fs');
 
 // connectDB
@@ -59,6 +60,7 @@ app.use('/api', myFormRoutes);
 // app.use('/api', submissionRoutes);
 app.use('/api', fileRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/demo-bookings', demoBookingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

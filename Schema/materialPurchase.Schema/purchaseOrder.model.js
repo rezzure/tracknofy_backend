@@ -91,6 +91,3 @@ const purchaseOrderSchema = new mongoose.Schema({
 const PurchaseOrder = mongoose.model('PurchaseOrder', purchaseOrderSchema);
 
 module.exports=PurchaseOrder
-
-
-

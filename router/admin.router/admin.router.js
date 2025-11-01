@@ -87,12 +87,17 @@ const addQuotationTask = require("../../controllers/Admin/addQuotationTask.js");
 const getQuotationTask = require("../../controllers/Admin/getQuotationTask.js");
 const updateQuotationTask = require("../../controllers/Admin/updateQuotationTask.js");
 
+// HRMS Controllers
 const createUserDetails = require("../../controllers/Admin/HRMS/createUserDetails.js");
 const getUserDetails = require("../../controllers/Admin/HRMS/getUserDetails.js");
 const deleteUserDetails = require("../../controllers/Admin/HRMS/deleteUserDetails.js");
 const updateUserDetails = require("../../controllers/Admin/HRMS/updateUserDetails.js");
 const markAttendance = require("../../controllers/Admin/HRMS/markAttendance.js");
 const {getAttendance, getAttendanceByDate} = require("../../controllers/Admin/HRMS/getAttendance.js");
+const createLeaveRequest = require("../../controllers/Admin/HRMS/createLeaveRequest.js");
+const getLeaveRequest = require("../../controllers/Admin/HRMS/getLeaveRequest.js");
+const updateLeaveRequestStatus = require("../../controllers/Admin/HRMS/updateLeaveRequestStatus.js");
+const { getPendingLeaves, approveLeave, rejectLeave } = require("../../controllers/Admin/HRMS/leaveApproval.js");
 
 // Design Approval Controllers
 const { addDesign, addComments, createNewVersion, switchDesignVersion } = require("../../controllers/Admin/addDesign.js");
@@ -104,26 +109,40 @@ const {getDesign, getDesignVersions} = require("../../controllers/Admin/getDesig
 router.post("/add/design", verification, upload.array("designFile", 10), addDesign);
 router.get("/get/design", verification, getDesign);
 router.get("/get/design/site/:siteId", verification, getDesign);
-
-// Design comments and status
 router.post('/design/:id/comment', verification, addComments);
 router.patch("/design/:id/status", verification, updateDesignStatus);
 router.delete("/design/:id", verification, deleteDesign);
-
 router.post("/design/:id/switch-version", verification, switchDesignVersion);
-// Create new version of existing design
 router.post("/design/:id/create-version", verification, createNewVersion);
-// Get all versions of a design
 router.get("/design/:id/versions", verification, getDesignVersions);
 
-// Create User Details
-router.post("/create/user-details", verification, upload.array('images', 10), createUserDetails);
+// HRMS Routes
+router.post("/create/user-details", verification, 
+  upload.fields([
+    { name: 'profilePhoto', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  createUserDetails);
+
 router.get("/get/user-details", verification, getUserDetails);
-router.put("/update/user-details/:id", verification, upload.array('images', 10), updateUserDetails);
+
+router.put("/update/user-details/:id", verification,  
+  upload.fields([
+    { name: 'profilePhoto', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  updateUserDetails);
+
 router.delete("/delete/user-details/:_id", verification, deleteUserDetails);
 router.post("/mark/attendance", verification, markAttendance);
 router.get("/get/attendance", verification, getAttendance);
 router.get("/get/attendance", verification, getAttendanceByDate);
+router.post("/create/leave-request", verification, createLeaveRequest);
+router.get("/get/leave-request", verification, getLeaveRequest);
+router.put("/update-status/:id", verification, updateLeaveRequestStatus);
+router.get('/get/pending-leaves', getPendingLeaves);
+router.put('/approve-leave/:id', approveLeave);
+router.put('/reject-leave/:id', rejectLeave);
 
 // admin details
 router.get("/admin/detail", verification, adminDetail);
